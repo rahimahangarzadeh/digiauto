@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="src/data.js"></script>
+<script src="src/org-manager.js"></script>
+<script src="src/org-seed.js"></script>
+<script src="src/freigegeben_manager.js"></script>
+<script src="src/toast_manager.js"></script>
+<script type="text/babel" src="src/common.jsx"></script>
+
+<script type="text/babel">
+console.log('Before view_portal');
+</script>
+
+<script type="text/babel" src="src/view_portal.jsx"></script>
+
+<script type="text/babel">
+console.log('After view_portal - PortalView:', typeof window.PortalView);
+</script>
+
+</body>
+</html>

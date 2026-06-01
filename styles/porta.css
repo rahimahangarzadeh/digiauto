@@ -1,0 +1,430 @@
+/* ========================================================================
+   Porta-Design — Colors & Type
+   Warm, literary design system. Parchment canvas, serif authority.
+   ======================================================================== */
+
+/* ---------- Web fonts ----------
+   Using Google Fonts substitutes for the proprietary Anthropic family.
+   Drop real .woff2 files into fonts/ and this import will fall through.
+--------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400..700;1,8..60,400..700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,400..700;1,400..700&display=swap');
+
+:root {
+  /* ===============================================================
+     COLORS
+     =============================================================== */
+
+  /* Primary */
+  --color-near-black:       #141413;   /* primary text, dark surface */
+  --color-terracotta:       #c96442;   /* primary brand accent */
+  --color-coral:            #d97757;   /* secondary warm accent */
+
+  /* Semantic accent */
+  --color-error:            #b53333;
+  --color-focus:            #3898ec;   /* only cool color; focus rings only */
+
+  /* Surfaces */
+  --color-parchment:        #f5f4ed;   /* page bg (light) */
+  --color-ivory:            #faf9f5;   /* elevated card surface */
+  --color-white:            #ffffff;   /* max-contrast button surface */
+  --color-warm-sand:        #e8e6dc;   /* button surface, prominent */
+  --color-dark-surface:     #30302e;   /* dark card / container */
+  --color-deep-dark:        #141413;   /* dark page bg */
+
+  /* Text */
+  --color-text-primary:     #141413;
+  --color-text-secondary:   #5e5d59;   /* olive gray */
+  --color-text-tertiary:    #87867f;   /* stone gray */
+  --color-text-emphasis:    #3d3d3a;   /* dark warm */
+  --color-text-button:      #4d4c48;   /* charcoal warm */
+  --color-text-on-dark:     #b0aea5;   /* warm silver */
+  --color-text-on-dark-strong: #faf9f5;
+
+  /* Borders */
+  --color-border-cream:     #f0eee6;   /* standard light border */
+  --color-border-warm:      #e8e6dc;   /* prominent light border */
+  --color-border-dark:      #30302e;   /* dark border */
+
+  /* Rings (for shadow-rings) */
+  --ring-warm:              #d1cfc5;
+  --ring-subtle:            #dedcd1;
+  --ring-deep:              #c2c0b6;
+
+  /* ===============================================================
+     SEMANTIC COLOR TOKENS
+     =============================================================== */
+  --bg-page:                var(--color-parchment);
+  --bg-elevated:            var(--color-ivory);
+  --bg-button:              var(--color-warm-sand);
+  --bg-button-primary:      var(--color-terracotta);
+  --bg-dark:                var(--color-deep-dark);
+  --bg-dark-elevated:       var(--color-dark-surface);
+
+  --fg-1:                   var(--color-text-primary);
+  --fg-2:                   var(--color-text-secondary);
+  --fg-3:                   var(--color-text-tertiary);
+  --fg-emphasis:            var(--color-text-emphasis);
+  --fg-on-dark-1:           var(--color-text-on-dark-strong);
+  --fg-on-dark-2:           var(--color-text-on-dark);
+
+  --border-1:               var(--color-border-cream);
+  --border-2:               var(--color-border-warm);
+  --border-dark-1:          var(--color-border-dark);
+
+  --accent:                 var(--color-terracotta);
+  --accent-hover:           #b85739;  /* terracotta -4% */
+  --accent-soft:            var(--color-coral);
+
+  /* ===============================================================
+     TYPOGRAPHY
+     =============================================================== */
+  --font-serif:  "Source Serif 4", "Anthropic Serif", Georgia, "Iowan Old Style", "Times New Roman", serif;
+  --font-sans:   "Inter", "Anthropic Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono:   "JetBrains Mono", "Anthropic Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Type scale (px values shown as rems, 16px base) */
+  --fs-display:        4rem;       /* 64px  */
+  --fs-section:        3.25rem;    /* 52px  */
+  --fs-sub-lg:         2.3rem;     /* 36.8  */
+  --fs-sub:            2rem;       /* 32    */
+  --fs-sub-sm:         1.6rem;     /* 25.6  */
+  --fs-feature:        1.3rem;     /* 20.8  */
+  --fs-body-lg:        1.25rem;    /* 20    */
+  --fs-body:           1.0625rem;  /* 17    */
+  --fs-base:           1rem;       /* 16    */
+  --fs-sm:             0.9375rem;  /* 15    */
+  --fs-caption:        0.875rem;   /* 14    */
+  --fs-label:          0.75rem;    /* 12    */
+  --fs-overline:       0.625rem;   /* 10    */
+  --fs-micro:          0.6rem;     /* 9.6   */
+
+  /* Line heights */
+  --lh-tight:          1.10;
+  --lh-snug:           1.20;
+  --lh-mid:            1.30;
+  --lh-compact:        1.43;
+  --lh-normal:         1.60;
+
+  /* Letter spacing */
+  --tracking-mono:     -0.32px;
+  --tracking-label:    0.12px;
+  --tracking-overline: 0.5px;
+
+  /* ===============================================================
+     SPACING (8px base)
+     =============================================================== */
+  --space-3xs: 3px;
+  --space-2xs: 4px;
+  --space-xs:  6px;
+  --space-sm:  8px;
+  --space-md:  10px;
+  --space-lg:  12px;
+  --space-xl:  16px;
+  --space-2xl: 20px;
+  --space-3xl: 24px;
+  --space-4xl: 30px;
+  --space-5xl: 48px;
+  --space-6xl: 64px;
+  --space-section: 96px;
+
+  /* ===============================================================
+     RADII
+     =============================================================== */
+  --r-xs:  4px;   /* inline chips */
+  --r-sm:  6px;
+  --r-md:  8px;   /* standard buttons/cards */
+  --r-lg:  12px;  /* primary buttons, inputs */
+  --r-xl:  16px;  /* featured cards */
+  --r-2xl: 24px;  /* tag-like */
+  --r-3xl: 32px;  /* hero containers */
+
+  /* ===============================================================
+     ELEVATION / SHADOWS
+     =============================================================== */
+  --shadow-ring:          0 0 0 1px var(--ring-warm);
+  --shadow-ring-deep:     0 0 0 1px var(--ring-deep);
+  --shadow-ring-subtle:   0 0 0 1px var(--ring-subtle);
+  --shadow-whisper:       rgba(0,0,0,0.05) 0px 4px 24px;
+  --shadow-inset:         inset 0 0 0 1px rgba(0,0,0,0.15);
+  --shadow-dark-ring:     0 0 0 1px var(--color-dark-surface);
+
+  /* ===============================================================
+     MOTION
+     =============================================================== */
+  --ease-standard:  cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-decelerate: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast:   150ms;
+  --dur-mid:    200ms;
+  --dur-slow:   320ms;
+
+  /* ===============================================================
+     LAYOUT
+     =============================================================== */
+  --container: 1200px;
+  --container-narrow: 760px;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+html, body {
+  background: var(--bg-page);
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ============================================================
+   SEMANTIC TYPE CLASSES
+   Use .pd-h1, .pd-h2, etc. OR the tag selectors below.
+   ============================================================ */
+
+.pd-display,
+.pd-h1,
+.pd-h2,
+.pd-h3,
+.pd-h4,
+.pd-h5 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  color: var(--fg-1);
+  letter-spacing: normal;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.pd-display { font-size: var(--fs-display);  line-height: var(--lh-tight); }
+.pd-h1      { font-size: var(--fs-section);  line-height: var(--lh-snug); }
+.pd-h2      { font-size: var(--fs-sub-lg);   line-height: var(--lh-mid); }
+.pd-h3      { font-size: var(--fs-sub);      line-height: var(--lh-tight); }
+.pd-h4      { font-size: var(--fs-sub-sm);   line-height: var(--lh-snug); }
+.pd-h5      { font-size: var(--fs-feature);  line-height: var(--lh-snug); }
+
+.pd-body-serif {
+  font-family: var(--font-serif);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+}
+
+.pd-body-lg {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-lg);
+  font-weight: 400;
+  line-height: var(--lh-normal);
+  color: var(--fg-2);
+  text-wrap: pretty;
+}
+
+.pd-body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: 400;
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+}
+
+.pd-body-sm {
+  font-family: var(--font-sans);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-normal);
+  color: var(--fg-1);
+}
+
+.pd-caption {
+  font-family: var(--font-sans);
+  font-size: var(--fs-caption);
+  line-height: var(--lh-compact);
+  color: var(--fg-2);
+}
+
+.pd-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-label);
+  line-height: var(--lh-snug);
+  letter-spacing: var(--tracking-label);
+  color: var(--fg-2);
+}
+
+.pd-overline {
+  font-family: var(--font-sans);
+  font-size: var(--fs-overline);
+  font-weight: 500;
+  line-height: var(--lh-normal);
+  letter-spacing: var(--tracking-overline);
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+
+.pd-micro {
+  font-family: var(--font-sans);
+  font-size: var(--fs-micro);
+  line-height: var(--lh-normal);
+  letter-spacing: 0.096px;
+  color: var(--fg-3);
+}
+
+.pd-code,
+code, kbd, samp, pre {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: var(--tracking-mono);
+  line-height: var(--lh-normal);
+}
+
+/* Tag defaults — safe to use if you prefer plain semantics */
+h1 { font: 500 var(--fs-display)/var(--lh-tight) var(--font-serif); margin: 0; color: var(--fg-1); text-wrap: balance; }
+h2 { font: 500 var(--fs-section)/var(--lh-snug)  var(--font-serif); margin: 0; color: var(--fg-1); text-wrap: balance; }
+h3 { font: 500 var(--fs-sub)/var(--lh-tight)     var(--font-serif); margin: 0; color: var(--fg-1); text-wrap: balance; }
+h4 { font: 500 var(--fs-sub-sm)/var(--lh-snug)   var(--font-serif); margin: 0; color: var(--fg-1); }
+h5 { font: 500 var(--fs-feature)/var(--lh-snug)  var(--font-serif); margin: 0; color: var(--fg-1); }
+p  { font: 400 var(--fs-body)/var(--lh-normal)   var(--font-sans);  margin: 0; color: var(--fg-1); text-wrap: pretty; }
+
+/* Links — text-color, always-underlined style in prose; in UI they're plain */
+a  { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:hover { color: var(--accent); }
+
+/* ============================================================
+   UTILITY: SURFACES
+   ============================================================ */
+.pd-surface-page      { background: var(--bg-page);         color: var(--fg-1); }
+.pd-surface-elevated  { background: var(--bg-elevated);     color: var(--fg-1); }
+.pd-surface-dark      { background: var(--bg-dark);         color: var(--fg-on-dark-1); }
+.pd-surface-dark-elev { background: var(--bg-dark-elevated);color: var(--fg-on-dark-1); }
+
+/* ============================================================
+   UTILITY: CARD
+   ============================================================ */
+.pd-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-md);
+  padding: var(--space-3xl);
+}
+.pd-card--featured {
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-whisper);
+}
+.pd-card--hero {
+  border-radius: var(--r-3xl);
+}
+
+/* ============================================================
+   UTILITY: BUTTONS
+   ============================================================ */
+.pd-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  font-weight: 500;
+  line-height: 1;
+  border: 0;
+  cursor: pointer;
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  transition:
+    background var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.pd-btn:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+
+.pd-btn--primary {
+  background: var(--bg-button-primary);
+  color: var(--color-ivory);
+  border-radius: var(--r-lg);
+  box-shadow: 0 0 0 1px var(--color-terracotta);
+}
+.pd-btn--primary:hover   { background: var(--accent-hover); }
+.pd-btn--primary:active  { box-shadow: var(--shadow-inset); }
+
+.pd-btn--sand {
+  background: var(--bg-button);
+  color: var(--color-text-button);
+  padding: 8px 12px 8px 10px;
+  box-shadow: var(--shadow-ring);
+}
+.pd-btn--sand:hover   { background: #dfdcd0; }
+
+.pd-btn--white {
+  background: var(--color-white);
+  color: var(--fg-1);
+  border-radius: var(--r-lg);
+  padding: 8px 16px 8px 12px;
+  box-shadow: var(--shadow-ring-subtle);
+}
+.pd-btn--white:hover  { background: var(--bg-button); }
+
+.pd-btn--dark {
+  background: var(--color-dark-surface);
+  color: var(--color-ivory);
+  box-shadow: var(--shadow-ring);
+}
+.pd-btn--dark:hover   { background: #3a3a37; }
+
+.pd-btn--dark-primary {
+  background: var(--color-near-black);
+  color: var(--fg-on-dark-2);
+  border: 1px solid var(--color-dark-surface);
+  border-radius: var(--r-lg);
+  padding: 9.6px 16.8px;
+}
+.pd-btn--dark-primary:hover { background: #1b1b1a; color: var(--fg-on-dark-1); }
+
+/* ============================================================
+   UTILITY: INPUT
+   ============================================================ */
+.pd-input {
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  color: var(--fg-1);
+  background: var(--color-white);
+  border: 1px solid var(--border-1);
+  border-radius: var(--r-lg);
+  padding: 10px 12px;
+  line-height: 1.25;
+  transition: border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+  outline: none;
+}
+.pd-input::placeholder { color: var(--fg-3); }
+.pd-input:focus {
+  border-color: var(--color-focus);
+  box-shadow: 0 0 0 3px rgba(56,152,236,0.15);
+}
+
+/* ============================================================
+   UTILITY: CONTAINER
+   ============================================================ */
+.pd-container         { max-width: var(--container);        margin: 0 auto; padding: 0 24px; }
+.pd-container-narrow  { max-width: var(--container-narrow); margin: 0 auto; padding: 0 24px; }
+
+/* ============================================================
+   UTILITY: BADGE / TAG
+   ============================================================ */
+.pd-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-label);
+  letter-spacing: var(--tracking-label);
+  padding: 4px 10px;
+  border-radius: var(--r-2xl);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-1);
+  color: var(--fg-2);
+}
+.pd-badge--accent {
+  color: var(--accent);
+  border-color: color-mix(in oklab, var(--accent) 25%, transparent);
+  background: color-mix(in oklab, var(--accent) 8%, var(--bg-elevated));
+}

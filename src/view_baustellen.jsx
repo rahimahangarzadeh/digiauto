@@ -502,6 +502,11 @@ function BaustellenView({ activeCompany }) {
     });
   const siteFilterValues = siteFilterPanel ? Array.from(new Set(sites.map((site, index) => siteColumnValue(site, siteFilterPanel, index)))).sort((a,b) => String(a).localeCompare(String(b), 'de', { numeric:true })) : [];
   const visibleSiteFilterValues = siteFilterValues.filter(value => String(value).toLowerCase().includes(siteFilterSearch.toLowerCase()));
+  const totalSiteEmployees = listedSites.reduce((sum, item) => sum + item.site.employeeIds.length, 0);
+  const totalMissingTrainings = listedSites.reduce((sum, item) => sum + siteMetrics(item.site).status.missing, 0);
+  const readySites = listedSites.filter(item => siteMetrics(item.site).status.ready).length;
+  const totalRequiredPoints = listedSites.length * 6;
+  const fulfilledRequiredPoints = listedSites.reduce((sum, item) => sum + siteMetrics(item.site).fulfilled, 0);
   const SiteColumnHeader = ({ col }) => {
     const active = siteSort.col === col.key || (siteColumnFilters[col.key] || []).length > 0 || siteGroupBy === col.key;
     return (
@@ -533,6 +538,13 @@ function BaustellenView({ activeCompany }) {
         </div>
       </div>
 
+      <div className="kpi-grid baustellen-kpis" style={{ gridTemplateColumns:'repeat(4, minmax(150px, 1fr))', marginBottom:18 }}>
+        <div className="kpi"><div className="kpi__label">Baustellen</div><div className="kpi__value">{listedSites.length}</div><div className="kpi__delta">aktiv in Ansicht</div></div>
+        <div className="kpi"><div className="kpi__label">Mitarbeiter</div><div className="kpi__value">{totalSiteEmployees}</div><div className="kpi__delta">eingeplant</div></div>
+        <div className="kpi"><div className="kpi__label">Pflichtpunkte</div><div className="kpi__value" style={{ color: totalMissingTrainings ? '#8a6a1f' : '#3f7a4a' }}>{fulfilledRequiredPoints}/{totalRequiredPoints}</div><div className="kpi__delta">erfuellt</div></div>
+        <div className="kpi"><div className="kpi__label">Fehlende Schulungen</div><div className="kpi__value" style={{ color: totalMissingTrainings ? '#a13232' : '#3f7a4a' }}>{totalMissingTrainings}</div><div className="kpi__delta">{readySites} baustellen bereit</div></div>
+      </div>
+
       {Object.entries(siteColumnFilters).some(([, values]) => values?.length) && (
         <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', margin:'0 0 12px 0' }}>
           {Object.entries(siteColumnFilters).map(([col, values]) => (values || []).map(value => (
@@ -546,8 +558,8 @@ function BaustellenView({ activeCompany }) {
         </div>
       )}
 
-      <div className="card" style={{ overflow:'auto' }}>
-        <table className="data-table" style={{ minWidth:1380, width:'100%' }}>
+      <section className="tbl-wrap baustellen-table-wrap">
+        <table className="tbl job-table baustellen-table" style={{ minWidth:1380, width:'100%' }}>
           <thead>
             <tr>
               {siteColumns.map(col => <SiteColumnHeader key={col.key} col={col} />)}
@@ -590,7 +602,7 @@ function BaustellenView({ activeCompany }) {
               );
             })}          </tbody>
         </table>
-      </div>
+      </section>
 
       {detailOpen && selectedSite && (
         <div onClick={() => setDetailOpen(false)} style={{ position:'fixed', inset:0, zIndex:2400, background:'rgba(0,0,0,.32)', display:'flex', justifyContent:'flex-end' }}>

@@ -42,6 +42,7 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
         { id: 'bgbau', label: 'Baustellenaushang BGBAU', icon: 'doc' },
         { id: 'normenmatrix', label: 'Normenmatrix', icon: 'matrix' },
         { id: 'formulare', label: 'Formulare', icon: 'doc' },
+        { id: 'calendar',       label: 'Schulungskalender',        icon: 'cal' },
         { id: 'trainings', label: 'Schulungen', icon: 'cap' },
         { id: 'befaehigte_personen', label: 'Bef\u00e4higte Personen', icon: 'shield' },
         { id: 'organigramm',label: 'Organigramm', icon: 'users' },
@@ -64,7 +65,9 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
         { id: 'bgbau', label: 'Baustellenaushang BGBAU', icon: 'doc' },
         { id: 'normenmatrix', label: 'Normenmatrix', icon: 'matrix' },
         { id: 'formulare', label: 'Formulare', icon: 'doc' },
+        { id: 'calendar',       label: 'Schulungskalender',        icon: 'cal' },
         { id: 'trainings', label: 'Schulungen', icon: 'cap' },
+        { id: 'befaehigte_personen', label: 'Bef\u00e4higte Personen', icon: 'shield' },
         { id: 'organigramm',label: 'Organigramm', icon: 'users' },
         { id: 'zertuebersicht', label: 'Zertifizierungs\u00fcbersicht', icon: 'doc' },
       ]},
@@ -74,14 +77,12 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
       ]},
       { label: 'Verwaltung', items: [
         { id: 'employees',      label: 'Mitarbeiter',              icon: 'users' },
-        { id: 'calendar',       label: 'Schulungskalender',        icon: 'cal' },
         { id: 'certs',          label: 'Zertifikate',              icon: 'doc', badge: notifications?.certs },
         { id: 'instr',          label: 'Unterweisungen',           icon: 'flag', badge: notifications?.instr },
         { id: 'stellenbeschreibungen', label: 'Stellenbeschreibungen', icon: 'doc', badge: notifications?.stellen },
         { id: 'untersuchungsvorsorge', label: 'Untersuchungsvorsorge', icon: 'shield', badge: notifications?.medical },
         { id: 'fuehrerscheinkontrolle', label: 'F\u00fchrerscheinkontrolle', icon: 'cap', badge: notifications?.license },
         { id: 'geraetefuehrer', label: 'Ger\u00e4tef\u00fchrer', icon: 'cap', badge: notifications?.geraetefuehrer },
-        { id: 'befaehigte_personen', label: 'Bef\u00e4higte Personen', icon: 'shield' },
         { id: 'wartungsliste',  label: 'Termine', icon: 'history' },
       ]},
       { label: 'Stammdaten', items: [
@@ -117,7 +118,7 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="icon-btn"
-          title={collapsed ? 'Sidebar öffnen' : 'Sidebar schließen'}
+          title={collapsed ? 'Sidebar \u00f6ffnen' : 'Sidebar schlie\u00dfen'}
           style={{ flexShrink: 0 }}>
           <Icon name={collapsed ? 'chevR' : 'chevL'} size={16} />
         </button>
@@ -242,7 +243,7 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
                   {role === 'employee' ? 'Markus Brinker' : role === 'superadmin' ? 'Michael Janning' : 'Sabine Janning'}
                 </div>
                 <div className="sidebar__user-role" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {role === 'employee' ? 'Polier · Tiefbau' : role === 'superadmin' ? 'Superadmin' : 'Firmenverantwortliche'}
+                  {role === 'employee' ? 'Polier - Tiefbau' : role === 'superadmin' ? 'Superadmin' : 'Firmenverantwortliche'}
                 </div>
               </div>
               <button className="icon-btn" title="Abmelden" onClick={() => window.__logout && window.__logout()} style={{ flexShrink: 0 }}>
@@ -598,8 +599,8 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
     { id: 'license',      label: 'F\u00fchrerschein',          icon: 'cap' },
   ];
   const STATUSES = [
-    { id: 'valid',   label: 'Gültig',         color: '#3f7a4a', bg: '#eff5ed' },
-    { id: 'warn',    label: 'Läuft bald ab',  color: '#8a6a1f', bg: '#faf3de' },
+    { id: 'valid',   label: 'G\u00fcltig',         color: '#3f7a4a', bg: '#eff5ed' },
+    { id: 'warn',    label: 'L\u00e4uft bald ab',  color: '#8a6a1f', bg: '#faf3de' },
     { id: 'expired', label: 'Abgelaufen',     color: '#a13232', bg: '#fbecea' },
   ];
 
@@ -614,7 +615,7 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
   return (
     <>
       <div className="topbar">
-        <button className="hamburger-btn" onClick={onMobileMenuOpen} title="Menü öffnen">
+        <button className="hamburger-btn" onClick={onMobileMenuOpen} title={'Men\u00fc \u00f6ffnen'}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
             <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
           </svg>
@@ -633,7 +634,7 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
           <div className="topbar__search" style={{ gap: 6 }}>
             <Icon name="search" size={14} />
             <input
-              placeholder="Schulung, Zertifikat, Dokument suchen…"
+              placeholder="Schulung, Zertifikat, Dokument suchen..."
               value={ss.query}
               onChange={e => set(s => ({ ...s, query: e.target.value }))}
               onFocus={() => setShowFilter(true)}
@@ -726,7 +727,7 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
                     <input type="date" value={ss.dateFrom} onChange={e => set(s => ({ ...s, dateFrom: e.target.value }))}
                       style={{ width: '100%', padding: '7px 10px', fontSize: 13, border: '1px solid var(--border-1)', borderRadius: 7, background: 'var(--color-parchment)', boxSizing: 'border-box', fontFamily: 'inherit' }} />
                   </div>
-                  <div style={{ color: 'var(--fg-3)', paddingTop: 16, fontSize: 13 }}>—</div>
+                  <div style={{ color: 'var(--fg-3)', paddingTop: 16, fontSize: 13 }}>-</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 10, color: 'var(--fg-3)', marginBottom: 3 }}>Bis</div>
                     <input type="date" value={ss.dateTo} onChange={e => set(s => ({ ...s, dateTo: e.target.value }))}
@@ -738,7 +739,7 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
               {/* Footer */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-1)', paddingTop: 12 }}>
                 <button onClick={reset} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--fg-3)', textDecoration: 'underline', fontFamily: 'inherit' }}>
-                  Filter zurücksetzen
+                  {'Filter zur\u00fccksetzen'}
                 </button>
                 <button onClick={() => setShowFilter(false)} className="btn btn--primary" style={{ fontSize: 12, padding: '6px 18px' }}>
                   Anwenden

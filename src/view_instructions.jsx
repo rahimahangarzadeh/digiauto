@@ -606,10 +606,15 @@ function EvaluationView() {
   };
 
   /* â”€â”€ render â”€â”€ */
+  const evalModeStats = {
+    schulung: window.SEED.trainings.length,
+    position: positions.length,
+    firma: companies.length,
+  };
   const tabs = [
-    { id: 'schulung',  label: 'Nach Schulung' },
-    { id: 'position',  label: 'Nach Position' },
-    { id: 'firma',     label: 'Nach Firma'    },
+    { id: 'schulung', label: 'Nach Schulung', value: evalModeStats.schulung, hint: 'Schulungen' },
+    { id: 'position', label: 'Nach Position', value: evalModeStats.position, hint: 'Positionen' },
+    { id: 'firma', label: 'Nach Firma', value: evalModeStats.firma, hint: 'Firmen' },
   ];
 
   return (
@@ -661,34 +666,19 @@ function EvaluationView() {
         )}
       </div>
 
-      {/* Tab bar */}
-      <div style={{
-        display: 'inline-flex',
-        gap: 6,
-        marginBottom: 20,
-        padding: 4,
-        background: 'var(--color-parchment)',
-        border: '1px solid var(--border-1)',
-        borderRadius: 10,
-        boxShadow: '0 8px 22px rgba(20, 20, 19, 0.06)',
-      }}>
+      {/* KPI-style view selector */}
+      <div className="evaluation-kpi-tabs" aria-label="Auswertungsansicht">
         {tabs.map(t => (
           <button
             key={t.id}
+            type="button"
+            className={'evaluation-kpi-tab' + (tab === t.id ? ' is-active' : '')}
             onClick={() => setTab(t.id)}
-            style={{
-              padding: '9px 22px',
-              fontSize: 13.5,
-              fontWeight: tab === t.id ? 700 : 500,
-              color: tab === t.id ? 'var(--fg-1)' : 'var(--fg-2)',
-              background: tab === t.id ? 'var(--color-white)' : 'transparent',
-              border: '1px solid ' + (tab === t.id ? 'var(--border-1)' : 'transparent'),
-              boxShadow: tab === t.id ? '0 6px 16px rgba(20, 20, 19, 0.12)' : 'none',
-              cursor: 'pointer',
-              transition: 'all 150ms',
-              borderRadius: 8,
-            }}
-          >{t.label}</button>
+          >
+            <span className="evaluation-kpi-tab__label">{t.label}</span>
+            <strong>{t.value}</strong>
+            <span className="evaluation-kpi-tab__hint">{t.hint}</span>
+          </button>
         ))}
       </div>
 

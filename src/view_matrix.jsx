@@ -505,7 +505,7 @@ function MatrixView({ activeCompany }) {
         <table className="matrix">
           <thead>
             <tr>
-              <th style={{ width:40, textAlign:'center', padding:'8px 0' }}>
+              <th style={{ width:48, textAlign:'center', padding:'8px 0' }}>
                 <input
                   type="checkbox"
                   checked={selectedRows.size === emps.length && emps.length > 0}
@@ -546,7 +546,7 @@ function MatrixView({ activeCompany }) {
                     outlineOffset: -2,
                     transition: 'background 150ms',
                   }}>
-                  <td style={{ textAlign:'center', padding:'8px 0', width:40, background: isRowSelected ? 'rgba(201,100,66,0.1)' : (isSelected ? 'rgba(201,100,66,0.06)' : undefined) }}>
+                  <td style={{ textAlign:'center', padding:'8px 0', width:48, background: isRowSelected ? 'rgba(201,100,66,0.1)' : (isSelected ? 'rgba(201,100,66,0.06)' : undefined) }}>
                     <input
                       type="checkbox"
                       checked={isRowSelected}

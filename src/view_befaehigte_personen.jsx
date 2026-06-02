@@ -56,6 +56,7 @@
       responsible,
       document,
       note,
+      releasedToEmployee: false,
     };
   };
   const initialRows = [
@@ -164,6 +165,7 @@
     });
   };
   const deleteRow = row => setRows(current => current.filter(item => item.id !== row.id));
+  const toggleEmployeeRelease = (rowId) => setRows(current => current.map(row => row.id === rowId ? { ...row, releasedToEmployee: !row.releasedToEmployee } : row));
   const toggleRowArea = (rowId, area) => setRows(current => current.map(row => {
     if (row.id !== rowId) return row;
     const selected = areaList(row.area);
@@ -197,6 +199,7 @@
       responsible: 'QSGU',
       document: 'Neue_Beauftragung.pdf',
       note: 'Neue Beauftragung erfassen.',
+      releasedToEmployee: false,
     };
     setRows(current => [next, ...current]);
     setDetail(next);
@@ -262,6 +265,12 @@
         <td>{fmt(row.validUntil)}</td>
         <td><span className={'badge ' + statusBadgeClass(status)}><span className="badge__dot" />{status}</span></td>
         <td style={{ minWidth: 240, whiteSpace: 'normal' }}>{row.note}</td>
+        <td onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
+          <label className="release-toggle" title="Im Mitarbeiterportal anzeigen">
+            <input type="checkbox" checked={!!row.releasedToEmployee} onChange={() => toggleEmployeeRelease(row.id)} />
+            <span></span>
+          </label>
+        </td>
         <td onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
           <div style={{ display: 'inline-flex', gap: 6 }}>
             <button className="job-icon-btn" title="Vorschau"><Icon name="eye" size={15} /></button>
@@ -346,6 +355,7 @@
             <tr>
               <th style={{ width: 44 }}><input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} /></th>
               {columns.map(col => <ColumnHeader key={col.key} col={col} />)}
+              <th>Freigabe f&uuml;r Mitarbeiter</th>
               <th>Aktionen</th>
             </tr>
           </thead>
@@ -353,7 +363,7 @@
             {grouped
               ? Object.entries(grouped).map(([group, groupRows]) => (
                 <React.Fragment key={group}>
-                  <tr><td colSpan={columns.length + 2} style={{ background: 'var(--color-parchment)', fontWeight: 800 }}>{colLabel(groupBy)}: {group} ({groupRows.length})</td></tr>
+                  <tr><td colSpan={columns.length + 3} style={{ background: 'var(--color-parchment)', fontWeight: 800 }}>{colLabel(groupBy)}: {group} ({groupRows.length})</td></tr>
                   {renderRows(groupRows)}
                 </React.Fragment>
               ))
@@ -417,6 +427,10 @@
             <label><span className="form-label">Verantwortlich für Prüfung</span><input className="input" value={detail.responsible} onChange={e => setDetail(d => ({ ...d, responsible: e.target.value }))} /></label>
             <label><span className="form-label">Dokument</span><input className="input" value={detail.document} onChange={e => setDetail(d => ({ ...d, document: e.target.value }))} /></label>
             <label style={{ gridColumn: '1 / -1' }}><span className="form-label">Bemerkung</span><textarea className="input" value={detail.note} onChange={e => setDetail(d => ({ ...d, note: e.target.value }))} /></label>
+            <label style={{ gridColumn: '1 / -1', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, background:'white', border:'1px solid var(--border-1)', borderRadius:10, padding:14 }}>
+              <span><span className="form-label">Freigabe f&uuml;r Mitarbeiter</span><span className="small muted" style={{ display:'block', marginTop:4 }}>Im Mitarbeiterportal unter Ger&auml;tepr&uuml;fung anzeigen</span></span>
+              <span className="release-toggle"><input type="checkbox" checked={!!detail.releasedToEmployee} onChange={e => setDetail(d => ({ ...d, releasedToEmployee: e.target.checked }))} /><span></span></span>
+            </label>
             <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, flexWrap: 'wrap', padding: 14, background: 'white', border: '1px solid var(--border-1)', borderRadius: 10 }}>
               <button className="job-small-btn"><Icon name="eye" size={12} />Dokument Vorschau</button>
               <button className="job-small-btn"><Icon name="download" size={12} />Download</button>

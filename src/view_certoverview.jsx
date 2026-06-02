@@ -35,8 +35,37 @@ function CertOverviewView({ activeCompany }) {
     ]
   };
 
+  const initialAuditData = {
+    tiefbau: [
+      { id: 'audit-1', date: '2026-05-21', time: '08:00', title: 'GW 301' },
+      { id: 'audit-2', date: '2026-05-31', time: '08:00', title: 'ᴍ62 AwsV' },
+      { id: 'audit-3', date: '2026-09-30', time: '08:00', title: 'RAL' },
+      { id: 'audit-4', date: '2026-11-02', time: '08:00', title: 'ISO 14001' },
+      { id: 'audit-5', date: '2026-11-02', time: '08:00', title: 'SCL' },
+      { id: 'audit-6', date: '2027-02-28', time: '08:00', title: 'ISO 3834' },
+      { id: 'audit-7', date: '2027-02-28', time: '08:00', title: 'AD2000-HPO' },
+      { id: 'audit-8', date: '2027-02-28', time: '08:00', title: 'PED-3-1' },
+    ],
+    bohrtechnik: [
+      { id: 'audit-b1', date: '2026-06-15', time: '09:00', title: 'ISO 45001' },
+      { id: 'audit-b2', date: '2026-07-20', time: '10:00', title: 'SCC Audit' },
+    ],
+    rohrbau: [
+      { id: 'audit-r1', date: '2026-07-01', time: '08:00', title: 'EN ISO 3834' },
+      { id: 'audit-r2', date: '2026-08-15', time: '14:00', title: 'DVGW Inspektion' },
+    ],
+    galabau: [
+      { id: 'audit-g1', date: '2026-06-10', time: '11:00', title: 'RAL Überprüfung' },
+    ],
+    transporte: [
+      { id: 'audit-t1', date: '2026-05-25', time: '08:00', title: 'ADR Schulung' },
+      { id: 'audit-t2', date: '2026-10-12', time: '13:00', title: 'ISO 39001 Review' },
+    ]
+  };
+
   const [companies, setCompanies] = React.useState(() => window.SEED.companies.map((company) => ({ ...company })));
   const [certsByCompany, setCertsByCompany] = React.useState(initialCertData);
+  const [auditsByCompany, setAuditsByCompany] = React.useState(initialAuditData);
   const availableCompanies = activeCompany === 'all'
     ? companies
     : companies.filter((company) => company.id === activeCompany);
@@ -226,6 +255,36 @@ function CertOverviewView({ activeCompany }) {
     return `in ${cert.days} Tagen`;
   };
 
+  const getAllAudits = () => {
+    const allAudits = [];
+    Object.values(auditsByCompany).forEach(audits => {
+      allAudits.push(...audits);
+    });
+    return allAudits.sort((a, b) => new Date(a.date) - new Date(b.date));
+  };
+
+  const formatAuditDate = (dateStr) => {
+    return window.fmtDE(dateStr);
+  };
+
+  const calculateCountdown = (dateStr, timeStr) => {
+    const now = new Date(window.SEED.today);
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const auditDate = new Date(dateStr + 'T' + timeStr + ':00');
+
+    let diff = Math.floor((auditDate - now) / 1000);
+    if (diff < 0) diff = 0;
+
+    const days = Math.floor(diff / 86400);
+    const hours_remaining = Math.floor((diff % 86400) / 3600);
+    const minutes_remaining = Math.floor((diff % 3600) / 60);
+    const seconds_remaining = diff % 60;
+
+    return { days, hours: hours_remaining, minutes: minutes_remaining, seconds: seconds_remaining };
+  };
+
+  const allAudits = getAllAudits();
+
   return (
     <div className="cert-overview">
       <div className="view__header cert-overview__header">
@@ -396,6 +455,44 @@ function CertOverviewView({ activeCompany }) {
           ) : (
             <div className="cert-empty">Keine Firma ausgewählt.</div>
           )}
+        </section>
+
+        <section className="cert-audits" aria-label="Audits">
+          <div className="cert-section-head">
+            <div>
+              <div className="eyebrow">Audits</div>
+              <h2>Auditsliste</h2>
+            </div>
+            <div className="cert-head-actions">
+              <span>{allAudits.length}</span>
+            </div>
+          </div>
+
+          <div className="cert-audit-stack">
+            {allAudits.map((audit) => {
+              const countdown = calculateCountdown(audit.date, audit.time);
+              return (
+                <div key={audit.id} className="cert-audit-item">
+                  <div className="cert-audit-item__left">
+                    <div className="cert-audit-date">{formatAuditDate(audit.date)}</div>
+                    <div className="cert-audit-time">{audit.time} Uhr</div>
+                    <div className="cert-audit-countdown">
+                      {countdown.days}d | {String(countdown.hours).padStart(2, '0')}h | {String(countdown.minutes).padStart(2, '0')}m | {String(countdown.seconds).padStart(2, '0')}s
+                    </div>
+                  </div>
+                  <div className="cert-audit-item__title">
+                    {audit.title}
+                  </div>
+                </div>
+              );
+            })}
+
+            {allAudits.length === 0 && (
+              <div className="cert-empty">
+                Keine Audits vorhanden.
+              </div>
+            )}
+          </div>
         </section>
       </div>
 

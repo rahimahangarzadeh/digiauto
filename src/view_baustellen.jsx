@@ -65,7 +65,21 @@ function BaustellenView({ activeCompany }) {
   const [siteSort, setSiteSort] = React.useState({ col:'nr', dir:'asc' });
   const [employeeCompanyFilter, setEmployeeCompanyFilter] = React.useState('all');
   const [editingDetails, setEditingDetails] = React.useState(true);
+  const [editingStammdaten, setEditingStammdaten] = React.useState(false);
   const [teamEditOpen, setTeamEditOpen] = React.useState(false);
+  const [siteDocuments, setSiteDocuments] = React.useState({
+    'bs-1': [
+      { id: 'doc-1', name: 'Baustellenaushang.pdf', size: '2.4 MB', date: '2026-05-20' },
+      { id: 'doc-2', name: 'Unterweisung-Baustelle.pdf', size: '1.8 MB', date: '2026-05-18' },
+      { id: 'doc-3', name: 'Verkehrssicherung-Plan.pdf', size: '3.1 MB', date: '2026-05-15' },
+    ],
+    'bs-2': [
+      { id: 'doc-4', name: 'Rohrbau-Sicherheit.pdf', size: '2.1 MB', date: '2026-05-19' },
+    ],
+    'bs-3': [],
+  });
+  const [editingDocId, setEditingDocId] = React.useState(null);
+  const [editingDocName, setEditingDocName] = React.useState('');
   const [employeeDetailId, setEmployeeDetailId] = React.useState(null);
   const [employeeDetailTab, setEmployeeDetailTab] = React.useState('schulungen');
   const [alarmModalOpen, setAlarmModalOpen] = React.useState(false);
@@ -123,6 +137,37 @@ function BaustellenView({ activeCompany }) {
   const updateSite = (key, value) => {
     setSites(items => items.map(site => site.id === selectedSite.id ? { ...site, [key]: value } : site));
   };
+
+  const addDocument = (siteId) => {
+    const newDoc = {
+      id: 'doc-' + Date.now(),
+      name: 'Neues Dokument.pdf',
+      size: '0 KB',
+      date: window.SEED.today,
+    };
+    setSiteDocuments(prev => ({
+      ...prev,
+      [siteId]: [...(prev[siteId] || []), newDoc]
+    }));
+  };
+
+  const deleteDocument = (siteId, docId) => {
+    setSiteDocuments(prev => ({
+      ...prev,
+      [siteId]: (prev[siteId] || []).filter(doc => doc.id !== docId)
+    }));
+  };
+
+  const updateDocument = (siteId, docId, newName) => {
+    setSiteDocuments(prev => ({
+      ...prev,
+      [siteId]: (prev[siteId] || []).map(doc =>
+        doc.id === docId ? { ...doc, name: newName } : doc
+      )
+    }));
+  };
+
+  const currentSiteDocuments = siteDocuments[selectedSite?.id] || [];
 
   const toggleEmployee = (id) => {
     setSites(items => items.map(site => {
@@ -634,16 +679,58 @@ function BaustellenView({ activeCompany }) {
                     <div className="kpi"><div className="kpi__label">Status</div><div className="kpi__value" style={{ color: ready ? '#3f7a4a' : '#a13232' }}>{ready ? 'OK' : 'Nein'}</div><div className="kpi__delta">einsatzbereit</div></div>
                   </div>
                   <div className="card card--pad">
-                    <div className="card__title">Baustellen-Details</div>
-                    <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12, marginTop:14 }}>
-                      <Field label="Projektname" field="projectName" />
-                      <Field label="Projekt-Nr." field="projectNr" />
-                      <Field label="Bauleiter" field="bauleiter" />
-                      <Field label="Vorarbeiter" field="vorarbeiter" />
-                      <Field label="Auftraggeber" field="auftraggeber" />
-                      <Field label="Firma" field="company" />
-                      <Field label="Adresse" field="adresse" wide />
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, marginBottom:14 }}>
+                      <div className="card__title">Baustellen-Details</div>
+                      {!editingStammdaten && <button className="btn btn--ghost" onClick={() => setEditingStammdaten(true)}><Icon name="edit" size={14} />Bearbeite Stammdaten</button>}
                     </div>
+                    {!editingStammdaten ? (
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12 }}>
+                        <div style={{ display:'grid', gap:6 }}>
+                          <span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Projektname</span>
+                          <span style={{ color:'var(--fg-1)' }}>{selectedSite.projectName}</span>
+                        </div>
+                        <div style={{ display:'grid', gap:6 }}>
+                          <span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Projekt-Nr.</span>
+                          <span style={{ color:'var(--fg-1)' }}>{selectedSite.projectNr}</span>
+                        </div>
+                        <div style={{ display:'grid', gap:6 }}>
+                          <span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Bauleiter</span>
+                          <span style={{ color:'var(--fg-1)' }}>{selectedSite.bauleiter}</span>
+                        </div>
+                        <div style={{ display:'grid', gap:6 }}>
+                          <span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Vorarbeiter</span>
+                          <span style={{ color:'var(--fg-1)' }}>{selectedSite.vorarbeiter}</span>
+                        </div>
+                        <div style={{ display:'grid', gap:6 }}>
+                          <span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Auftraggeber</span>
+                          <span style={{ color:'var(--fg-1)' }}>{selectedSite.auftraggeber}</span>
+                        </div>
+                        <div style={{ display:'grid', gap:6 }}>
+                          <span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Firma</span>
+                          <span style={{ color:'var(--fg-1)' }}>{selectedSite.company}</span>
+                        </div>
+                        <div style={{ display:'grid', gap:6, gridColumn:'1 / -1' }}>
+                          <span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Adresse</span>
+                          <span style={{ color:'var(--fg-1)' }}>{selectedSite.adresse}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12, marginBottom:14 }}>
+                          <Field label="Projektname" field="projectName" />
+                          <Field label="Projekt-Nr." field="projectNr" />
+                          <Field label="Bauleiter" field="bauleiter" />
+                          <Field label="Vorarbeiter" field="vorarbeiter" />
+                          <Field label="Auftraggeber" field="auftraggeber" />
+                          <Field label="Firma" field="company" />
+                          <Field label="Adresse" field="adresse" wide />
+                        </div>
+                        <div style={{ display:'flex', justifyContent:'flex-end', gap:10 }}>
+                          <button className="btn btn--ghost" onClick={() => setEditingStammdaten(false)}>Abbrechen</button>
+                          <button className="btn btn--primary" onClick={() => setEditingStammdaten(false)}><Icon name="check" size={14} />Speichern</button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -696,7 +783,7 @@ function BaustellenView({ activeCompany }) {
                 <div className="card card--pad">
                   <div className="card__title">Fehlende Schulungen</div>
                   <div style={{ display:'grid', gap:10, marginTop:14 }}>
-                    {missingChecks.length === 0 ? <div className="small muted">Keine fehlenden Schulungen.</div> : missingChecks.map(check => <div key={check.id} style={{ display:'flex', justifyContent:'space-between', gap:12, alignItems:'center', padding:12, border:'1px solid var(--border-1)', borderRadius:8, background:'#fdf3e0' }}><div><strong>{check.label}</strong><div className="small muted">{check.rule} � {check.actual}/{check.required}</div></div>{check.type !== 'device' && <button className="btn btn--ghost" onClick={() => planTraining(check.id)}>zur Schulung anmelden</button>}</div>)}
+                    {missingChecks.length === 0 ? <div className="small muted">Keine fehlenden Schulungen.</div> : missingChecks.map(check => <div key={check.id} style={{ display:'flex', justifyContent:'space-between', gap:12, alignItems:'center', padding:12, border:'1px solid var(--border-1)', borderRadius:8, background:'#fdf3e0' }}><div><strong>{check.label}</strong><div className="small muted">{check.rule} � {check.actual}/{check.required}</div></div>{check.type !== 'device' && <button className="btn btn--ghost" onClick={() => planTraining(check.id)}>zur Schulung anmelden</button>}</div>)}
                   </div>
                 </div>
               )}
@@ -729,9 +816,53 @@ function BaustellenView({ activeCompany }) {
               )}
               {sitePanelTab === 'dokumente' && (
                 <div className="card card--pad">
-                  <div className="card__title">Dokumente</div>
-                  <div style={{ display:'grid', gap:10, marginTop:14 }}>
-                    {['Baustellenaushang.pdf', 'Unterweisung-Baustelle.pdf', 'Verkehrssicherung-Plan.pdf'].map(doc => <div key={doc} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:12, border:'1px solid var(--border-1)', borderRadius:8, background:'white' }}><span><Icon name="doc" size={14} /> {doc}</span><DetailDocActions /></div>)}
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, marginBottom:14 }}>
+                    <div className="card__title">Dokumente</div>
+                    <button className="btn btn--ghost" onClick={() => addDocument(selectedSite.id)}><Icon name="plus" size={14} />Hochladen</button>
+                  </div>
+                  <div style={{ display:'grid', gap:8 }}>
+                    {currentSiteDocuments.length === 0 ? (
+                      <div style={{ padding:24, textAlign:'center', color:'var(--fg-3)' }}>Keine Dokumente vorhanden</div>
+                    ) : (
+                      currentSiteDocuments.map(doc => (
+                        <div key={doc.id} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto auto auto', gap:12, alignItems:'center', padding:12, border:'1px solid var(--border-1)', borderRadius:8, background:'white' }}>
+                          <Icon name="doc" size={16} />
+                          {editingDocId === doc.id ? (
+                            <input
+                              type="text"
+                              value={editingDocName}
+                              onChange={e => setEditingDocName(e.target.value)}
+                              onBlur={() => {
+                                if (editingDocName.trim()) {
+                                  updateDocument(selectedSite.id, doc.id, editingDocName);
+                                }
+                                setEditingDocId(null);
+                                setEditingDocName('');
+                              }}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') {
+                                  if (editingDocName.trim()) {
+                                    updateDocument(selectedSite.id, doc.id, editingDocName);
+                                  }
+                                  setEditingDocId(null);
+                                  setEditingDocName('');
+                                }
+                              }}
+                              autoFocus
+                              style={{ minHeight:32, border:'1px solid var(--color-accent)', borderRadius:6, padding:'0 8px', font:'inherit', color:'var(--fg-1)' }}
+                            />
+                          ) : (
+                            <div>
+                              <strong>{doc.name}</strong>
+                              <div className="small muted">{doc.size} · {window.fmtDE(doc.date)}</div>
+                            </div>
+                          )}
+                          <button className="btn btn--ghost" style={{ minHeight:32, padding:'0 10px' }} title="Download"><Icon name="download" size={14} /></button>
+                          <button className="btn btn--ghost" style={{ minHeight:32, padding:'0 10px' }} onClick={() => { setEditingDocId(doc.id); setEditingDocName(doc.name); }} title="Umbenennen"><Icon name="edit" size={14} /></button>
+                          <button className="btn btn--ghost is-danger" style={{ minHeight:32, padding:'0 10px' }} onClick={() => deleteDocument(selectedSite.id, doc.id)} title="Löschen"><Icon name="trash" size={14} /></button>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
@@ -831,7 +962,25 @@ function BaustellenView({ activeCompany }) {
             <div style={{ overflow:'auto', padding:18, display:'grid', gap:8 }}>
               {filteredEmployees.map(emp => {
                 const checked = selectedSite.employeeIds.includes(emp.id);
-                return <label key={emp.id} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto', gap:12, alignItems:'center', border:'1px solid var(--border-1)', borderRadius:8, background:checked ? '#eff5ed' : 'white', padding:'11px 12px', cursor:'pointer' }}><input type="checkbox" checked={checked} onChange={() => toggleEmployee(emp.id)} /><span><strong>{emp.name}</strong><span className="small muted" style={{ display:'block' }}>{window.company(emp.company)?.short || emp.company} - {emp.position}</span></span><span className={'badge ' + (checked ? 'badge--valid' : '')}><span className="badge__dot" />{checked ? 'im Projekt' : 'nicht gewaehlt'}</span></label>;
+                const released = isSiteReleasedForEmployee(selectedSite, emp.id);
+                return (
+                  <div key={emp.id} style={{ display:'grid', gridTemplateColumns:'auto 1fr auto auto', gap:12, alignItems:'center', border:'1px solid var(--border-1)', borderRadius:8, background:checked ? '#eff5ed' : 'white', padding:'11px 12px' }}>
+                    <input type="checkbox" checked={checked} onChange={() => toggleEmployee(emp.id)} style={{ cursor:'pointer' }} />
+                    <span>
+                      <strong>{emp.name}</strong>
+                      <span className="small muted" style={{ display:'block' }}>{window.company(emp.company)?.short || emp.company} - {emp.position}</span>
+                    </span>
+                    <span className={'badge ' + (checked ? 'badge--valid' : '')} style={{ cursor:'default' }}>
+                      <span className="badge__dot" />{checked ? 'im Projekt' : 'nicht gewaehlt'}
+                    </span>
+                    {checked && (
+                      <label style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', padding:'4px 8px', borderRadius:6, background:released ? 'rgba(63, 122, 74, 0.1)' : 'rgba(0,0,0,0.04)', border:'1px solid ' + (released ? '#3f7a4a' : 'var(--border-1)') }}>
+                        <input type="checkbox" checked={released} onChange={() => toggleSiteRelease(emp.id)} style={{ cursor:'pointer' }} />
+                        <span style={{ fontSize:'13px', fontWeight:500, color:released ? '#3f7a4a' : 'var(--fg-2)' }}>Freigabe</span>
+                      </label>
+                    )}
+                  </div>
+                );
               })}
             </div>
             <div style={{ padding:18, borderTop:'1px solid var(--border-1)', display:'flex', justifyContent:'flex-end', gap:10 }}><button className="btn btn--ghost" onClick={() => setTeamEditOpen(false)}>Abbrechen</button><button className="btn btn--primary" onClick={() => setTeamEditOpen(false)}>Speichern</button></div>

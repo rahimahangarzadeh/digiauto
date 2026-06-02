@@ -1,7 +1,26 @@
 ﻿/* Mitarbeiterportal - stabile kompakte Ansicht fuer Employee Login */
 
-function PortalView({ searchState, setSearchState }) {
+function PortalView({ searchState, setSearchState, nav }) {
+  const tabMap = {
+    'portal-certs': 'certs',
+    'portal-fuehrerschein': 'license',
+    'portal-unterweisungen': 'instructions',
+    'portal-untersuchung': 'medical',
+    'portal-stellenbeschr': 'jobs',
+    'portal-baustellen': 'sites',
+    'portal-geraetefuehrer': 'befaehigte',
+    'portal-termine': 'appointments',
+    'portal-wartung': 'wartung',
+  };
+
   const [activeTab, setActiveTab] = React.useState('certs');
+  const [kpiFilter, setKpiFilter] = React.useState(null);
+
+  React.useEffect(() => {
+    if (nav && tabMap[nav]) {
+      setActiveTab(tabMap[nav]);
+    }
+  }, [nav, tabMap]);
   const [certFilter, setCertFilter] = React.useState('all');
   const [certSort, setCertSort] = React.useState(() => {
     try { return JSON.parse(localStorage.getItem('portal_cert_sort')) || { key: null, dir: 'asc' }; }
@@ -448,8 +467,11 @@ function PortalView({ searchState, setSearchState }) {
   const filteredBaseCerts = certFilter === 'all'
     ? myCerts
     : myCerts.filter(item => (item.cert.status || 'missing') === certFilter);
+  const certsByKPI = kpiFilter
+    ? filteredBaseCerts.filter(item => (item.cert.status || 'missing') === kpiFilter)
+    : filteredBaseCerts;
   const filteredCerts = certSort.key
-    ? [...filteredBaseCerts].sort((a, b) => {
+    ? [...certsByKPI].sort((a, b) => {
         const av = sortValue(a, certSort.key);
         const bv = sortValue(b, certSort.key);
         const result = typeof av === 'number' && typeof bv === 'number'
@@ -457,7 +479,7 @@ function PortalView({ searchState, setSearchState }) {
           : String(av).localeCompare(String(bv), 'de');
         return certSort.dir === 'asc' ? result : -result;
       })
-    : filteredBaseCerts;
+    : certsByKPI;
   const allVisibleCertIds = filteredCerts.map(item => item.training.id);
   const visibleSelectedCount = allVisibleCertIds.filter(id => selectedCertIds.includes(id)).length;
 
@@ -1074,23 +1096,55 @@ function PortalView({ searchState, setSearchState }) {
     );
   };
 
+  const currentTab = tabs.find(t => t.id === activeTab);
+  const getTabKPIs = () => {
+    if (activeTab === 'certs') {
+      const valid = myCerts.filter(c => c.cert.status === 'valid').length;
+      const warn = myCerts.filter(c => c.cert.status === 'warn').length;
+      const expired = myCerts.filter(c => c.cert.status === 'expired').length;
+      const missing = myCerts.filter(c => c.cert.status === 'missing').length;
+      return { valid, warn, expired, missing };
+    }
+    return { valid: 0, warn: 0, expired: 0, missing: 0 };
+  };
+
+  const kpis = getTabKPIs();
+
+  const KPIBox = ({ label, value, color, status }) => {
+    const isActive = kpiFilter === status;
+    return (
+      <div
+        onClick={() => setKpiFilter(isActive ? null : status)}
+        style={{
+          padding: '12px 14px',
+          background: isActive ? color + '15' : 'var(--color-ivory)',
+          border: `1px solid ${isActive ? color : 'var(--border-1)'}`,
+          borderRadius: 12,
+          cursor: 'pointer',
+          transition: 'all 150ms',
+          transform: isActive ? 'translateY(-1px)' : 'none',
+          boxShadow: isActive ? `0 4px 12px ${color}30` : 'none'
+        }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: isActive ? color : 'var(--fg-3)', marginBottom: 4 }}>
+          {label}
+          {isActive && <span style={{ marginLeft: 6, fontSize: 9, background: color, color: '#fff', padding: '1px 5px', borderRadius: 99 }}>Aktiv</span>}
+        </div>
+        <div style={{ fontSize: 24, fontWeight: 500, color: color }}>{value}</div>
+      </div>
+    );
+  };
+
   return (
     <div>
-      <div className="portal-section-kpis" role="tablist" aria-label="Mitarbeiterportal Bereiche">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            className={'portal-section-kpi ' + (activeTab === tab.id ? 'is-active' : '')}
-            onClick={() => { setActiveTab(tab.id); if (tab.id === 'certs') setCertsFilter('all'); }}
-          >
-            <span className="portal-section-kpi__label">{tab.label}</span>
-            <strong>{tab.count}</strong>
-          </button>
-        ))}
-      </div>
+      {currentTab && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+          <KPIBox label="Gültig" value={kpis.valid} color="#5f9268" status="valid" />
+          <KPIBox label="Läuft ab" value={kpis.warn} color="#c89b3f" status="warn" />
+          <KPIBox label="Abgelaufen" value={kpis.expired} color="#b26060" status="expired" />
+          <KPIBox label="Fehlt" value={kpis.missing} color="#999" status="missing" />
+        </div>
+      )}
+
       {activeTab === 'certs' && (
         <>
         <div className="portal-list-toolbar">

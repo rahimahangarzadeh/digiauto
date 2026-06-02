@@ -184,7 +184,7 @@ function App() {
     trainings:'Schulungen', calendar:'Kalender', certs:'Zertifikate',
     instr:'Unterweisungen', providers:'Akademien', companies:'Firmen',
     auswertung:'Firmen-Auswertung', baustellen:'Baustellen', bauleiterbesprechung:'Bauleiterbesprechung', bgbau:'Baustellenaushang BGBAU', normenmatrix:'Normenmatrix', formulare:'Formulare', organigramm:'Organigramm', zertuebersicht:'Zertifizierungs\u00fcbersicht',
-    portal:'Mein Portal', stellenbeschreibungen:'Stellenbeschreibungen',
+    portal:'Mein Portal', 'portal-certs':'Zertifikate', 'portal-fuehrerschein':'F\u00fchrerschein', 'portal-unterweisungen':'Unterweisungen', 'portal-untersuchung':'Untersuchungsvorsorge', 'portal-stellenbeschr':'Stellenbeschreibung', 'portal-baustellen':'Baustellen', 'portal-geraetefuehrer':'Ger\u00e4tepr\u00fcfung', 'portal-termine':'Termine', 'portal-wartung':'Wartungsliste', stellenbeschreibungen:'Stellenbeschreibungen',
     untersuchungsvorsorge:'Untersuchungsvorsorge', fuehrerscheinkontrolle:'F\u00fchrerscheinkontrolle', geraetefuehrer:'Ger\u00e4tef\u00fchrer', befaehigte_personen:'Bef\u00e4higte Personen',
     wartungsliste:'Termine',
     doc_home:'Startseite', doc_drive:'Meine Ablage'
@@ -218,7 +218,18 @@ function App() {
       break;
     case 'organigramm':view = <OrganigrammView activeCompany={activeCompany} />; break;
     case 'zertuebersicht':view = <CertOverviewView activeCompany={activeCompany} />; break;
-    case 'portal':    view = window.PortalView ? React.createElement(window.PortalView, { searchState, setSearchState }) : <Empty title="Mein Portal lädt" sub="Bitte kurz erneut öffnen." />; break;
+    case 'portal':
+    case 'portal-certs':
+    case 'portal-fuehrerschein':
+    case 'portal-unterweisungen':
+    case 'portal-untersuchung':
+    case 'portal-stellenbeschr':
+    case 'portal-baustellen':
+    case 'portal-geraetefuehrer':
+    case 'portal-termine':
+    case 'portal-wartung':
+      view = window.PortalView ? React.createElement(window.PortalView, { searchState, setSearchState, nav }) : <Empty title="Mein Portal lädt" sub="Bitte kurz erneut öffnen." />;
+      break;
     case 'stellenbeschreibungen': view = <StellenbeschreibungenView />; break;
     case 'untersuchungsvorsorge': view = <UntersuchungsvorsorgeView />; break;
     case 'fuehrerscheinkontrolle': view = window.FuehrerscheinkontrolleView ? <window.FuehrerscheinkontrolleView /> : <Empty title="Führerscheinkontrolle lädt" sub="Bitte kurz erneut öffnen." />; break;

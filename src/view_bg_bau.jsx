@@ -333,7 +333,7 @@ function BGBauAushangView({ activeCompany }) {
               }
               const row = item.row;
               return (
-                <div key={row.id} className={'bgbau-grid-row' + (selectedIds.has(row.id) ? ' is-selected' : '')} onClick={() => setPreviewRow(row)}>
+                <div key={row.id} className={'bgbau-grid-row' + (selectedIds.has(row.id) ? ' is-selected' : '')} onClick={() => setEditRow(row)}>
                   <div onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedIds.has(row.id)} onChange={() => toggleRow(row.id)} /></div>
                   <div className="bgbau-task-name"><span className="bgbau-task-indent"></span><span className="bgbau-status-dot" style={{ background: statusCfg[row.status]?.color }}></span><strong title={row.project}>{row.project}</strong></div>
                   <div>{Math.max(1, daysBetween(row.start, row.end) + 1)} T</div>
@@ -469,28 +469,41 @@ function BGBauPreview({ row, companyName, employeeName, fmtDate, durationLabel, 
 
 function BGBauEditPanel({ row, employees, companies, onClose, onSave }) {
   const [form, setForm] = React.useState(row);
+  const [editMode, setEditMode] = React.useState(false);
   const set = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
-  const input = { minHeight:40, border:'1px solid var(--border-1)', borderRadius:8, padding:'0 12px', font:'inherit', background:'#fff' };
+
+  // Baustellen aus view_baustellen (placeholder - würde von globaler Quelle kommen)
+  const availableSites = [
+    { id: 'bs-1', name: 'Baustelle Alex Barum - Kanalsanierung Nordhorn' },
+    { id: 'bs-2', name: 'Rohrgraben Suedring - Hausanschluesse Suedring' },
+    { id: 'bs-3', name: 'Bohrung Gewerbepark - Horizontalbohrung Gewerbepark' },
+  ];
+  const input = { minHeight:40, border:'1px solid var(--border-1)', borderRadius:8, padding:'0 12px', font:'inherit', background:editMode ? 'var(--color-white)' : 'var(--color-ivory)', color:'var(--fg-1)' };
   return (
     <>
       <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:3000, background:'rgba(18,18,17,.25)' }} />
-      <aside style={{ position:'fixed', top:0, right:0, bottom:0, width:460, maxWidth:'calc(100vw - 18px)', zIndex:3100, background:'var(--color-ivory)', boxShadow:'-14px 0 40px rgba(0,0,0,.18)', padding:22, overflowY:'auto' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18 }}>
-          <h2 style={{ margin:0, fontFamily:'var(--font-serif)' }}>Aushang bearbeiten</h2>
-          <button className="icon-btn" onClick={onClose}><Icon name="x" size={18} /></button>
+      <aside style={{ position:'fixed', top:0, right:0, bottom:0, width:600, maxWidth:'calc(100vw - 18px)', zIndex:3100, background:'var(--color-ivory)', boxShadow:'-14px 0 40px rgba(0,0,0,.18)', padding:22, overflowY:'auto' }}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:18, paddingBottom:14, borderBottom:'1px solid var(--border-1)' }}>
+          <h2 style={{ margin:0, fontFamily:'var(--font-serif)', fontWeight:500, fontSize:22 }}>Aushang bearbeiten</h2>
+          <div style={{ display:'flex', gap:8 }}>
+            {!editMode && <button className="btn btn--ghost" onClick={() => setEditMode(true)} style={{ minHeight:32, padding:'0 10px' }}><Icon name="edit" size={14} />Bearbeiten</button>}
+            <button className="icon-btn" onClick={onClose} style={{ border:0, background:'transparent', cursor:'pointer' }}><Icon name="x" size={18} /></button>
+          </div>
         </div>
-        <div style={{ display:'grid', gap:12 }}>
-          <label>Nr.<input value={form.nr} onChange={e => set('nr', e.target.value)} style={input} /></label>
-          <label>Firma<select value={form.company} onChange={e => set('company', e.target.value)} style={input}>{companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-          <label>Projektname<input value={form.project} onChange={e => set('project', e.target.value)} style={input} /></label>
-          <label>Adresse<input value={form.address} onChange={e => set('address', e.target.value)} style={input} /></label>
-          <label>Beginn<input type="date" value={form.start} onChange={e => set('start', e.target.value)} style={input} /></label>
-          <label>Ende<input type="date" value={form.end} onChange={e => set('end', e.target.value)} style={input} /></label>
-          <label>Status<select value={form.status} onChange={e => set('status', e.target.value)} style={input}><option value="geplant">Geplant</option><option value="aktiv">Aktiv</option><option value="pause">Pause</option><option value="fertig">Projekt fertig</option></select></label>
-          <label>Verantwortlich<select value={form.responsible} onChange={e => set('responsible', e.target.value)} style={input}>{employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></label>
-          <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:12 }}>
-            <button className="btn btn--ghost" onClick={onClose}>Abbrechen</button>
-            <button className="btn btn--primary" onClick={() => onSave(form)}>Speichern</button>
+        <div style={{ display:'grid', gap:12, marginTop:14 }}>
+          <label style={{ display:'grid', gap:6 }}><span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Nr.</span><input disabled={!editMode} value={form.nr} onChange={e => set('nr', e.target.value)} style={input} /></label>
+          <label style={{ display:'grid', gap:6 }}><span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Firma</span><select disabled={!editMode} value={form.company} onChange={e => set('company', e.target.value)} style={input}>{companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+          <label style={{ display:'grid', gap:6 }}><span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Baustelle</span><select disabled={!editMode} value={form.siteId || ''} onChange={e => set('siteId', e.target.value)} style={input}><option value="">-- Baustelle auswählen --</option>{availableSites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}</select></label>
+          <label style={{ display:'grid', gap:6 }}><span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Projektname</span><input disabled={!editMode} value={form.project} onChange={e => set('project', e.target.value)} style={input} /></label>
+          <label style={{ display:'grid', gap:6 }}><span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Adresse</span><input disabled={!editMode} value={form.address} onChange={e => set('address', e.target.value)} style={input} /></label>
+          <label style={{ display:'grid', gap:6 }}><span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Beginn</span><input disabled={!editMode} type="date" value={form.start} onChange={e => set('start', e.target.value)} style={input} /></label>
+          <label style={{ display:'grid', gap:6 }}><span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Ende</span><input disabled={!editMode} type="date" value={form.end} onChange={e => set('end', e.target.value)} style={input} /></label>
+          <label style={{ display:'grid', gap:6 }}><span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Status</span><select disabled={!editMode} value={form.status} onChange={e => set('status', e.target.value)} style={input}><option value="geplant">Geplant</option><option value="aktiv">Aktiv</option><option value="pause">Pause</option><option value="fertig">Projekt fertig</option></select></label>
+          <label style={{ display:'grid', gap:6 }}><span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Verantwortlich</span><select disabled={!editMode} value={form.responsible} onChange={e => set('responsible', e.target.value)} style={input}>{employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></label>
+          <label style={{ display:'grid', gap:6 }}><span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Dokument</span><input disabled={!editMode} value={form.doc || ''} onChange={e => set('doc', e.target.value)} style={input} placeholder="z.B. BGBAU_Suedring.pdf" /></label>
+          <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:18, paddingTop:14, borderTop:'1px solid var(--border-1)' }}>
+            <button className="btn btn--ghost" onClick={onClose}>Schliessen</button>
+            {editMode && <button className="btn btn--primary" onClick={() => { onSave(form); setEditMode(false); }}>Speichern</button>}
           </div>
         </div>
       </aside>

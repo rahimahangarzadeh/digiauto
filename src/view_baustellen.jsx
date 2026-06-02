@@ -878,12 +878,12 @@ function BaustellenView({ activeCompany }) {
       {alarmModalOpen && (
         <div onClick={() => setAlarmModalOpen(false)} style={{ position:'fixed', inset:0, zIndex:2550, background:'rgba(0,0,0,.36)', display:'flex', justifyContent:'flex-end' }}>
           <aside onClick={event => event.stopPropagation()} style={{ width:'min(760px, 96vw)', background:'var(--color-ivory)', boxShadow:'-24px 0 70px rgba(0,0,0,.28)', display:'flex', flexDirection:'column' }}>
-            <div style={{ background:'var(--color-near-black)', color:'white', padding:'24px 28px', display:'grid', gridTemplateColumns:'1fr auto', gap:18, alignItems:'start' }}>
+            <div style={{ background:'var(--color-near-black)', color:'white', padding:'22px 24px', display:'flex', justifyContent:'space-between', gap:16, alignItems:'flex-start' }}>
               <div>
-                <h2 style={{ margin:0, fontFamily:'var(--font-serif)', fontWeight:500, fontSize:30 }}>Alarmplan erstellen</h2>
-                <div style={{ color:'rgba(255,255,255,.68)', marginTop:8 }}>{selectedSite.projectNr} - {selectedSite.company}</div>
+                <h2 style={{ margin:0, fontFamily:'var(--font-serif)', fontWeight:500, fontSize:22 }}>Alarmplan erstellen</h2>
+                <div style={{ color:'rgba(255,255,255,.68)', marginTop:6, fontSize:13 }}>{selectedSite.projectNr} - {selectedSite.company}</div>
               </div>
-              <button onClick={() => setAlarmModalOpen(false)} style={{ border:0, background:'transparent', color:'rgba(255,255,255,.72)', fontSize:26, cursor:'pointer' }}>x</button>
+              <button onClick={() => setAlarmModalOpen(false)} style={{ border:0, background:'transparent', color:'rgba(255,255,255,.72)', fontSize:20, cursor:'pointer', flex:0 }}>x</button>
             </div>
             <div style={{ padding:24, overflow:'auto', flex:1 }}>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:14 }}>

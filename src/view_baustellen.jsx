@@ -583,11 +583,32 @@ function BaustellenView({ activeCompany }) {
         </div>
       </div>
 
-      <div className="kpi-grid baustellen-kpis" style={{ gridTemplateColumns:'repeat(4, minmax(150px, 1fr))', marginBottom:18 }}>
-        <div className="kpi"><div className="kpi__label">Baustellen</div><div className="kpi__value">{listedSites.length}</div><div className="kpi__delta">aktiv in Ansicht</div></div>
-        <div className="kpi"><div className="kpi__label">Mitarbeiter</div><div className="kpi__value">{totalSiteEmployees}</div><div className="kpi__delta">eingeplant</div></div>
-        <div className="kpi"><div className="kpi__label">Pflichtpunkte</div><div className="kpi__value" style={{ color: totalMissingTrainings ? '#8a6a1f' : '#3f7a4a' }}>{fulfilledRequiredPoints}/{totalRequiredPoints}</div><div className="kpi__delta">erfuellt</div></div>
-        <div className="kpi"><div className="kpi__label">Fehlende Schulungen</div><div className="kpi__value" style={{ color: totalMissingTrainings ? '#a13232' : '#3f7a4a' }}>{totalMissingTrainings}</div><div className="kpi__delta">{readySites} baustellen bereit</div></div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:18 }}>
+        {[
+          { label:'Baustellen', value: listedSites.length, delta:'aktiv in Ansicht', color: null },
+          { label:'Mitarbeiter', value: totalSiteEmployees, delta:'eingeplant', color: null },
+          { label:'Pflichtpunkte', value: fulfilledRequiredPoints + '/' + totalRequiredPoints, delta:'erfuellt', color: totalMissingTrainings ? '#8a6a1f' : '#3f7a4a' },
+          { label:'Fehlende Schulungen', value: totalMissingTrainings, delta: readySites + ' baustellen bereit', color: totalMissingTrainings ? '#a13232' : '#3f7a4a' },
+        ].map((k, i) => (
+          <div key={i} style={{
+            padding:'10px 14px',
+            background: 'var(--color-ivory)',
+            border: '1px solid var(--border-1)',
+            borderRadius:10,
+            display: 'grid',
+            gridTemplateColumns: 'auto 1fr auto',
+            gap: 16,
+            alignItems: 'center',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.048)',
+            transition:'all 150ms ease',
+          }}>
+            <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color:'var(--fg-3)' }}>{k.label}</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center', textAlign:'center' }}>
+              <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:500, color: k.color || 'var(--fg-1)', lineHeight:1 }}>{k.value}</div>
+            </div>
+            <div style={{ fontSize:11, fontWeight:600, color:'var(--fg-3)', textAlign:'right' }}>{k.delta}</div>
+          </div>
+        ))}
       </div>
 
       {Object.entries(siteColumnFilters).some(([, values]) => values?.length) && (

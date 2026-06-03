@@ -74,7 +74,7 @@ function OrganigrammView() {
 
       {notice && <div className="org-notice">{notice}</div>}
 
-      <div className="job-kpis" style={{ marginBottom: 16 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:18 }}>
         {[
           ['all', 'Organigramme', docs.length, '#111111'],
           ['Freigegeben', 'Freigegeben', docs.filter((doc) => doc.status === 'Freigegeben').length, '#3f7a4a'],
@@ -84,12 +84,36 @@ function OrganigrammView() {
           <button
             key={key}
             type="button"
-            className={'job-kpi' + (statusFilter === key ? ' job-kpi--active' : '')}
-            style={{ '--job-kpi-color': color, textAlign: 'left' }}
             onClick={() => setStatusFilter(statusFilter === key ? 'all' : key)}
+            style={{
+              padding:'10px 14px',
+              background: 'var(--color-ivory)',
+              border: '1px solid var(--border-1)',
+              borderRadius:10,
+              cursor: 'pointer',
+              display: 'grid',
+              gridTemplateColumns: 'auto 1fr auto',
+              gap: 16,
+              alignItems: 'center',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.048)',
+              transition:'all 150ms ease',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = 'var(--color-white)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+              e.currentTarget.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'var(--color-ivory)';
+              e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.048)';
+              e.currentTarget.style.transform = 'translateY(0)';
+            }}
           >
-            <span>{label}</span>
-            <strong>{value}</strong>
+            <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color:'var(--fg-3)' }}>{label}</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center', textAlign:'center' }}>
+              <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:500, color: color, lineHeight:1 }}>{value}</div>
+            </div>
+            <div style={{ fontSize:11, fontWeight:600, color:'var(--fg-3)', textAlign:'right' }}>Klicken</div>
           </button>
         ))}
       </div>

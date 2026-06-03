@@ -667,19 +667,50 @@ function EvaluationView() {
       </div>
 
       {/* KPI-style view selector */}
-      <div className="evaluation-kpi-tabs" aria-label="Auswertungsansicht">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            type="button"
-            className={'evaluation-kpi-tab' + (tab === t.id ? ' is-active' : '')}
-            onClick={() => setTab(t.id)}
-          >
-            <span className="evaluation-kpi-tab__label">{t.label}</span>
-            <strong>{t.value}</strong>
-            <span className="evaluation-kpi-tab__hint">{t.hint}</span>
-          </button>
-        ))}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:16 }}>
+        {tabs.map(t => {
+          const isActive = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setTab(t.id)}
+              style={{
+                padding:'10px 14px',
+                background: isActive ? '#fdf3e0' : 'var(--color-ivory)',
+                border: '1px solid ' + (isActive ? '#c89b3f' : 'var(--border-1)'),
+                borderRadius:10,
+                cursor: 'pointer',
+                display: 'grid',
+                gridTemplateColumns: 'auto 1fr auto',
+                gap: 16,
+                alignItems: 'center',
+                boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.08)' : '0 2px 5px rgba(0,0,0,0.048)',
+                transition:'all 150ms ease',
+              }}
+              onMouseEnter={e => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'var(--color-white)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }
+              }}
+              onMouseLeave={e => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'var(--color-ivory)';
+                  e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.048)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }
+              }}
+            >
+              <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color: isActive ? '#c89b3f' : 'var(--fg-3)' }}>{t.label}</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center', textAlign:'center' }}>
+                <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:500, color: isActive ? '#c89b3f' : 'var(--fg-1)', lineHeight:1 }}>{t.value}</div>
+              </div>
+              <div style={{ fontSize:11, fontWeight:600, color: isActive ? '#c89b3f' : 'var(--fg-3)', textAlign:'right' }}>{t.hint}</div>
+            </button>
+          );
+        })}
       </div>
 
       {tab === 'schulung' && <TabSchulung />}

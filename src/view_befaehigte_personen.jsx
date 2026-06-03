@@ -314,10 +314,45 @@
         </div>
       </div>
 
-      <div className="job-kpis" style={{ gridTemplateColumns: 'repeat(4, minmax(150px, 1fr))' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:18 }}>
         {kpis.map(kpi => (
-          <button key={kpi.label} type="button" className="job-kpi" onClick={() => kpi.filter && setFilters({ status: [kpi.filter] })} style={{ '--job-kpi-color': kpi.color }}>
-            <span>{kpi.label}</span><strong>{kpi.value}</strong>
+          <button
+            key={kpi.label}
+            type="button"
+            onClick={() => kpi.filter && setFilters({ status: [kpi.filter] })}
+            style={{
+              padding:'10px 14px',
+              background: 'var(--color-ivory)',
+              border: '1px solid var(--border-1)',
+              borderRadius:10,
+              cursor: kpi.filter ? 'pointer' : 'default',
+              display: 'grid',
+              gridTemplateColumns: 'auto 1fr auto',
+              gap: 16,
+              alignItems: 'center',
+              boxShadow: '0 2px 5px rgba(0,0,0,0.048)',
+              transition:'all 150ms ease',
+            }}
+            onMouseEnter={e => {
+              if (kpi.filter) {
+                e.currentTarget.style.background = 'var(--color-white)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }
+            }}
+            onMouseLeave={e => {
+              if (kpi.filter) {
+                e.currentTarget.style.background = 'var(--color-ivory)';
+                e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.048)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }
+            }}
+          >
+            <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color:'var(--fg-3)' }}>{kpi.label}</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center', textAlign:'center' }}>
+              <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:500, color: kpi.color, lineHeight:1 }}>{kpi.value}</div>
+            </div>
+            <div style={{ fontSize:11, fontWeight:600, color:'var(--fg-3)', textAlign:'right' }}>{kpi.filter ? 'Klicken' : ''}</div>
           </button>
         ))}
       </div>

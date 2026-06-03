@@ -1351,17 +1351,33 @@ function TrainingsView() {
       {/* Filter Bar */}
       <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', marginBottom:16, flexWrap:'wrap', borderBottom:'1px solid var(--border-1)', paddingBottom:12 }}>
         {/* Kategorie Tabs */}
-        <div style={{ display:'flex', gap:6 }}>
+        <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
           {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setCategoryFilter(cat)}
               style={{
-                padding:'6px 12px', fontSize:12, fontWeight:500, borderRadius:8,
-                border: categoryFilter === cat ? '1px solid var(--color-accent)' : '1px solid var(--border-1)',
-                background: categoryFilter === cat ? 'rgba(201,100,66,0.08)' : 'transparent',
+                padding:'12px 18px',
+                fontSize:14,
+                fontWeight:600,
+                letterSpacing:0.3,
+                borderRadius:10,
+                border: '1px solid var(--border-1)',
+                background: categoryFilter === cat ? 'var(--color-white)' : 'var(--color-ivory)',
                 color: categoryFilter === cat ? 'var(--color-accent)' : 'var(--fg-2)',
-                cursor:'pointer', transition:'all 120ms',
+                cursor:'pointer',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.048)',
+                transition:'all 150ms ease',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'var(--color-white)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = categoryFilter === cat ? 'var(--color-white)' : 'var(--color-ivory)';
+                e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.048)';
+                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >{cat}</button>
           ))}
@@ -2068,11 +2084,33 @@ function CompaniesView() {
               <button className="icon-btn" type="button" onClick={() => setSelectedId(null)} aria-label="Detail schlieÃŸen"><Icon name="x" size={16} /></button>
             </div>
 
-            <div className="company-detail-kpis">
-              <div><span>Mitarbeiter</span><strong>{selectedStats.active.length}</strong></div>
-              <div><span>Abteilungen</span><strong>{selectedStats.departments.length}</strong></div>
-              <button type="button" onClick={() => goMatrix(selectedCompany.id)}><span>Qualifikation</span><strong>{selectedStats.pct}%</strong></button>
-              <div><span>Offene Unterweisungen</span><strong>{selectedStats.openInstructions}</strong></div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
+              {[
+                { label:'Mitarbeiter', value: selectedStats.active.length, action: null },
+                { label:'Abteilungen', value: selectedStats.departments.length, action: null },
+                { label:'Qualifikation', value: selectedStats.pct + '%', action: () => goMatrix(selectedCompany.id) },
+                { label:'Offene Unterweisungen', value: selectedStats.openInstructions, action: null },
+              ].map((k, i) => (
+                <div key={i} style={{
+                  padding:'10px 14px',
+                  background: 'var(--color-ivory)',
+                  border: '1px solid var(--border-1)',
+                  borderRadius:10,
+                  cursor: k.action ? 'pointer' : 'default',
+                  display: 'grid',
+                  gridTemplateColumns: 'auto 1fr auto',
+                  gap: 16,
+                  alignItems: 'center',
+                  boxShadow: '0 2px 5px rgba(0,0,0,0.048)',
+                  transition:'all 150ms ease',
+                }} onClick={k.action} onMouseEnter={e => { if (k.action) { e.currentTarget.style.background = 'var(--color-white)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)'; e.currentTarget.style.transform = 'translateY(-2px)'; } }} onMouseLeave={e => { if (k.action) { e.currentTarget.style.background = 'var(--color-ivory)'; e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.048)'; e.currentTarget.style.transform = 'translateY(0)'; } }}>
+                  <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color:'var(--fg-3)' }}>{k.label}</div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center', textAlign:'center' }}>
+                    <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:500, color:'var(--fg-1)', lineHeight:1 }}>{k.value}</div>
+                  </div>
+                  {k.action && <div style={{ fontSize:11, fontWeight:600, color:'var(--fg-3)', textAlign:'right' }}>Klicken</div>}
+                </div>
+              ))}
             </div>
 
             <section className="company-detail-section">

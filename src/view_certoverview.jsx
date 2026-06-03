@@ -362,31 +362,37 @@ function CertOverviewView({ activeCompany }) {
                     <span>{selectedSummary.warning} läuft ab</span>
                     <span>{selectedSummary.expired} abgelaufen</span>
                   </div>
-                  <div className="cert-staff-stats" aria-label="Mitarbeiterübersicht">
-                    <div className="cert-staff-stat">
-                      <span>Mitarbeiter</span>
-                      <strong>{selectedStaffSummary.total}</strong>
-                    </div>
-                    <div className="cert-staff-stat">
-                      <span>Angestellte</span>
-                      <strong>{selectedStaffSummary.angestellte}</strong>
-                    </div>
-                    <div className="cert-staff-stat">
-                      <span>Gewerbliche</span>
-                      <strong>{selectedStaffSummary.gewerbliche}</strong>
-                    </div>
-                    <div className="cert-staff-stat">
-                      <span>Azubi</span>
-                      <strong>{selectedStaffSummary.azubi}</strong>
-                    </div>
-                    <div className="cert-staff-stat">
-                      <span>Vollzeit</span>
-                      <strong>{selectedStaffSummary.vollzeit}</strong>
-                    </div>
-                    <div className="cert-staff-stat">
-                      <span>Teilzeit</span>
-                      <strong>{selectedStaffSummary.teilzeit}</strong>
-                    </div>
+                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12, marginBottom:12 }}>
+                    {[
+                      { label: 'Mitarbeiter', value: selectedStaffSummary.total },
+                      { label: 'Angestellte', value: selectedStaffSummary.angestellte },
+                      { label: 'Gewerbliche', value: selectedStaffSummary.gewerbliche },
+                      { label: 'Azubi', value: selectedStaffSummary.azubi },
+                      { label: 'Vollzeit', value: selectedStaffSummary.vollzeit },
+                      { label: 'Teilzeit', value: selectedStaffSummary.teilzeit },
+                    ].map(stat => (
+                      <div
+                        key={stat.label}
+                        style={{
+                          padding:'10px 14px',
+                          background: 'var(--color-ivory)',
+                          border: '1px solid var(--border-1)',
+                          borderRadius:10,
+                          display: 'grid',
+                          gridTemplateColumns: 'auto 1fr auto',
+                          gap: 12,
+                          alignItems: 'center',
+                          boxShadow: '0 2px 5px rgba(0,0,0,0.048)',
+                          transition:'all 150ms ease',
+                        }}
+                      >
+                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color:'var(--fg-3)' }}>{stat.label}</div>
+                        <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center', textAlign:'center' }}>
+                          <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:500, color: '#2d6fa3', lineHeight:1 }}>{stat.value}</div>
+                        </div>
+                        <div style={{ fontSize:11, fontWeight:600, color:'var(--fg-3)', textAlign:'right' }}></div>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div className="cert-export-actions">

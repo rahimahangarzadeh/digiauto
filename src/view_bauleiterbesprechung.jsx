@@ -230,11 +230,32 @@ function BauleiterbesprechungView() {
         </div>
       </div>
 
-      <div className="kpi-grid" style={{ gridTemplateColumns:'repeat(4, minmax(150px, 1fr))', marginBottom:18 }}>
-        <div className="kpi"><div className="kpi__label">Besprechungen</div><div className="kpi__value">{meetings.length}</div><div className="kpi__delta">gesamt</div></div>
-        <div className="kpi"><div className="kpi__label">Offene Punkte</div><div className="kpi__value" style={{ color:'#a13232' }}>{meetings.reduce((sum, item) => sum + openTasks(item).length, 0)}</div><div className="kpi__delta">nicht erledigt</div></div>
-        <div className="kpi"><div className="kpi__label">Naechster Termin</div><div className="kpi__value" style={{ fontSize:28 }}>{fmt(meetings[0]?.nextDate)}</div><div className="kpi__delta">aus letzter Besprechung</div></div>
-        <div className="kpi"><div className="kpi__label">Teilnehmer</div><div className="kpi__value">{people.length}</div><div className="kpi__delta">aus Mitarbeiterliste</div></div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:18 }}>
+        {[
+          { label:'Besprechungen', value: meetings.length, delta:'gesamt', color: null },
+          { label:'Offene Punkte', value: meetings.reduce((sum, item) => sum + openTasks(item).length, 0), delta:'nicht erledigt', color: '#a13232' },
+          { label:'Naechster Termin', value: fmt(meetings[0]?.nextDate), delta:'aus letzter Besprechung', color: null },
+          { label:'Teilnehmer', value: people.length, delta:'aus Mitarbeiterliste', color: null },
+        ].map((k, i) => (
+          <div key={i} style={{
+            padding:'10px 14px',
+            background: 'var(--color-ivory)',
+            border: '1px solid var(--border-1)',
+            borderRadius:10,
+            display: 'grid',
+            gridTemplateColumns: 'auto 1fr auto',
+            gap: 16,
+            alignItems: 'center',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.048)',
+            transition:'all 150ms ease',
+          }}>
+            <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color:'var(--fg-3)' }}>{k.label}</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center', textAlign:'center' }}>
+              <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:500, color: k.color || 'var(--fg-1)', lineHeight:1 }}>{k.value}</div>
+            </div>
+            <div style={{ fontSize:11, fontWeight:600, color:'var(--fg-3)', textAlign:'right' }}>{k.delta}</div>
+          </div>
+        ))}
       </div>
 
       <div>

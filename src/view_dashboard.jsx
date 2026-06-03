@@ -14,7 +14,7 @@ function KpiCard({ kpi, onNavigate }) {
         gap: 16,
         alignItems: 'center',
         cursor: 'pointer',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        boxShadow: '0 2px 5px rgba(0,0,0,0.048)',
         position: 'relative',
         overflow: 'hidden',
         transition: 'all 150ms ease',
@@ -26,7 +26,7 @@ function KpiCard({ kpi, onNavigate }) {
       }}
       onMouseLeave={e => {
         e.currentTarget.style.background = 'var(--color-ivory)';
-        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+        e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.048)';
         e.currentTarget.style.transform = 'translateY(0)';
       }}>
       {/* Left: Label */}

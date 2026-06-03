@@ -399,21 +399,34 @@ function MatrixView({ activeCompany }) {
               key={k.label}
               onClick={() => k.status && setFilterStatus(filterStatus === k.status ? 'all' : k.status)}
               style={{
-                padding:'12px 14px',
+                padding:'10px 14px',
                 background: isActive ? (k.color === '#5f9268' ? '#eff5ed' : k.color === '#c89b3f' ? '#fdf3e0' : k.color === '#b26060' ? '#fbecea' : '#f0f0f0') : 'var(--color-ivory)',
                 border: '1px solid ' + (isActive ? k.color : 'var(--border-1)'),
-                borderRadius:12,
+                borderRadius:10,
                 cursor: k.status ? 'pointer' : 'default',
-                transform: isActive ? 'translateY(-1px)' : undefined,
-                boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.08)' : undefined,
+                display: 'grid',
+                gridTemplateColumns: 'auto 1fr auto',
+                gap: 16,
+                alignItems: 'center',
+                boxShadow: isActive ? '0 4px 12px rgba(0,0,0,0.08)' : '0 2px 5px rgba(0,0,0,0.048)',
                 transition:'all 150ms cubic-bezier(0.4,0,0.2,1)',
               }}>
-              <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color: isActive ? k.color : 'var(--fg-3)', marginBottom:4, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+              {/* Left: Label */}
+              <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color: isActive ? k.color : 'var(--fg-3)' }}>
                 {k.label}
-                {isActive && <span style={{ fontSize:9.5, background: k.color, color:'#fff', padding:'1px 5px', borderRadius:99, letterSpacing:0.3 }}>Aktiv</span>}
               </div>
-              <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:500, color: isActive ? k.color : (k.color || 'var(--fg-1)'), lineHeight:1 }}>{k.value}</div>
-              {k.status && <div style={{ fontSize:10.5, color: isActive ? k.color : 'var(--fg-3)', marginTop:4 }}>{isActive ? 'Klicken zum Zurücksetzen' : 'Klicken zum Filtern'}</div>}
+
+              {/* Middle: Value */}
+              <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center', textAlign:'center' }}>
+                <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:500, color: isActive ? k.color : (k.color || 'var(--fg-1)'), lineHeight:1 }}>{k.value}</div>
+              </div>
+
+              {/* Right: Action Text */}
+              {k.status && (
+                <div style={{ fontSize:11, fontWeight:600, color: isActive ? k.color : 'var(--fg-3)', textAlign:'right' }}>
+                  {isActive ? 'Klicken zum\nZurücksetzen' : 'Klicken zum\nFiltern'}
+                </div>
+              )}
             </div>
           );
         })}
@@ -989,7 +1002,7 @@ function EmpDetail({ emp }) {
                 <div key={g.id} style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr 1fr 1.7fr auto', gap:12, alignItems:'center', padding:'11px 16px', borderBottom:'1px solid var(--border-1)' }}>
                   <div style={{ fontSize:13.5, fontWeight:500 }}>{g.type === 'Sonstig' && g.otherType ? 'Sonstig - ' + g.otherType : g.type}</div>
                   <div style={{ fontSize:12.5, color:'var(--fg-2)' }}>{g.kind}</div>
-                  <div style={{ fontSize:12.5, color:'var(--fg-2)' }}>{g.date ? window.fmtDE(g.date) : '�'}</div>
+                  <div style={{ fontSize:12.5, color:'var(--fg-2)' }}>{g.date ? window.fmtDE(g.date) : '�'}</div>
                   <div style={{ fontSize:12.5, color:'var(--fg-2)' }}>{g.description || 'Freigegeben fuer Mitarbeiter'}</div>
                   <div><DocActions id={'gf-'+g.id+'-'+emp.id} name={g.type || 'Geraetefuehrer'} /></div>
                 </div>

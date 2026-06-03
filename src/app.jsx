@@ -53,7 +53,7 @@ function App() {
     if (['doc_bgbau', 'doc_audits', 'doc_references', 'doc_accidents', 'doc_risk'].includes(nav)) setNav('doc_drive');
     if (tweaks.role === 'admin') {
       if (nav === 'bgbau') return;
-      const allowed = ['dashboard', 'matrix', 'auswertung', 'baustellen', 'bauleiterbesprechung', 'bgbau', 'normenmatrix', 'formulare', 'trainings', 'befaehigte_personen', 'organigramm', 'zertuebersicht', 'doc_home', 'doc_drive'];
+      const allowed = ['dashboard', 'chatbot', 'matrix', 'auswertung', 'baustellen', 'bauleiterbesprechung', 'bgbau', 'normenmatrix', 'formulare', 'trainings', 'befaehigte_personen', 'organigramm', 'zertuebersicht', 'doc_home', 'doc_drive'];
       if (!allowed.includes(nav)) setNav('dashboard');
     }
   }, [tweaks.role, nav]);
@@ -180,7 +180,7 @@ function App() {
   };
 
   const titles = {
-    dashboard:'Dashboard', matrix:'Qualifikationsmatrix', employees:'Mitarbeiter',
+    dashboard:'Dashboard', chatbot:'Chatbot', matrix:'Qualifikationsmatrix', employees:'Mitarbeiter',
     trainings:'Schulungen', calendar:'Kalender', certs:'Zertifikate',
     instr:'Unterweisungen', providers:'Akademien', companies:'Firmen',
     auswertung:'Firmen-Auswertung', baustellen:'Baustellen', bauleiterbesprechung:'Bauleiterbesprechung', bgbau:'Baustellenaushang BGBAU', normenmatrix:'Normenmatrix', formulare:'Formulare', organigramm:'Organigramm', zertuebersicht:'Zertifizierungs\u00fcbersicht',
@@ -196,6 +196,7 @@ function App() {
   let view = null;
   switch (nav) {
     case 'dashboard': view = <DashboardView activeCompany={activeCompany} setNav={setNav} />; break;
+    case 'chatbot': view = <ChatbotView activeCompany={activeCompany} />; break;
     case 'matrix':    view = <MatrixView activeCompany={activeCompany} />; break;
     case 'employees': view = <EmployeesView activeCompany={activeCompany} />; break;
     case 'trainings': view = <TrainingsView />; break;

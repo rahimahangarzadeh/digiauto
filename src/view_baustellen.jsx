@@ -66,6 +66,7 @@ function BaustellenView({ activeCompany }) {
   const [employeeCompanyFilter, setEmployeeCompanyFilter] = React.useState('all');
   const [editingDetails, setEditingDetails] = React.useState(true);
   const [editingStammdaten, setEditingStammdaten] = React.useState(false);
+  const [editingRiskAssessment, setEditingRiskAssessment] = React.useState(false);
   const [teamEditOpen, setTeamEditOpen] = React.useState(false);
   const [siteDocuments, setSiteDocuments] = React.useState({
     'bs-1': [
@@ -168,6 +169,40 @@ function BaustellenView({ activeCompany }) {
   };
 
   const currentSiteDocuments = siteDocuments[selectedSite?.id] || [];
+  const riskAssessmentBaseRows = [
+    { nr: 1, name: 'Baustellenanmeldung BG BAU', document: 'BG-BAU-Anmeldung.pdf' },
+    { nr: 2, name: 'Betriebs-Gefährdungsbeurteilung', document: 'Betriebs-Gefährdungsbeurteilung.pdf' },
+    { nr: 3, name: 'Ergänzende Gefährdungsbeurteilung Baustelle', document: 'Ergänzende-GBU-Baustelle.pdf' },
+    { nr: 4, name: 'Projektbezogene Unterweisung', document: 'Projektbezogene-Unterweisung.pdf' },
+    { nr: 5, name: 'Erstunterweisung Baustellen', document: 'Erstunterweisung-Baustelle.pdf' },
+  ];
+  const riskAssessmentBySite = {
+    'bs-1': [
+      { notRequired: false, done: true, date: '2026-05-18', description: 'Baustellenanmeldung fuer Kanalsanierung Nordhorn vorbereitet.' },
+      { notRequired: false, done: true, date: '2026-05-19', description: 'Betriebliche Grundgefährdungen fuer Tiefbauarbeiten geprueft.' },
+      { notRequired: false, done: false, date: '2026-05-22', description: 'Ergänzung fuer Verkehrsbereich Lingener Strasse offen.' },
+      { notRequired: false, done: true, date: '2026-05-20', description: 'Projektbezogene Unterweisung mit Team Alex Barum dokumentiert.' },
+      { notRequired: false, done: true, date: '2026-05-20', description: 'Erstunterweisung fuer neue Baustellenbesetzung abgeschlossen.' },
+    ],
+    'bs-2': [
+      { notRequired: false, done: true, date: '2026-05-21', description: 'Baustellenanmeldung Hausanschluesse Suedring angelegt.' },
+      { notRequired: false, done: true, date: '2026-05-22', description: 'Rohrgraben, Verbau und Leitungsnaehe bewertet.' },
+      { notRequired: false, done: true, date: '2026-05-23', description: 'Ergänzung fuer Hausanschluss-Arbeiten im Gehwegbereich.' },
+      { notRequired: false, done: false, date: '2026-05-24', description: 'Unterweisung fuer Nachunternehmer noch zur Unterschrift.' },
+      { notRequired: true, done: false, date: '', description: 'Keine Erstunterweisung erforderlich, bestehendes Team.' },
+    ],
+    'bs-3': [
+      { notRequired: false, done: true, date: '2026-05-25', description: 'Baustellenanmeldung Horizontalbohrung Gewerbepark erstellt.' },
+      { notRequired: false, done: false, date: '2026-05-26', description: 'Betriebs-Gefährdungsbeurteilung fuer Bohrtechnik in Pruefung.' },
+      { notRequired: false, done: false, date: '2026-05-27', description: 'Ergänzung fuer Start-/Zielgrube und Spuelbohrung offen.' },
+      { notRequired: false, done: true, date: '2026-05-26', description: 'Projektbezogene Unterweisung fuer Bohrtrupp begonnen.' },
+      { notRequired: false, done: true, date: '2026-05-26', description: 'Erstunterweisung fuer Gewerbepark-Team dokumentiert.' },
+    ],
+  };
+  const riskAssessmentRows = riskAssessmentBaseRows.map((row, index) => ({
+    ...row,
+    ...(riskAssessmentBySite[selectedSite?.id]?.[index] || {}),
+  }));
 
   const toggleEmployee = (id) => {
     setSites(items => items.map(site => {
@@ -469,6 +504,7 @@ function BaustellenView({ activeCompany }) {
     { id:'personal', label:'Personal' },
     { id:'pruefung', label:'Personal-Pruefung' },
     { id:'fehlend', label:'Fehlende Schulungen' },
+    { id:'gefaehrdung', label:'Gefährdungsbeurteilung' },
     { id:'alarmplan', label:'Alarmplan' },
     { id:'dokumente', label:'Dokumente' },
   ];
@@ -672,11 +708,12 @@ function BaustellenView({ activeCompany }) {
 
       {detailOpen && selectedSite && (
         <div onClick={() => setDetailOpen(false)} style={{ position:'fixed', inset:0, zIndex:2400, background:'rgba(0,0,0,.32)', display:'flex', justifyContent:'flex-end' }}>
-          <aside onClick={event => event.stopPropagation()} style={{ width:'min(980px, 94vw)', background:'var(--color-ivory)', boxShadow:'-24px 0 70px rgba(0,0,0,.28)', display:'flex', flexDirection:'column' }}>
+          <aside onClick={event => event.stopPropagation()} style={{ width:'min(1176px, 96vw)', background:'var(--color-ivory)', boxShadow:'-24px 0 70px rgba(0,0,0,.28)', display:'flex', flexDirection:'column' }}>
             <div style={{ background:'var(--color-near-black)', color:'white', padding:'24px 28px', display:'grid', gridTemplateColumns:'1fr auto', gap:18, alignItems:'start' }}>
               <div>
                 <h2 style={{ margin:0, fontFamily:'var(--font-serif)', fontWeight:500, fontSize:30 }}>{selectedSite.name}</h2>
-                <div style={{ color:'rgba(255,255,255,.68)', marginTop:8 }}>{selectedSite.projectNr} - {selectedSite.company} - Bauleiter: {selectedSite.bauleiter}</div>
+                <div style={{ color:'rgba(255,255,255,.68)', marginTop:8 }}>{selectedSite.projectName} - {selectedSite.projectNr}</div>
+                <div style={{ color:'rgba(255,255,255,.58)', marginTop:5 }}>{selectedSite.company} - {selectedSite.adresse} - Bauleiter: {selectedSite.bauleiter}</div>
                 <div style={{ marginTop:14 }}>{ready ? <span className="badge badge--valid"><span className="badge__dot" />Personal reicht</span> : <span className="badge badge--expired"><span className="badge__dot" />Personal fehlt</span>}</div>
               </div>
               <button onClick={() => setDetailOpen(false)} style={{ border:0, background:'transparent', color:'rgba(255,255,255,.72)', fontSize:26, cursor:'pointer' }}>x</button>
@@ -804,7 +841,56 @@ function BaustellenView({ activeCompany }) {
                 <div className="card card--pad">
                   <div className="card__title">Fehlende Schulungen</div>
                   <div style={{ display:'grid', gap:10, marginTop:14 }}>
-                    {missingChecks.length === 0 ? <div className="small muted">Keine fehlenden Schulungen.</div> : missingChecks.map(check => <div key={check.id} style={{ display:'flex', justifyContent:'space-between', gap:12, alignItems:'center', padding:12, border:'1px solid var(--border-1)', borderRadius:8, background:'#fdf3e0' }}><div><strong>{check.label}</strong><div className="small muted">{check.rule} � {check.actual}/{check.required}</div></div>{check.type !== 'device' && <button className="btn btn--ghost" onClick={() => planTraining(check.id)}>zur Schulung anmelden</button>}</div>)}
+                    {missingChecks.length === 0 ? <div className="small muted">Keine fehlenden Schulungen.</div> : missingChecks.map(check => <div key={check.id} style={{ display:'flex', justifyContent:'space-between', gap:12, alignItems:'center', padding:12, border:'1px solid var(--border-1)', borderRadius:8, background:'#fdf3e0' }}><div><strong>{check.label}</strong><div className="small muted">{check.rule} - {check.actual}/{check.required}</div></div>{check.type !== 'device' && <button className="btn btn--ghost" onClick={() => planTraining(check.id)}>zur Schulung anmelden</button>}</div>)}
+                  </div>
+                </div>
+              )}
+
+              {sitePanelTab === 'gefaehrdung' && (
+                <div className="card card--pad">
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:14, marginBottom:14 }}>
+                    <div>
+                      <div className="card__title">Gefährdungsbeurteilung</div>
+                      <div className="card__sub">{selectedSite.name} - {selectedSite.projectName}</div>
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', justifyContent:'flex-end' }}>
+                      <span className="badge badge--accent"><span className="badge__dot" />Beispiel ausgefüllt</span>
+                      <button className={editingRiskAssessment ? 'btn btn--primary' : 'btn btn--ghost'} onClick={() => setEditingRiskAssessment(value => !value)}>
+                        <Icon name={editingRiskAssessment ? 'check' : 'edit'} size={14} />{editingRiskAssessment ? 'Speichern' : 'Bearbeiten'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="site-risk-table-wrap">
+                    <table className="tbl site-risk-table">
+                      <thead>
+                        <tr>
+                          <th>Nr.</th>
+                          <th>Name</th>
+                          <th>Nicht erforderlich</th>
+                          <th>Erledigt</th>
+                          <th>Datum</th>
+                          <th>Beschreibung</th>
+                          <th>Dokument (PDF)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {riskAssessmentRows.map(row => (
+                          <tr key={row.nr}>
+                            <td className="num">{row.nr}</td>
+                            <td><strong>{row.name}</strong></td>
+                            <td><input type="checkbox" checked={!!row.notRequired} readOnly disabled={!editingRiskAssessment} /></td>
+                            <td><input type="checkbox" checked={!!row.done} readOnly disabled={!editingRiskAssessment} /></td>
+                            <td>{editingRiskAssessment ? <input className="site-risk-input" type="date" defaultValue={row.date || ''} /> : (row.date ? window.fmtDE(row.date) : '-')}</td>
+                            <td>{editingRiskAssessment ? <textarea className="site-risk-textarea" defaultValue={row.description} /> : row.description}</td>
+                            <td>
+                              <button className="btn btn--ghost" style={{ minHeight:32, padding:'0 10px' }}>
+                                <Icon name="doc" size={13} />{row.document}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}

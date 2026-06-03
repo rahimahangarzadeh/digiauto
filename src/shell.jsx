@@ -43,6 +43,7 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
     sections = [
       { label: '\u00dcbersicht', items: [
         { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+        { id: 'chatbot', label: 'Chatbot', icon: 'flag' },
         { id: 'matrix',    label: 'Qualifikationsmatrix', icon: 'matrix' },
         { id: 'auswertung',label: 'Firmen-Auswertung', icon: 'shield' },
         { id: 'baustellen', label: 'Baustellen', icon: 'building' },
@@ -66,6 +67,7 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
     sections = [
       { label: '\u00dcbersicht', items: [
         { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+        { id: 'chatbot', label: 'Chatbot', icon: 'flag' },
         { id: 'matrix',    label: 'Qualifikationsmatrix', icon: 'matrix' },
         { id: 'auswertung',label: 'Firmen-Auswertung', icon: 'shield' },
         { id: 'baustellen', label: 'Baustellen', icon: 'building' },

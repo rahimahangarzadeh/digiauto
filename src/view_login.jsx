@@ -13,18 +13,14 @@ function Login({ onLogin }) {
   return (
     <div className="login-page">
       <div className="login-page__panel">
-        <div style={{display:'flex', alignItems:'center', gap:10}}>
-          <div className="sidebar__brand-mark">J</div>
-          <div>
-            <div style={{fontFamily:'var(--font-serif)', fontSize:17, fontWeight:500}}>Janning · Qualifikation</div>
-            <div className="small muted">Schulungs- und Qualifikationsmatrix</div>
-          </div>
+        <div className="login-brand">
+          <img className="login-brand-logo" src="assets/janning-logo-sechseck.png" alt="Janning Group" />
         </div>
 
-        <div>
+        <div className="login-center">
           <div style={{fontFamily:'var(--font-serif)', fontSize:40, fontWeight:500, lineHeight:1.1, letterSpacing:'-0.3px'}}>Anmelden.</div>
           <div className="small muted" style={{marginTop:6, maxWidth:380}}>
-            Willkommen zurück. Melden Sie sich mit Ihrer Firmen-E-Mail an — oder wählen Sie eine Rolle, um die Demo zu betreten.
+            Willkommen zurück. Melden Sie sich mit Ihrer Firmen-E-Mail an oder wählen Sie eine Rolle, um die Demo zu betreten.
           </div>
           <div className="login-form">
             <label>E-Mail</label>
@@ -45,30 +41,6 @@ function Login({ onLogin }) {
               ))}
             </div>
           </div>
-        </div>
-
-        <div className="small muted">
-          Fünf Firmen der Janning-Gruppe · Tiefbau, Bohrtechnik, Rohrbau, Galabau, Transporte.
-        </div>
-      </div>
-
-      <div className="login-page__panel login-page__dark">
-        <div className="small" style={{color:'var(--fg-on-dark-2)', letterSpacing:0.5, textTransform:'uppercase'}}>Qualifikation, aufgeräumt.</div>
-        <div>
-          <div className="login-quote">
-            „Wer was kann, wann — und wann es nachgeschult werden muss. Alles an einer Stelle, ohne Lärm."
-          </div>
-          <div className="login-caption" style={{marginTop:24}}>
-            Ein ruhiges Werkzeug für Unterweisungen, Zertifikate und Fristen. Gebaut für die Janning-Gruppe.
-          </div>
-        </div>
-
-        <div style={{display:'flex', gap:18, alignItems:'center', flexWrap:'wrap'}}>
-          {window.SEED.companies.map(c => (
-            <div key={c.id} style={{background:'#fff', borderRadius:8, padding:'8px 10px', height:40, display:'grid', placeItems:'center'}}>
-              <img src={c.logo} alt={c.short} style={{height:22, maxWidth:120, objectFit:'contain'}} />
-            </div>
-          ))}
         </div>
       </div>
     </div>

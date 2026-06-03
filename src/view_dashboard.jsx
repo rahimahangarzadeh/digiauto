@@ -155,6 +155,37 @@ function DashboardView({ activeCompany, setNav: setCurrentNav }) {
   const monthShort = (dateStr) =>
     new Date(dateStr).toLocaleString('de-DE', { month: 'short' }).toUpperCase().replace('.','');
 
+  const dashboardAudits = [
+    { id: 'audit-1', date: '2026-05-21', time: '08:00', title: 'GW 301', companyName: 'Janning Tiefbau GmbH' },
+    { id: 'audit-2', date: '2026-05-25', time: '08:00', title: 'ADR Schulung', companyName: 'Janning Transporte GmbH' },
+    { id: 'audit-3', date: '2026-05-31', time: '08:00', title: 'm62 AwsV', companyName: 'Janning Tiefbau GmbH' },
+    { id: 'audit-4', date: '2026-06-10', time: '11:00', title: 'RAL Überprüfung', companyName: 'Janning Galabau GmbH' },
+    { id: 'audit-5', date: '2026-06-15', time: '09:00', title: 'ISO 45001', companyName: 'Janning Bohrtechnik GmbH' },
+    { id: 'audit-6', date: '2026-07-01', time: '08:00', title: 'EN ISO 3834', companyName: 'Janning Rohrbau GmbH' },
+    { id: 'audit-7', date: '2026-07-20', time: '10:00', title: 'SCC Audit', companyName: 'Janning Bohrtechnik GmbH' },
+    { id: 'audit-8', date: '2026-08-15', time: '14:00', title: 'DVGW Inspektion', companyName: 'Janning Rohrbau GmbH' },
+    { id: 'audit-9', date: '2026-09-30', time: '08:00', title: 'RAL', companyName: 'Janning Tiefbau GmbH' },
+    { id: 'audit-10', date: '2026-10-12', time: '13:00', title: 'ISO 39001 Review', companyName: 'Janning Transporte GmbH' },
+    { id: 'audit-11', date: '2026-11-02', time: '08:00', title: 'ISO 14001', companyName: 'Janning Tiefbau GmbH' },
+    { id: 'audit-12', date: '2026-11-02', time: '08:00', title: 'SCL', companyName: 'Janning Tiefbau GmbH' },
+    { id: 'audit-13', date: '2027-02-28', time: '08:00', title: 'ISO 3834', companyName: 'Janning Tiefbau GmbH' },
+    { id: 'audit-14', date: '2027-02-28', time: '08:00', title: 'AD2000-HPO', companyName: 'Janning Tiefbau GmbH' },
+    { id: 'audit-15', date: '2027-02-28', time: '08:00', title: 'PED-3-1', companyName: 'Janning Tiefbau GmbH' },
+  ].sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+
+  const auditCountdown = (dateStr, timeStr) => {
+    const now = new Date(window.SEED.today || '2026-04-21');
+    const auditDate = new Date(dateStr + 'T' + timeStr + ':00');
+    let diff = Math.floor((auditDate - now) / 1000);
+    if (diff < 0) diff = 0;
+    return {
+      days: Math.floor(diff / 86400),
+      hours: Math.floor((diff % 86400) / 3600),
+      minutes: Math.floor((diff % 3600) / 60),
+      seconds: diff % 60,
+    };
+  };
+
   return (
     <div>
       {/* ── Header ── */}
@@ -246,8 +277,8 @@ function DashboardView({ activeCompany, setNav: setCurrentNav }) {
         );
       })()}
 
-      {/* ── 3-Column Grid ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, alignItems: 'start' }}>
+      {/* ── Dashboard panels ── */}
+      <div className="dashboard-panel-grid">
 
         {/* ── COL 1: Abdeckung nach Schulung ── */}
         <div className="card card--pad" style={{ display:'flex', flexDirection:'column', gap:0 }}>
@@ -518,6 +549,38 @@ function DashboardView({ activeCompany, setNav: setCurrentNav }) {
                 + {filteredExpiring.length - 8} weitere Einträge
               </div>
             )}
+          </div>
+        </div>
+
+        {/* ── COL 4: Auditsliste ── */}
+        <div className="card card--pad" style={{ display:'flex', flexDirection:'column', gap:0 }}>
+          <div className="dashboard-card-head">
+            <div>
+              <div className="card__sub">Audits</div>
+              <div className="card__title">Auditsliste</div>
+            </div>
+            <span className="dashboard-count-badge">{dashboardAudits.length}</span>
+          </div>
+
+          <div className="dashboard-audit-stack">
+            {dashboardAudits.slice(0, 6).map((audit) => {
+              const countdown = auditCountdown(audit.date, audit.time);
+              return (
+                <div key={audit.id} className="cert-audit-item dashboard-audit-item">
+                  <div className="cert-audit-item__left">
+                    <div className="cert-audit-date">{window.fmtDE(audit.date)}</div>
+                    <div className="cert-audit-time">{audit.time} Uhr</div>
+                    <div className="cert-audit-countdown">
+                      {countdown.days}d | {String(countdown.hours).padStart(2, '0')}h | {String(countdown.minutes).padStart(2, '0')}m | {String(countdown.seconds).padStart(2, '0')}s
+                    </div>
+                  </div>
+                  <div className="cert-audit-item__body">
+                    <div className="cert-audit-item__title">{audit.title}</div>
+                    <div className="cert-audit-company">{audit.companyName}</div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 

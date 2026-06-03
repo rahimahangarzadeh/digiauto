@@ -1,4 +1,4 @@
-/* Zertifizierungsübersicht - firm certifications (ISO, SCC, etc.) */
+﻿/* Zertifizierungsübersicht - firm certifications (ISO, SCC, etc.) */
 
 function CertOverviewView({ activeCompany }) {
   const initialCertData = {
@@ -257,8 +257,13 @@ function CertOverviewView({ activeCompany }) {
 
   const getAllAudits = () => {
     const allAudits = [];
-    Object.values(auditsByCompany).forEach(audits => {
-      allAudits.push(...audits);
+    Object.entries(auditsByCompany).forEach(([companyId, audits]) => {
+      const company = companies.find((item) => item.id === companyId);
+      allAudits.push(...audits.map((audit) => ({
+        ...audit,
+        companyId,
+        companyName: company?.name || companyId,
+      })));
     });
     return allAudits.sort((a, b) => new Date(a.date) - new Date(b.date));
   };
@@ -334,15 +339,21 @@ function CertOverviewView({ activeCompany }) {
                     </div>
                   </div>
                   <div className="cert-company-row__summary" aria-label="Status-Zusammenfassung">
-                    <span className="cert-dot cert-dot--success" title="Gültig" />{summary.valid}
-                    <span className="cert-dot cert-dot--warning" title="Läuft bald ab" />{summary.warning}
-                    <span className="cert-dot cert-dot--danger" title="Abgelaufen" />{summary.expired}
+                    <span className="cert-status-chip cert-status-chip--success">
+                      <span className="cert-dot cert-dot--success" />{summary.valid} gültig
+                    </span>
+                    <span className="cert-status-chip cert-status-chip--warning">
+                      <span className="cert-dot cert-dot--warning" />{summary.warning} bald
+                    </span>
+                    <span className="cert-status-chip cert-status-chip--danger">
+                      <span className="cert-dot cert-dot--danger" />{summary.expired} abgelaufen
+                    </span>
                   </div>
                   <div className="cert-row-actions" onClick={(event) => event.stopPropagation()}>
                     <button type="button" onClick={() => openCompanyDialog('edit', company)}>Bearbeiten</button>
                     <button type="button" className="is-danger" onClick={() => deleteCompany(company.id)}>Löschen</button>
                   </div>
-                  <Icon name="chevR" size={16} />
+                  <span className="cert-company-row__chevron" aria-hidden="true"><Icon name="chevR" size={15} /></span>
                 </div>
               );
             })}
@@ -357,12 +368,12 @@ function CertOverviewView({ activeCompany }) {
                   <div className="eyebrow">Ausgewählte Firma</div>
                   <h2>{selectedCompany.name}</h2>
                   <div className="cert-detail__summary">
-                    <span>{selectedSummary.total} Zertifikate</span>
-                    <span>{selectedSummary.valid} gültig</span>
-                    <span>{selectedSummary.warning} läuft ab</span>
-                    <span>{selectedSummary.expired} abgelaufen</span>
+                    <span className="cert-status-chip">{selectedSummary.total} Zertifikate</span>
+                    <span className="cert-status-chip cert-status-chip--success">{selectedSummary.valid} gültig</span>
+                    <span className="cert-status-chip cert-status-chip--warning">{selectedSummary.warning} läuft ab</span>
+                    <span className="cert-status-chip cert-status-chip--danger">{selectedSummary.expired} abgelaufen</span>
                   </div>
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:12, marginBottom:12 }}>
+                  <div className="cert-staff-grid">
                     {[
                       { label: 'Mitarbeiter', value: selectedStaffSummary.total },
                       { label: 'Angestellte', value: selectedStaffSummary.angestellte },
@@ -371,26 +382,9 @@ function CertOverviewView({ activeCompany }) {
                       { label: 'Vollzeit', value: selectedStaffSummary.vollzeit },
                       { label: 'Teilzeit', value: selectedStaffSummary.teilzeit },
                     ].map(stat => (
-                      <div
-                        key={stat.label}
-                        style={{
-                          padding:'10px 14px',
-                          background: 'var(--color-ivory)',
-                          border: '1px solid var(--border-1)',
-                          borderRadius:10,
-                          display: 'grid',
-                          gridTemplateColumns: 'auto 1fr auto',
-                          gap: 12,
-                          alignItems: 'center',
-                          boxShadow: '0 2px 5px rgba(0,0,0,0.048)',
-                          transition:'all 150ms ease',
-                        }}
-                      >
-                        <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color:'var(--fg-3)' }}>{stat.label}</div>
-                        <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center', textAlign:'center' }}>
-                          <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:500, color: '#2d6fa3', lineHeight:1 }}>{stat.value}</div>
-                        </div>
-                        <div style={{ fontSize:11, fontWeight:600, color:'var(--fg-3)', textAlign:'right' }}></div>
+                      <div key={stat.label} className="cert-staff-card">
+                        <span>{stat.label}</span>
+                        <strong>{stat.value}</strong>
                       </div>
                     ))}
                   </div>
@@ -486,8 +480,13 @@ function CertOverviewView({ activeCompany }) {
                       {countdown.days}d | {String(countdown.hours).padStart(2, '0')}h | {String(countdown.minutes).padStart(2, '0')}m | {String(countdown.seconds).padStart(2, '0')}s
                     </div>
                   </div>
-                  <div className="cert-audit-item__title">
-                    {audit.title}
+                  <div className="cert-audit-item__body">
+                    <div className="cert-audit-item__title">
+                      {audit.title}
+                    </div>
+                    <div className="cert-audit-company">
+                      {audit.companyName}
+                    </div>
                   </div>
                 </div>
               );

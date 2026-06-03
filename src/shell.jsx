@@ -343,7 +343,7 @@ function NotificationsPanel({ onClose }) {
     { id: 'n2', type: 'cert',      unread: true,  time: 'Gestern, 14:12',    title: 'Zertifikat genehmigt', body: 'Dein hochgeladenes Zertifikat „SCC Dok. 016" wurde von Sabine Janning genehmigt.' },
     { id: 'n3', type: 'warning',   unread: true,  time: 'Gestern, 09:00',    title: 'Erinnerung: Zertifikat läuft ab', body: '„Bagger & Radlader" ist am 21.10.2025 abgelaufen. Bitte eine Auffrischung planen.' },
     { id: 'n4', type: 'admin',     unread: false, time: 'Mo., 11:45',        title: 'Mitteilung vom Admin', body: 'Alle Mitarbeiter der Tiefbau GmbH werden gebeten, bis Ende Mai die Jahresunterweisung zu absolvieren.' },
-    { id: 'n5', type: 'calendar',  unread: false, time: 'Fr., 10:00',        title: 'Mein Termin: Erste Hilfe', body: 'Auffrischungskurs Erste Hilfe – 12.05.2026 – 08:00 Uhr � BiW Bildungszentrum, Lingen.' },
+    { id: 'n5', type: 'calendar',  unread: false, time: 'Fr., 10:00',        title: 'Mein Termin: Erste Hilfe', body: 'Auffrischungskurs Erste Hilfe – 12.05.2026 – 08:00 Uhr BiW Bildungszentrum, Lingen.' },
     { id: 'n6', type: 'cert',      unread: false, time: '22. Apr., 16:30',   title: 'Zertifikat abgelehnt', body: '„Gabelstaplerschein"-Upload wurde abgelehnt. Bitte ein lesbares Dokument hochladen.' },
     { id: 'n7', type: 'calendar',  unread: false, time: '20. Apr., 08:00',   title: 'Mein Termin: SCC 017', body: 'SCC Dok. 017 Auffrischung – 28.05.2026 – 09:00 Uhr – DEKRA Akademie, Osnabrück.' },
   ]);

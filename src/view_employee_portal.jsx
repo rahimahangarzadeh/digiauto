@@ -52,6 +52,7 @@ function PortalView({ searchState, setSearchState, nav }) {
   const [chatMessages, setChatMessages] = React.useState([
     { id: 'c1', from: 'admin', text: 'Hallo Markus, wenn du Fragen zu Dokumenten hast, schreib mir hier.', time: 'Mo. 09:14' },
   ]);
+  const [siteDetailTab, setSiteDetailTab] = React.useState('stammdaten');
   const me = window.employee('e-me') || window.SEED.employees[0];
   const portalUploads = (() => {
     try { return JSON.parse(localStorage.getItem('portal_document_uploads') || '[]'); }
@@ -1323,43 +1324,80 @@ function PortalView({ searchState, setSearchState, nav }) {
                 </div>
               </div>
 
-              <div className="job-sign-panel">
-                <span className="badge badge--valid"><span className="badge__dot" />Freigegeben</span>
-                <div className="bar"><div className="bar__fill bar__fill--valid" style={{ width:'100%' }} /></div>
-                <small>Du darfst diese Baustelleninformationen im Mitarbeiterportal sehen.</small>
+              <div style={{ display:'flex', overflowX:'auto', borderBottom:'1px solid var(--border-1)', background:'var(--color-parchment)' }}>
+                {[
+                  { id:'stammdaten', label:'Stammdaten' },
+                  { id:'personal', label:'Personal' },
+                  { id:'dokumente', label:'Dokumente' },
+                ].map(tab => (
+                  <button key={tab.id} onClick={() => setSiteDetailTab(tab.id)} style={{ border:0, background:siteDetailTab === tab.id ? 'var(--color-ivory)' : 'transparent', padding:'14px 18px', font:'inherit', fontWeight:800, color:siteDetailTab === tab.id ? 'var(--fg-1)' : 'var(--fg-3)', cursor:'pointer', whiteSpace:'nowrap' }}>
+                    {tab.label}
+                  </button>
+                ))}
               </div>
 
-              <section className="job-detail-section">
-                <h3>Baustellen-Daten</h3>
-                <div className="med-detail-grid">
-                  <div><span>Projekt</span><strong>{selectedPortalSite.projectName || selectedPortalSite.name}</strong></div>
-                  <div><span>Auftraggeber</span><strong>{selectedPortalSite.auftraggeber || '-'}</strong></div>
-                  <div><span>Bauleiter</span><strong>{selectedPortalSite.bauleiter || '-'}</strong></div>
-                  <div><span>Vorarbeiter</span><strong>{selectedPortalSite.vorarbeiter || '-'}</strong></div>
-                  <div style={{ gridColumn:'1 / -1' }}><span>Adresse</span><strong>{selectedPortalSite.adresse || '-'}</strong></div>
-                </div>
-              </section>
-
-              <section className="job-detail-section">
-                <h3>Team</h3>
-                <div style={{ display:'grid', gap:8 }}>
-                  {selectedPortalSite.employees.map(emp => (
-                    <div key={emp.id} style={{ display:'flex', justifyContent:'space-between', gap:12, padding:'10px 0', borderBottom:'1px solid var(--border-1)' }}>
-                      <span><strong>{emp.name}</strong><span className="small muted" style={{ display:'block' }}>{window.company(emp.company)?.short || emp.company} - {emp.position}</span></span>
-                      {selectedPortalSite.firstAiders.some(item => item.id === emp.id) && <span className="badge badge--valid"><span className="badge__dot" />Ersthelfer</span>}
+              <div style={{ padding:24, overflow:'auto', flex:1 }}>
+                {siteDetailTab === 'stammdaten' && (
+                  <div style={{ display:'grid', gap:18 }}>
+                    <div className="kpi-grid">
+                      <div className="kpi"><div className="kpi__label">Mitarbeiter</div><div className="kpi__value">{selectedPortalSite.employees?.length || 0}</div><div className="kpi__delta">im Projekt</div></div>
+                      <div className="kpi"><div className="kpi__label">Pflichtpunkte</div><div className="kpi__value" style={{ color:'#3f7a4a' }}>6/6</div><div className="kpi__delta">erfuellt</div></div>
+                      <div className="kpi"><div className="kpi__label">Fehlende Schulungen</div><div className="kpi__value" style={{ color:'#3f7a4a' }}>0</div><div className="kpi__delta">nachplanen</div></div>
+                      <div className="kpi"><div className="kpi__label">Status</div><div className="kpi__value" style={{ color:'#3f7a4a' }}>OK</div><div className="kpi__delta">einsatzbereit</div></div>
                     </div>
-                  ))}
-                </div>
-              </section>
+                    <div className="card card--pad">
+                      <div className="card__title" style={{ marginBottom:14 }}>Baustellen-Details</div>
+                      <div style={{ display:'grid', gridTemplateColumns:'repeat(2, minmax(0, 1fr))', gap:12 }}>
+                        <div style={{ display:'grid', gap:6 }}>
+                          <span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Projektname</span>
+                          <span style={{ color:'var(--fg-1)' }}>{selectedPortalSite.projectName || selectedPortalSite.name}</span>
+                        </div>
+                        <div style={{ display:'grid', gap:6 }}>
+                          <span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Auftraggeber</span>
+                          <span style={{ color:'var(--fg-1)' }}>{selectedPortalSite.auftraggeber || '-'}</span>
+                        </div>
+                        <div style={{ display:'grid', gap:6 }}>
+                          <span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Bauleiter</span>
+                          <span style={{ color:'var(--fg-1)' }}>{selectedPortalSite.bauleiter || '-'}</span>
+                        </div>
+                        <div style={{ display:'grid', gap:6 }}>
+                          <span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Vorarbeiter</span>
+                          <span style={{ color:'var(--fg-1)' }}>{selectedPortalSite.vorarbeiter || '-'}</span>
+                        </div>
+                        <div style={{ display:'grid', gap:6, gridColumn:'1 / -1' }}>
+                          <span style={{ fontSize:11, color:'var(--fg-3)', textTransform:'uppercase', fontWeight:700 }}>Adresse</span>
+                          <span style={{ color:'var(--fg-1)' }}>{selectedPortalSite.adresse || '-'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-              <section className="job-detail-section">
-                <h3>Dokumente</h3>
-                <div style={{ display:'grid', gap:8 }}>
-                  {selectedPortalSite.documents.map(doc => (
-                    <button key={doc} className="job-small-btn" style={{ justifyContent:'space-between' }}><span><Icon name="doc" size={12} /> {doc}</span><span>Anzeigen</span></button>
-                  ))}
-                </div>
-              </section>
+                {siteDetailTab === 'personal' && (
+                  <div className="card card--pad">
+                    <div className="card__title" style={{ marginBottom:12 }}>Mitarbeiter der Baustelle</div>
+                    <div style={{ display:'grid', gap:8 }}>
+                      {selectedPortalSite.employees?.map(emp => (
+                        <div key={emp.id} style={{ display:'flex', justifyContent:'space-between', gap:12, padding:'10px 0', borderBottom:'1px solid var(--border-1)' }}>
+                          <span><strong>{emp.name}</strong><span className="small muted" style={{ display:'block' }}>{window.company(emp.company)?.short || emp.company} - {emp.position}</span></span>
+                          {selectedPortalSite.firstAiders?.some(item => item.id === emp.id) && <span className="badge badge--valid"><span className="badge__dot" />Ersthelfer</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {siteDetailTab === 'dokumente' && (
+                  <div className="card card--pad">
+                    <div className="card__title" style={{ marginBottom:12 }}>Dokumente</div>
+                    <div style={{ display:'grid', gap:8 }}>
+                      {selectedPortalSite.documents?.length ? selectedPortalSite.documents.map(doc => (
+                        <button key={doc} className="job-small-btn" style={{ justifyContent:'space-between' }}><span><Icon name="doc" size={12} /> {doc}</span><span>Anzeigen</span></button>
+                      )) : <div style={{ color:'var(--fg-3)', padding:12 }}>Keine Dokumente verfuegbar.</div>}
+                    </div>
+                  </div>
+                )}
+              </div>
             </aside>
           )}
         </div>

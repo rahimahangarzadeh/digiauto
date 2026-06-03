@@ -7115,3 +7115,379 @@ a.subtle:hover { text-decoration: underline; }
     grid-template-columns: 1fr;
   }
 }
+
+/* =========================================================
+   UNFALLSTATISTIK VIEW
+   ========================================================= */
+.view-subtitle {
+  font-size: 13px;
+  color: var(--fg-3);
+  margin: 8px 0 0 0;
+  font-weight: 400;
+}
+
+.unfallstatistik-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+  margin-bottom: 40px;
+}
+
+.unfallkarte {
+  background: var(--color-ivory);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 250ms var(--ease-standard);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.unfallkarte:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.unfallkarte--kein-risiko {
+  border-color: #dcfce7;
+  background: linear-gradient(135deg, var(--color-ivory) 0%, #f0fdf4 100%);
+}
+
+.unfallkarte--kein-risiko:hover {
+  border-color: #22c55e;
+}
+
+.unfallkarte--niedrig {
+  border-color: #fef08a;
+  background: linear-gradient(135deg, var(--color-ivory) 0%, #fffbeb 100%);
+}
+
+.unfallkarte--niedrig:hover {
+  border-color: #84cc16;
+}
+
+.unfallkarte--mittel {
+  border-color: #fed7aa;
+  background: linear-gradient(135deg, var(--color-ivory) 0%, #fffbf0 100%);
+}
+
+.unfallkarte--mittel:hover {
+  border-color: #f59e0b;
+}
+
+.unfallkarte--hoch {
+  border-color: #fecaca;
+  background: linear-gradient(135deg, var(--color-ivory) 0%, #fef2f2 100%);
+}
+
+.unfallkarte--hoch:hover {
+  border-color: #ef4444;
+}
+
+.unfallkarte-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.unfallkarte-title {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 1.3;
+  color: var(--fg-1);
+  margin: 0 0 4px 0;
+}
+
+.unfallkarte-intern {
+  font-size: 12px;
+  color: var(--fg-3);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.risiko-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.risiko-badge--kein-risiko {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.risiko-badge--niedrig {
+  background: #fef08a;
+  color: #713f12;
+}
+
+.risiko-badge--mittel {
+  background: #fed7aa;
+  color: #92400e;
+}
+
+.risiko-badge--hoch {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.unfallkarte-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.uh-display {
+  text-align: center;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+}
+
+.uh-value {
+  font-family: var(--font-serif);
+  font-size: 48px;
+  font-weight: 600;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.uh-label {
+  font-size: 12px;
+  color: var(--fg-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.unfallkarte-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.metric-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 6px;
+}
+
+.metric-label {
+  font-size: 11px;
+  color: var(--fg-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--fg-1);
+}
+
+.trend-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.trend-pfeil {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.trend-text {
+  color: var(--fg-2);
+}
+
+.unfallkarte-footer {
+  padding-top: 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  text-align: right;
+  font-size: 12px;
+  color: var(--color-terracotta);
+  font-weight: 600;
+}
+
+.view-hint {
+  color: var(--color-terracotta);
+  font-weight: 600;
+}
+
+.unfallstatistik-section {
+  margin-bottom: 32px;
+}
+
+.unfallstatistik-section h2 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 20px;
+  margin: 0 0 16px 0;
+  color: var(--fg-1);
+}
+
+.unfallstatistik-tabelle {
+  overflow-x: auto;
+  border: 1px solid var(--border-1);
+  border-radius: 12px;
+  background: var(--color-ivory);
+}
+
+.unfallstatistik-tabelle table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.unfallstatistik-tabelle th {
+  padding: 12px 16px;
+  background: var(--color-parchment);
+  border-bottom: 1px solid var(--border-1);
+  text-align: left;
+  font-weight: 600;
+  color: var(--fg-1);
+  font-family: var(--font-sans);
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.unfallstatistik-tabelle td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-1);
+  color: var(--fg-1);
+}
+
+.unfallstatistik-tabelle tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.firma-cell {
+  font-weight: 500;
+}
+
+.status-ok {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.info-box {
+  background: var(--color-parchment);
+  border: 1px solid var(--border-1);
+  border-left: 4px solid var(--color-terracotta);
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.info-box p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+
+.detail-panel-unfallstatistik {
+  width: 520px;
+}
+
+.detail-intern {
+  font-size: 12px;
+  color: var(--fg-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  margin-left: auto;
+}
+
+.detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.detail-table th {
+  padding: 10px;
+  background: var(--color-parchment);
+  border-bottom: 1px solid var(--border-1);
+  text-align: left;
+  font-weight: 600;
+  color: var(--fg-1);
+}
+
+.detail-table td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-1);
+  color: var(--fg-2);
+}
+
+.detail-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.risiko-erklarung {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.risiko-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: var(--color-parchment);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.risiko-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1024px) {
+  .unfallstatistik-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .detail-panel-unfallstatistik {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .unfallstatistik-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .unfallkarte-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .uh-value {
+    font-size: 36px;
+  }
+}

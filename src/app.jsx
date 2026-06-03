@@ -53,7 +53,7 @@ function App() {
     if (['doc_bgbau', 'doc_audits', 'doc_references', 'doc_accidents', 'doc_risk'].includes(nav)) setNav('doc_drive');
     if (tweaks.role === 'admin') {
       if (nav === 'bgbau') return;
-      const allowed = ['dashboard', 'chatbot', 'matrix', 'auswertung', 'baustellen', 'bauleiterbesprechung', 'bgbau', 'normenmatrix', 'formulare', 'trainings', 'befaehigte_personen', 'fachaufsichten', 'organigramm', 'zertuebersicht', 'doc_home', 'doc_drive'];
+      const allowed = ['dashboard', 'chatbot', 'matrix', 'auswertung', 'baustellen', 'bauleiterbesprechung', 'bgbau', 'normenmatrix', 'formulare', 'trainings', 'befaehigte_personen', 'fachaufsichten', 'unfallstatistik', 'organigramm', 'zertuebersicht', 'doc_home', 'doc_drive'];
       if (!allowed.includes(nav)) setNav('dashboard');
     }
   }, [tweaks.role, nav]);
@@ -185,7 +185,7 @@ function App() {
     instr:'Unterweisungen', providers:'Akademien', companies:'Firmen',
     auswertung:'Firmen-Auswertung', baustellen:'Baustellen', bauleiterbesprechung:'Bauleiterbesprechung', bgbau:'Baustellenaushang BGBAU', normenmatrix:'Normenmatrix', formulare:'Formulare', organigramm:'Organigramm', zertuebersicht:'Zertifizierungs\u00fcbersicht',
     portal:'Mein Portal', 'portal-certs':'Zertifikate', 'portal-fuehrerschein':'F\u00fchrerschein', 'portal-unterweisungen':'Unterweisungen', 'portal-untersuchung':'Untersuchungsvorsorge', 'portal-stellenbeschr':'Stellenbeschreibung', 'portal-baustellen':'Baustellen', 'portal-geraetefuehrer':'Ger\u00e4tepr\u00fcfung', 'portal-termine':'Termine', 'portal-wartung':'Wartungsliste', stellenbeschreibungen:'Stellenbeschreibungen',
-    untersuchungsvorsorge:'Untersuchungsvorsorge', fuehrerscheinkontrolle:'F\u00fchrerscheinkontrolle', geraetefuehrer:'Ger\u00e4tef\u00fchrer', befaehigte_personen:'Bef\u00e4higte Personen', fachaufsichten:'Fachaufsichten',
+    untersuchungsvorsorge:'Untersuchungsvorsorge', fuehrerscheinkontrolle:'F\u00fchrerscheinkontrolle', geraetefuehrer:'Ger\u00e4tef\u00fchrer', befaehigte_personen:'Bef\u00e4higte Personen', fachaufsichten:'Fachaufsichten', unfallstatistik:'Unfallstatistik',
     wartungsliste:'Termine',
     doc_home:'Startseite', doc_drive:'Meine Ablage'
   };
@@ -237,6 +237,7 @@ function App() {
     case 'geraetefuehrer': view = <GeraetefuehrerView />; break;
     case 'befaehigte_personen': view = <BefaehigtePersonenView activeCompany={activeCompany} />; break;
     case 'fachaufsichten': view = <FachaufsichtenView activeCompany={activeCompany} />; break;
+    case 'unfallstatistik': view = <UnfallstatistikView activeCompany={activeCompany} />; break;
     case 'wartungsliste': view = <WartungslisteView />; break;
     default:          view = <DashboardView activeCompany={activeCompany} />;
   }

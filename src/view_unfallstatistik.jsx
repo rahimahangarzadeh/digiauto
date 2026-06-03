@@ -34,6 +34,9 @@ function UnfallstatistikView({ activeCompany }) {
 
   const [selectedFirmaId, setSelectedFirmaId] = React.useState(null);
   const [detailOpen, setDetailOpen] = React.useState(false);
+  const [editMode, setEditMode] = React.useState(false);
+  const [addFirmaModalOpen, setAddFirmaModalOpen] = React.useState(false);
+  const [editingFirmaId, setEditingFirmaId] = React.useState(null);
 
   const getCurrentUH = (firma) => {
     const aktuellesDatum = firma.jahreData[firma.jahreData.length - 1];
@@ -98,7 +101,22 @@ function UnfallstatistikView({ activeCompany }) {
           <p className="view-subtitle">SCC-Unfallhäufigkeit (UH) gemäß Regelwerk 2011 - Dokument 006</p>
         </div>
         <div className="view-header-tabs">
-          <span className="tab-count">3 Firmen</span>
+          <span className="tab-count">{unfallDaten.length} Firmen</span>
+          <div className="header-actions">
+            <button
+              className={`btn btn--primary ${editMode ? 'btn--active' : ''}`}
+              onClick={() => setEditMode(!editMode)}
+            >
+              {editMode ? '✓ Beenden' : '✎ Bearbeiten'}
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={() => setAddFirmaModalOpen(true)}
+              disabled={!editMode}
+            >
+              + Neue Firma
+            </button>
+          </div>
         </div>
       </div>
 
@@ -162,7 +180,25 @@ function UnfallstatistikView({ activeCompany }) {
               </div>
 
               <div className="unfallkarte-footer">
-                <span className="view-hint">→ Details anzeigen</span>
+                {editMode ? (
+                  <div className="card-actions">
+                    <button
+                      className="btn-small btn-small--edit"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingFirmaId(firma.id);
+                        setAddFirmaModalOpen(true);
+                      }}
+                    >
+                      ✎ Bearbeiten
+                    </button>
+                    <button className="btn-small btn-small--delete" onClick={(e) => e.stopPropagation()}>
+                      🗑 Löschen
+                    </button>
+                  </div>
+                ) : (
+                  <span className="view-hint">→ Details anzeigen</span>
+                )}
               </div>
             </div>
           );
@@ -228,6 +264,103 @@ function UnfallstatistikView({ activeCompany }) {
           </p>
         </div>
       </div>
+
+      {addFirmaModalOpen && (
+        <div className="modal-overlay" onClick={() => { setAddFirmaModalOpen(false); setEditingFirmaId(null); }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingFirmaId ? 'Firma bearbeiten' : 'Neue Firma hinzufügen'}</h2>
+              <button
+                className="btn-close"
+                onClick={() => {
+                  setAddFirmaModalOpen(false);
+                  setEditingFirmaId(null);
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Firmenname *</label>
+                <input type="text" className="form-input" placeholder="z.B. Janning Neue Firma GmbH" />
+              </div>
+
+              <div className="form-group">
+                <label>SCC-Interne Nummer *</label>
+                <input type="text" className="form-input" placeholder="z.B. SGU_040" />
+              </div>
+
+              <div className="form-section">
+                <h3>Jahresangaben 2023</h3>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Unfälle</label>
+                    <input type="number" className="form-input" placeholder="0" min="0" />
+                  </div>
+                  <div className="form-group">
+                    <label>Arbeitsstunden</label>
+                    <input type="number" className="form-input" placeholder="0" min="0" />
+                  </div>
+                  <div className="form-group">
+                    <label>UH-Quote</label>
+                    <input type="number" className="form-input" placeholder="0.0" step="0.1" disabled />
+                    <span className="form-hint">Berechnet automatisch</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-section">
+                <h3>Jahresangaben 2024</h3>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Unfälle</label>
+                    <input type="number" className="form-input" placeholder="0" min="0" />
+                  </div>
+                  <div className="form-group">
+                    <label>Arbeitsstunden</label>
+                    <input type="number" className="form-input" placeholder="0" min="0" />
+                  </div>
+                  <div className="form-group">
+                    <label>UH-Quote</label>
+                    <input type="number" className="form-input" placeholder="0.0" step="0.1" disabled />
+                    <span className="form-hint">Berechnet automatisch</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-section">
+                <h3>Jahresangaben 2025</h3>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Unfälle</label>
+                    <input type="number" className="form-input" placeholder="0" min="0" />
+                  </div>
+                  <div className="form-group">
+                    <label>Arbeitsstunden</label>
+                    <input type="number" className="form-input" placeholder="0" min="0" />
+                  </div>
+                  <div className="form-group">
+                    <label>UH-Quote</label>
+                    <input type="number" className="form-input" placeholder="0.0" step="0.1" disabled />
+                    <span className="form-hint">Berechnet automatisch</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn btn--ghost" onClick={() => { setAddFirmaModalOpen(false); setEditingFirmaId(null); }}>
+                Abbrechen
+              </button>
+              <button className="btn btn--primary">
+                {editingFirmaId ? 'Speichern' : 'Firma hinzufügen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {detailOpen && selectedFirma && (
         <div className="detail-panel detail-panel-unfallstatistik">

@@ -25,9 +25,9 @@ function UnfallstatistikView({ activeCompany }) {
       firma: 'Janning Tiefbau GmbH',
       intern: 'SGU_037',
       jahreData: [
-        { jahr: 2023, unfaelle: 3, stunden: 160400, uh: 15.8 },
-        { jahr: 2024, unfaelle: 4, stunden: 230000, uh: 17.4 },
-        { jahr: 2025, unfaelle: 3, stunden: 243000, uh: 12.3 },
+        { jahr: 2023, unfaelle: 3, stunden: 160400, uh: 10.91 },
+        { jahr: 2024, unfaelle: 4, stunden: 230000, uh: 13.44 },
+        { jahr: 2025, unfaelle: 3, stunden: 243000, uh: 15.8 },
       ],
     },
   ];
@@ -206,50 +206,69 @@ function UnfallstatistikView({ activeCompany }) {
       </div>
 
       <div className="unfallstatistik-section">
-        <h2>Jahresvergleich (2023 - 2025)</h2>
-        <div className="unfallstatistik-tabelle">
-          <table>
-            <thead>
-              <tr>
-                <th>Firma</th>
-                <th>2023 UH</th>
-                <th>2024 UH</th>
-                <th>2025 UH</th>
-                <th>Trend</th>
-              </tr>
-            </thead>
-            <tbody>
-              {unfallDaten.map((firma) => {
-                const d2023 = firma.jahreData[0];
-                const d2024 = firma.jahreData[1];
-                const d2025 = firma.jahreData[2];
-                const trend = d2025.uh > d2024.uh ? '↑' : d2025.uh < d2024.uh ? '↓' : '→';
-                const trendColor = d2025.uh > d2024.uh ? '#ef4444' : d2025.uh < d2024.uh ? '#22c55e' : '#999';
+        <h2>Jahresvergleich</h2>
 
-                return (
-                  <tr key={firma.id}>
-                    <td className="firma-cell">
-                      <strong>{firma.firma}</strong>
-                      <br />
-                      <span style={{ fontSize: '12px', color: '#999' }}>{firma.intern}</span>
-                    </td>
-                    <td className={getRisikostufe(d2023.uh) === 'kein-risiko' ? 'status-ok' : ''}>
-                      {d2023.uh === 0 ? '—' : d2023.uh.toFixed(1)}
-                    </td>
-                    <td className={getRisikostufe(d2024.uh) === 'kein-risiko' ? 'status-ok' : ''}>
-                      {d2024.uh === 0 ? '—' : d2024.uh.toFixed(1)}
-                    </td>
-                    <td className={getRisikostufe(d2025.uh) === 'kein-risiko' ? 'status-ok' : ''}>
-                      {d2025.uh === 0 ? '—' : d2025.uh.toFixed(1)}
-                    </td>
-                    <td style={{ color: trendColor, fontWeight: 'bold', textAlign: 'center' }}>
-                      {trend}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        {unfallDaten.map((firma) => {
+          const getTrendForYear = (currUH, prevUH) => {
+            if (prevUH === null) return '—';
+            if (currUH > prevUH) return '↑';
+            if (currUH < prevUH) return '↓';
+            return '→';
+          };
+
+          const getTrendColorForYear = (currUH, prevUH) => {
+            if (prevUH === null) return '#999';
+            if (currUH > prevUH) return '#ef4444';
+            if (currUH < prevUH) return '#22c55e';
+            return '#999';
+          };
+
+          return (
+            <div key={firma.id} className="jahresvergleich-firma">
+              <h3 className="firma-subtitle">
+                Firma: <strong>{firma.firma}</strong>
+              </h3>
+
+              <div className="unfallstatistik-tabelle">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Jahr</th>
+                      <th>Unfallhäufigkeit (UH) nach SCC</th>
+                      <th>Anzahl der Unfälle nach SCC²)</th>
+                      <th>Trend</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {firma.jahreData.map((datum, idx) => {
+                      const prevUH = idx > 0 ? firma.jahreData[idx - 1].uh : null;
+                      const trend = getTrendForYear(datum.uh, prevUH);
+                      const trendColor = getTrendColorForYear(datum.uh, prevUH);
+
+                      return (
+                        <tr key={datum.jahr}>
+                          <td className="jahr-cell">{datum.jahr}</td>
+                          <td className={datum.uh === 0 ? 'status-ok' : ''}>
+                            {datum.uh === 0 ? '—' : datum.uh.toFixed(2)}
+                          </td>
+                          <td className={datum.unfaelle === 0 ? 'status-ok' : ''}>
+                            {datum.unfaelle}
+                          </td>
+                          <td style={{ color: trendColor, fontWeight: 'bold', textAlign: 'center', fontSize: '18px' }}>
+                            {trend}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          );
+        })}
+
+        <div className="tabelle-fussnote">
+          <p>²) Unfälle mit einer Ausfallzeit ab einer Arbeitstag (Wegunfälle wurden nicht berücksichtigt)</p>
         </div>
       </div>
 

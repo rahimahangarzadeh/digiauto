@@ -237,6 +237,7 @@ function UnfallstatistikView({ activeCompany }) {
                       <th>Unfallhäufigkeit (UH) nach SCC</th>
                       <th>Anzahl der Unfälle nach SCC²)</th>
                       <th>Trend</th>
+                      <th>Dokument</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -256,6 +257,11 @@ function UnfallstatistikView({ activeCompany }) {
                           </td>
                           <td style={{ color: trendColor, fontWeight: 'bold', textAlign: 'center', fontSize: '18px' }}>
                             {trend}
+                          </td>
+                          <td className="dokument-cell">
+                            <a href="#" className="pdf-link" onClick={(e) => e.preventDefault()}>
+                              📄 PDF
+                            </a>
                           </td>
                         </tr>
                       );

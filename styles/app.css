@@ -7381,6 +7381,37 @@ a.subtle:hover { text-decoration: underline; }
   color: var(--fg-1);
 }
 
+.dokument-cell {
+  text-align: center;
+}
+
+.pdf-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: color-mix(in oklab, var(--color-terracotta) 10%, var(--color-parchment));
+  color: var(--color-terracotta);
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 150ms;
+  cursor: pointer;
+  border: 1px solid color-mix(in oklab, var(--color-terracotta) 20%, transparent);
+}
+
+.pdf-link:hover {
+  background: color-mix(in oklab, var(--color-terracotta) 20%, var(--color-parchment));
+  border-color: var(--color-terracotta);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(201, 100, 66, 0.15);
+}
+
+.pdf-link:active {
+  transform: translateY(0);
+}
+
 .unfallstatistik-tabelle {
   overflow-x: auto;
   border: 1px solid var(--border-1);

@@ -206,7 +206,24 @@ function UnfallstatistikView({ activeCompany }) {
       </div>
 
       <div className="unfallstatistik-section">
-        <h2>Jahresvergleich</h2>
+        <div className="jahresvergleich-header">
+          <h2>Jahresvergleich</h2>
+          <div className="header-actions">
+            <button
+              className={`btn btn--primary ${editMode ? 'btn--active' : ''}`}
+              onClick={() => setEditMode(!editMode)}
+            >
+              {editMode ? '✓ Beenden' : '✎ Bearbeiten'}
+            </button>
+            <button
+              className="btn btn--primary"
+              onClick={() => setAddFirmaModalOpen(true)}
+              disabled={!editMode}
+            >
+              + Neue Firma
+            </button>
+          </div>
+        </div>
 
         {unfallDaten.map((firma) => {
           const getTrendForYear = (currUH, prevUH) => {

@@ -7347,6 +7347,26 @@ a.subtle:hover { text-decoration: underline; }
   color: var(--fg-1);
 }
 
+.jahresvergleich-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+
+.jahresvergleich-header h2 {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.jahresvergleich-header .header-actions {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .jahresvergleich-firma {
   margin-bottom: 32px;
   padding-bottom: 32px;

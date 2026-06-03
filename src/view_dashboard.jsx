@@ -1,27 +1,50 @@
-/* Dashboard view — 3-column redesign */
+﻿/* Dashboard view — 3-column redesign */
 
-function KpiCard({ kpi }) {
+function KpiCard({ kpi, onNavigate }) {
   return (
     <div
+      onClick={() => onNavigate?.(kpi.nav, kpi.filter)}
       style={{
         background: 'var(--color-ivory)',
         border: '1px solid var(--border-1)',
-        borderRadius: 12,
-        padding: '14px 18px',
-        display: 'flex', flexDirection: 'column', gap: 2,
-        cursor: 'default',
+        borderRadius: 10,
+        padding: '10px 14px',
+        display: 'grid',
+        gridTemplateColumns: 'auto 1fr auto',
+        gap: 16,
+        alignItems: 'center',
+        cursor: 'pointer',
         boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         position: 'relative',
         overflow: 'hidden',
+        transition: 'all 150ms ease',
+      }}
+      onMouseEnter={e => {
+        e.currentTarget.style.background = 'var(--color-white)';
+        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+        e.currentTarget.style.transform = 'translateY(-2px)';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = 'var(--color-ivory)';
+        e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+        e.currentTarget.style.transform = 'translateY(0)';
       }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4 }}>
-        <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:0.6, textTransform:'uppercase', color:'var(--fg-3)' }}>{kpi.label}</div>
-        <div style={{ color: kpi.accent || 'var(--fg-3)', opacity:0.7 }}>{kpi.icon}</div>
+      {/* Left: Label */}
+      <div style={{ display:'flex', flexDirection:'column', gap:2, minWidth:0 }}>
+        <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color:'var(--fg-3)' }}>{kpi.label}</div>
       </div>
-      <div style={{ fontFamily:'var(--font-serif)', fontSize:34, fontWeight:500, lineHeight:1.05, color: kpi.accent || 'var(--fg-1)', letterSpacing:-0.5 }}>{kpi.value}</div>
-      <div style={{ fontSize:12, color:'var(--fg-3)', marginTop:2 }}>{kpi.delta}</div>
-      <div style={{ fontSize:11, fontWeight:600, marginTop:6, color: kpi.trendUp ? '#3f7a4a' : '#a13232', display:'flex', alignItems:'center', gap:3 }}>
-        <span>{kpi.trendUp ? '↑' : '↓'}</span><span>{kpi.trend}</span>
+
+      {/* Middle: Value + Delta */}
+      <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center', textAlign:'center' }}>
+        <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:500, lineHeight:1, color: kpi.accent || 'var(--fg-1)' }}>{kpi.value}</div>
+        <div style={{ fontSize:11, color:'var(--fg-3)' }}>{kpi.delta}</div>
+      </div>
+
+      {/* Right: Trend */}
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:2, minWidth:'max-content' }}>
+        <div style={{ fontSize:11, fontWeight:600, color: kpi.trendUp ? '#3f7a4a' : '#a13232', display:'flex', alignItems:'center', gap:2 }}>
+          <span>{kpi.trendUp ? '↑' : '↓'}</span><span>{kpi.trend}</span>
+        </div>
       </div>
     </div>
   );
@@ -145,11 +168,9 @@ function DashboardView({ activeCompany, setNav: setCurrentNav }) {
           </div>
         </div>
         <div className="view__actions">
-          <button className="btn btn--ghost"><Icon name="download" size={14} /> Export</button>
         </div>
       </div>
 
-      {/* ── KPI Row ── */}
       {(() => {
         const kpis = [
           {
@@ -158,7 +179,7 @@ function DashboardView({ activeCompany, setNav: setCurrentNav }) {
             delta: `von ${allEmps.length} insgesamt`,
             trend: '+2 diese Woche',
             trendUp: true,
-            nav: 'employees',
+            nav: 'matrix',
             accent: null,
             icon: (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -170,7 +191,8 @@ function DashboardView({ activeCompany, setNav: setCurrentNav }) {
             delta: `${warn} laufen bald ab`,
             trend: `${Math.round(valid*100/(valid+warn+expired+missing))}% Abdeckung`,
             trendUp: true,
-            nav: 'certs',
+            nav: 'matrix',
+            filter: 'valid',
             accent: '#3f7a4a',
             accentBg: '#eff5ed',
             icon: (
@@ -184,6 +206,7 @@ function DashboardView({ activeCompany, setNav: setCurrentNav }) {
             trend: '−5 seit letztem Monat',
             trendUp: false,
             nav: 'matrix',
+            filter: 'expired',
             accent: '#a13232',
             accentBg: '#fbecea',
             icon: (
@@ -205,10 +228,19 @@ function DashboardView({ activeCompany, setNav: setCurrentNav }) {
           },
         ];
 
+        const handleKpiNavigate = (nav, filter) => {
+          if (filter === 'valid') {
+            window.dispatchEvent(new CustomEvent('navigate-to-matrix-kpi-filter', { detail: { filter: 'valid' } }));
+          } else if (filter === 'expired') {
+            window.dispatchEvent(new CustomEvent('navigate-to-matrix-kpi-filter', { detail: { filter: 'expired' } }));
+          }
+          setCurrentNav(nav);
+        };
+
         return (
           <div className="kpi-grid" style={{ marginBottom: 24 }}>
             {kpis.map((k, i) => (
-              <KpiCard key={i} kpi={k} />
+              <KpiCard key={i} kpi={k} onNavigate={handleKpiNavigate} />
             ))}
           </div>
         );
@@ -316,9 +348,14 @@ function DashboardView({ activeCompany, setNav: setCurrentNav }) {
             {events.map(ev => {
               const urg = urgencyStyle(ev);
               const dayNum = ev.date.slice(-2).replace(/^0/, '');
+              const handleTerminClick = () => {
+                window.dispatchEvent(new CustomEvent('navigate-to-calendar-event', { detail: { eventId: ev.id } }));
+                setCurrentNav('calendar');
+              };
               return (
                 <div
                   key={ev.id}
+                  onClick={handleTerminClick}
                   style={{
                     display: 'grid',
                     gridTemplateColumns: '48px 1fr',
@@ -327,8 +364,8 @@ function DashboardView({ activeCompany, setNav: setCurrentNav }) {
                     borderRadius: 10,
                     background: urg.bg || 'var(--color-parchment)',
                     border: '1px solid var(--border-1)',
-                    transition: 'box-shadow 150ms',
-                    cursor: 'default',
+                    transition: 'box-shadow 150ms, background 150ms',
+                    cursor: 'pointer',
                   }}
                   onMouseEnter={e => e.currentTarget.style.boxShadow='0 2px 12px rgba(0,0,0,0.07)'}
                   onMouseLeave={e => e.currentTarget.style.boxShadow='none'}

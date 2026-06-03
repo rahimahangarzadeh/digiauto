@@ -11,6 +11,22 @@ function CalendarView({ activeCompany, selectedTraining, selectedInstruction, se
     }
   }, [selectedTraining, selectedInstruction, selectedDate]);
 
+  React.useEffect(() => {
+    const handleNavigateToEvent = (e) => {
+      const eventId = e.detail?.eventId;
+      if (eventId) {
+        const event = window.SEED.events?.find(ev => ev.id === eventId);
+        if (event) {
+          const eventDate = new Date(event.date + 'T00:00:00');
+          setMonthCursor(new Date(eventDate.getFullYear(), eventDate.getMonth(), 1));
+          setMode('month');
+        }
+      }
+    };
+    window.addEventListener('navigate-to-calendar-event', handleNavigateToEvent);
+    return () => window.removeEventListener('navigate-to-calendar-event', handleNavigateToEvent);
+  }, []);
+
   const year = monthCursor.getFullYear();
   const month = monthCursor.getMonth();
   const first = new Date(year, month, 1);

@@ -589,7 +589,7 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
   const [showFilter, setShowFilter] = React.useState(false);
   const filterRef = React.useRef(null);
 
-  const ss = searchState || { query: '', areas: [], status: [], dateFrom: '', dateTo: '' };
+  const ss = searchState || { query: '', areas: [], status: [], dateFrom: '', dateTo: '', datePreset: 'all' };
   const set = setSearchState || (() => {});
 
   // Close on outside click
@@ -615,7 +615,30 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
 
   const toggleArea   = (id) => set(s => ({ ...s, areas:  s.areas.includes(id)  ? s.areas.filter(x=>x!==id)  : [...s.areas, id] }));
   const toggleStatus = (id) => set(s => ({ ...s, status: s.status.includes(id) ? s.status.filter(x=>x!==id) : [...s.status, id] }));
-  const reset = () => set({ query: '', areas: [], status: [], dateFrom: '', dateTo: '' });
+  const reset = () => set({ query: '', areas: [], status: [], dateFrom: '', dateTo: '', datePreset: 'all' });
+
+  const setDatePreset = (preset) => {
+    if (preset === 'custom') {
+      set(s => ({ ...s, datePreset: 'custom' }));
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const presets = {
+        'all': { from: null, to: null },
+        '1d': { days: 1 }, '3d': { days: 3 }, '1w': { days: 7 }, '2w': { days: 14 },
+        '1m': { days: 30 }, '2m': { days: 60 }, '6m': { days: 180 }, '1y': { days: 365 },
+      };
+      const p = presets[preset];
+      if (p.from === null) {
+        set(s => ({ ...s, datePreset: preset, dateFrom: '', dateTo: '' }));
+      } else {
+        const to = new Date(today);
+        to.setDate(to.getDate() + p.days);
+        const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        set(s => ({ ...s, datePreset: preset, dateFrom: fmt(today), dateTo: fmt(to) }));
+      }
+    }
+  };
 
   const activeFilterCount = ss.areas.length + ss.status.length + (ss.dateFrom ? 1 : 0) + (ss.dateTo ? 1 : 0);
 
@@ -680,41 +703,87 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
               position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0,
               background: 'var(--color-white)', border: '1px solid var(--border-1)',
               borderRadius: 12, boxShadow: '0 18px 46px rgba(0,0,0,0.18)',
-              zIndex: 2600, padding: '16px 18px', minWidth: 420,
+              zIndex: 2600, padding: '16px 18px', minWidth: 500,
               maxHeight: 'calc(100vh - 92px)', overflowY: 'auto',
             }}>
-              {/* Bereiche */}
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.7, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: 8 }}>Bereich</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {AREAS.map(a => {
-                    const active = ss.areas.includes(a.id);
-                    return (
-                      <button key={a.id} onClick={() => toggleArea(a.id)} style={{
-                        display: 'inline-flex', alignItems: 'center', gap: 5,
-                        padding: '5px 11px', borderRadius: 20, fontSize: 12, fontWeight: 500,
-                        border: '1px solid ' + (active ? 'var(--color-accent)' : 'var(--border-1)'),
-                        background: active ? 'var(--color-accent)' : 'transparent',
-                        color: active ? '#fff' : 'var(--fg-2)', cursor: 'pointer', transition: 'all 120ms',
-                      }}>
-                        <Icon name={a.icon} size={11} /> {a.label}
-                        {active && <span style={{ marginLeft: 2, opacity: 0.8 }}>?</span>}
-                      </button>
-                    );
-                  })}
+              {/* Zeitraum */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid var(--border-1)' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', minWidth: 80 }}>Zeitraum</span>
+                <select value={ss.datePreset || 'all'} onChange={e => setDatePreset(e.target.value)} style={{
+                  flex: 1, padding: '8px 12px', fontSize: 12, border: '1px solid var(--border-1)', borderRadius: 6,
+                  background: 'var(--color-parchment)', fontFamily: 'inherit', cursor: 'pointer',
+                }}>
+                  <option value="all">Alle Zeiten</option>
+                  <option value="1d">1 Tag</option>
+                  <option value="3d">3 Tage</option>
+                  <option value="1w">1 Woche</option>
+                  <option value="2w">2 Wochen</option>
+                  <option value="1m">1 Monat</option>
+                  <option value="2m">2 Monate</option>
+                  <option value="6m">6 Monate</option>
+                  <option value="1y">1 Jahr</option>
+                  <option value="custom">Benutzerdefiniert</option>
+                </select>
+              </div>
+
+              {ss.datePreset === 'custom' && (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid var(--border-1)' }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', minWidth: 80 }}>Von</span>
+                    <input type="date" value={ss.dateFrom} onChange={e => set(s => ({ ...s, dateFrom: e.target.value }))}
+                      style={{ flex: 1, padding: '8px 12px', fontSize: 12, border: '1px solid var(--border-1)', borderRadius: 6, background: 'var(--color-parchment)', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid var(--border-1)' }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', minWidth: 80 }}>Bis</span>
+                    <input type="date" value={ss.dateTo} onChange={e => set(s => ({ ...s, dateTo: e.target.value }))}
+                      style={{ flex: 1, padding: '8px 12px', fontSize: 12, border: '1px solid var(--border-1)', borderRadius: 6, background: 'var(--color-parchment)', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+                  </div>
+                </>
+              )}
+
+              {/* Bereich */}
+              <div style={{ marginBottom: 14, paddingBottom: 12, borderBottom: '1px solid var(--border-1)' }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', marginBottom: 10 }}>Bereich (Seite/Kategorie)</div>
+                <div style={{ border: '1px solid var(--border-1)', borderRadius: 8, background: 'var(--color-parchment)', maxHeight: 200, overflowY: 'auto', padding: '8px 0', marginLeft: 96 }}>
+                  {[
+                    { id: 'all', label: 'Alle (Default)' },
+                    { id: 'dashboard', label: 'Dashboard' },
+                    { id: 'matrix', label: 'Qualifikationsmatrix' },
+                    { id: 'companies', label: 'Firmen-Auswertung' },
+                    { id: 'sites', label: 'Baustellen' },
+                    { id: 'meetings', label: 'Bauleiterbesprechung' },
+                    { id: 'bgbau', label: 'Baustellenaushang BGBAU' },
+                    { id: 'norms', label: 'Normenmatrix' },
+                    { id: 'forms', label: 'Formulare' },
+                    { id: 'calendar', label: 'Schulungskalender' },
+                    { id: 'trainings', label: 'Schulungen' },
+                    { id: 'qualified', label: 'Befähigte Personen' },
+                    { id: 'org', label: 'Organigramm' },
+                    { id: 'certs', label: 'Zertifizierungsübersicht' },
+                    { id: 'docs', label: 'Dokumente' },
+                  ].map(area => (
+                    <div key={area.id} onClick={() => toggleArea(area.id)} style={{
+                      padding: '10px 14px', cursor: 'pointer', fontSize: 13, color: 'var(--fg-1)',
+                      background: ss.areas.includes(area.id) ? 'var(--color-white)' : 'transparent',
+                      borderLeft: ss.areas.includes(area.id) ? '3px solid var(--color-accent)' : '3px solid transparent',
+                      transition: 'all 80ms',
+                    }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(201,100,66,0.05)'} onMouseLeave={e => e.currentTarget.style.background = ss.areas.includes(area.id) ? 'var(--color-white)' : 'transparent'}>
+                      {ss.areas.includes(area.id) ? '✓ ' : '  '}{area.label}
+                    </div>
+                  ))}
                 </div>
               </div>
 
               {/* Status */}
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.7, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: 8 }}>Status</div>
-                <div style={{ display: 'flex', gap: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid var(--border-1)' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--fg-2)', minWidth: 80 }}>Status</span>
+                <div style={{ display: 'flex', gap: 8, flex: 1 }}>
                   {STATUSES.map(s => {
                     const active = ss.status.includes(s.id);
                     return (
                       <button key={s.id} onClick={() => toggleStatus(s.id)} style={{
                         display: 'inline-flex', alignItems: 'center', gap: 5,
-                        padding: '5px 11px', borderRadius: 20, fontSize: 12, fontWeight: 500,
+                        padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 500,
                         border: '1px solid ' + (active ? s.color : 'var(--border-1)'),
                         background: active ? s.bg : 'transparent',
                         color: active ? s.color : 'var(--fg-2)', cursor: 'pointer', transition: 'all 120ms',
@@ -727,30 +796,12 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
                 </div>
               </div>
 
-              {/* Datum */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.7, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: 8 }}>Ablaufdatum</div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 10, color: 'var(--fg-3)', marginBottom: 3 }}>Von</div>
-                    <input type="date" value={ss.dateFrom} onChange={e => set(s => ({ ...s, dateFrom: e.target.value }))}
-                      style={{ width: '100%', padding: '7px 10px', fontSize: 13, border: '1px solid var(--border-1)', borderRadius: 7, background: 'var(--color-parchment)', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-                  </div>
-                  <div style={{ color: 'var(--fg-3)', paddingTop: 16, fontSize: 13 }}>-</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 10, color: 'var(--fg-3)', marginBottom: 3 }}>Bis</div>
-                    <input type="date" value={ss.dateTo} onChange={e => set(s => ({ ...s, dateTo: e.target.value }))}
-                      style={{ width: '100%', padding: '7px 10px', fontSize: 13, border: '1px solid var(--border-1)', borderRadius: 7, background: 'var(--color-parchment)', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-                  </div>
-                </div>
-              </div>
-
               {/* Footer */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-1)', paddingTop: 12 }}>
-                <button onClick={reset} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--fg-3)', textDecoration: 'underline', fontFamily: 'inherit' }}>
-                  {'Filter zur\u00fccksetzen'}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 10, borderTop: '1px solid var(--border-1)', paddingTop: 14 }}>
+                <button onClick={reset} style={{ background: 'none', border: '1px solid var(--border-1)', cursor: 'pointer', fontSize: 12, color: 'var(--fg-2)', padding: '6px 18px', borderRadius: 6, fontFamily: 'inherit' }}>
+                  Zur\u00fccksetzen
                 </button>
-                <button onClick={() => setShowFilter(false)} className="btn btn--primary" style={{ fontSize: 12, padding: '6px 18px' }}>
+                <button onClick={() => setShowFilter(false)} className="btn btn--primary" style={{ fontSize: 12, padding: '6px 24px' }}>
                   Anwenden
                 </button>
               </div>

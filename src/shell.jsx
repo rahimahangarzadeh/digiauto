@@ -138,7 +138,7 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
         </button>
       </div>
 
-      {/* Company switch � only in expanded mode */}
+      {/* Company switch – only in expanded mode */}
       {!collapsed && (
         <div className="sidebar__company-switch">
           <div className="sidebar__company-label">Firma</div>
@@ -339,13 +339,13 @@ function NotificationsPanel({ onClose }) {
 
   // Mock notifications
   const [notifications, setNotifications] = React.useState([
-    { id: 'n1', type: 'training',  unread: true,  time: 'Heute, 08:30',      title: 'Neue Schulung zugewiesen', body: 'Dir wurde �PSA gegen Absturz" als Pflichtschulung zugewiesen. Bitte buche einen Termin.' },
-    { id: 'n2', type: 'cert',      unread: true,  time: 'Gestern, 14:12',    title: 'Zertifikat genehmigt', body: 'Dein hochgeladenes Zertifikat �SCC Dok. 016" wurde von Sabine Janning genehmigt.' },
-    { id: 'n3', type: 'warning',   unread: true,  time: 'Gestern, 09:00',    title: 'Erinnerung: Zertifikat l�uft ab', body: '�Bagger & Radlader" ist am 21.10.2025 abgelaufen. Bitte eine Auffrischung planen.' },
+    { id: 'n1', type: 'training',  unread: true,  time: 'Heute, 08:30',      title: 'Neue Schulung zugewiesen', body: 'Dir wurde „PSA gegen Absturz" als Pflichtschulung zugewiesen. Bitte buche einen Termin.' },
+    { id: 'n2', type: 'cert',      unread: true,  time: 'Gestern, 14:12',    title: 'Zertifikat genehmigt', body: 'Dein hochgeladenes Zertifikat „SCC Dok. 016" wurde von Sabine Janning genehmigt.' },
+    { id: 'n3', type: 'warning',   unread: true,  time: 'Gestern, 09:00',    title: 'Erinnerung: Zertifikat läuft ab', body: '„Bagger & Radlader" ist am 21.10.2025 abgelaufen. Bitte eine Auffrischung planen.' },
     { id: 'n4', type: 'admin',     unread: false, time: 'Mo., 11:45',        title: 'Mitteilung vom Admin', body: 'Alle Mitarbeiter der Tiefbau GmbH werden gebeten, bis Ende Mai die Jahresunterweisung zu absolvieren.' },
-    { id: 'n5', type: 'calendar',  unread: false, time: 'Fr., 10:00',        title: 'Mein Termin: Erste Hilfe', body: 'Auffrischungskurs Erste Hilfe � 12.05.2026 � 08:00 Uhr � BiW Bildungszentrum, Lingen.' },
-    { id: 'n6', type: 'cert',      unread: false, time: '22. Apr., 16:30',   title: 'Zertifikat abgelehnt', body: '�Gabelstaplerschein"-Upload wurde abgelehnt. Bitte ein lesbares Dokument hochladen.' },
-    { id: 'n7', type: 'calendar',  unread: false, time: '20. Apr., 08:00',   title: 'Mein Termin: SCC 017', body: 'SCC Dok. 017 Auffrischung � 28.05.2026 � 09:00 Uhr � DEKRA Akademie, Osnabr�ck.' },
+    { id: 'n5', type: 'calendar',  unread: false, time: 'Fr., 10:00',        title: 'Mein Termin: Erste Hilfe', body: 'Auffrischungskurs Erste Hilfe – 12.05.2026 – 08:00 Uhr � BiW Bildungszentrum, Lingen.' },
+    { id: 'n6', type: 'cert',      unread: false, time: '22. Apr., 16:30',   title: 'Zertifikat abgelehnt', body: '„Gabelstaplerschein"-Upload wurde abgelehnt. Bitte ein lesbares Dokument hochladen.' },
+    { id: 'n7', type: 'calendar',  unread: false, time: '20. Apr., 08:00',   title: 'Mein Termin: SCC 017', body: 'SCC Dok. 017 Auffrischung – 28.05.2026 – 09:00 Uhr – DEKRA Akademie, Osnabrück.' },
   ]);
 
   const unreadCount = notifications.filter(n => n.unread).length;
@@ -452,7 +452,7 @@ function ProfileModal({ onClose }) {
   const me = window.employee('e-me');
   const company = window.company(me.company);
 
-  const [adresse, setAdresse] = React.useState('M�hlenstra�e 12, 48531 Nordhorn');
+  const [adresse, setAdresse] = React.useState('Mühlenstraße 12, 48531 Nordhorn');
   const [telefon, setTelefon] = React.useState(me.phone || '+49 5921 1004');
   const [saved, setSaved] = React.useState(false);
   const [photoHover, setPhotoHover] = React.useState(false);
@@ -520,7 +520,7 @@ function ProfileModal({ onClose }) {
         <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border-1)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, fontWeight: 500 }}>Mein Profil</div>
-            <div className="small muted" style={{ marginTop: 2 }}>Pers�nliche Einstellungen</div>
+            <div className="small muted" style={{ marginTop: 2 }}>Persönliche Einstellungen</div>
           </div>
           <button className="icon-btn" onClick={onClose}><Icon name="x" size={18} /></button>
         </div>
@@ -551,7 +551,7 @@ function ProfileModal({ onClose }) {
           </div>
           <div>
             <div style={{ fontWeight: 600, fontSize: 16 }}>{me.name}</div>
-            <div className="small muted" style={{ marginTop: 2 }}>{me.position} � {company?.short}</div>
+            <div className="small muted" style={{ marginTop: 2 }}>{me.position} – {company?.short}</div>
             <div className="small muted" style={{ marginTop: 2 }}>{me.email}</div>
           </div>
         </div>
@@ -559,7 +559,7 @@ function ProfileModal({ onClose }) {
         {/* Fields */}
         <div style={{ padding: '24px 24px 8px', flex: 1 }}>
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--color-accent)', marginBottom: 16 }}>
-            Pers�nliche Daten
+            Persönliche Daten
           </div>
           <Field label="Vorname"    value={me.firstName} />
           <Field label="Nachname"   value={me.lastName} />
@@ -568,7 +568,7 @@ function ProfileModal({ onClose }) {
 
           <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: 'var(--color-accent)', margin: '20px 0 16px' }}>
             Kontakt &amp; Adresse
-            <span style={{ marginLeft: 8, fontWeight: 400, fontSize: 10, color: 'var(--fg-3)', letterSpacing: 0.3, textTransform: 'none' }}>� bearbeitbar</span>
+            <span style={{ marginLeft: 8, fontWeight: 400, fontSize: 10, color: 'var(--fg-3)', letterSpacing: 0.3, textTransform: 'none' }}>⚡ bearbeitbar</span>
           </div>
           <Field label="Adresse"      editable inputValue={adresse}  onChange={setAdresse} />
           <Field label="Telefonnummer" editable inputValue={telefon}  onChange={setTelefon} />
@@ -580,7 +580,7 @@ function ProfileModal({ onClose }) {
             className="btn btn--primary"
             onClick={save}
             style={{ flex: 1 }}>
-            {saved ? <><Icon name="check" size={14} /> Gespeichert</> : '�nderungen speichern'}
+            {saved ? <><Icon name="check" size={14} /> Gespeichert</> : 'Änderungen speichern'}
           </button>
           <button className="btn btn--ghost" onClick={onClose} style={{ flex: 1 }}>Abbrechen</button>
         </div>

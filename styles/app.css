@@ -173,11 +173,9 @@ button { font-family: inherit; }
 }
 .nav-item:hover { background: var(--color-parchment); color: var(--fg-1); }
 .nav-item--active {
-  background: var(--color-parchment);
-  color: var(--color-accent);
-  font-weight: 600;
-  border-left: 3px solid var(--color-accent);
-  padding-left: 7px;
+  background: var(--color-warm-sand);
+  color: var(--fg-1);
+  font-weight: 500;
 }
 .nav-item__icon {
   width: 18px; height: 18px;

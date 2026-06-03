@@ -1139,11 +1139,9 @@ function PortalView({ searchState, setSearchState, nav }) {
     <div>
       {currentTab && (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, padding: '14px 16px', background: 'var(--color-parchment)', borderRadius: 10, border: '1px solid var(--border-1)' }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>{currentTab.label}</h2>
-              <div style={{ fontSize: 13, color: 'var(--fg-2)', marginTop: 2 }}>{currentTab.count} Eintr{currentTab.count === 1 ? 'ag' : 'äge'}</div>
-            </div>
+          <div style={{ marginBottom: 24 }}>
+            <h2 style={{ margin: '0 0 6px 0', fontSize: 28, fontWeight: 500, fontFamily: 'var(--font-serif)' }}>{currentTab.label}</h2>
+            <div style={{ fontSize: 14, color: 'var(--fg-2)' }}>{currentTab.count} Eintr{currentTab.count === 1 ? 'ag' : 'äge'}</div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
             <KPIBox label="Gültig" value={kpis.valid} color="#5f9268" status="valid" />

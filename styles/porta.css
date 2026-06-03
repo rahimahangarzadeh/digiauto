@@ -423,17 +423,6 @@ a:hover { color: var(--accent); }
   border: 1px solid var(--border-1);
   color: var(--fg-2);
 }
-/* ============================================================
-   NAVIGATION: ACTIVE STATE
-   ============================================================ */
-.nav-item--active {
-  background: var(--bg-button);
-  color: var(--accent);
-  font-weight: 600;
-  border-left: 3px solid var(--accent);
-  padding-left: 7px;
-}
-
 .pd-badge--accent {
   color: var(--accent);
   border-color: color-mix(in oklab, var(--accent) 25%, transparent);

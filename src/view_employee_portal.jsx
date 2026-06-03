@@ -1138,12 +1138,20 @@ function PortalView({ searchState, setSearchState, nav }) {
   return (
     <div>
       {currentTab && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
-          <KPIBox label="Gültig" value={kpis.valid} color="#5f9268" status="valid" />
-          <KPIBox label="Läuft ab" value={kpis.warn} color="#c89b3f" status="warn" />
-          <KPIBox label="Abgelaufen" value={kpis.expired} color="#b26060" status="expired" />
-          <KPIBox label="Fehlt" value={kpis.missing} color="#999" status="missing" />
-        </div>
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, padding: '14px 16px', background: 'var(--color-parchment)', borderRadius: 10, border: '1px solid var(--border-1)' }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>{currentTab.label}</h2>
+              <div style={{ fontSize: 13, color: 'var(--fg-2)', marginTop: 2 }}>{currentTab.count} Eintr{currentTab.count === 1 ? 'ag' : 'äge'}</div>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 16 }}>
+            <KPIBox label="Gültig" value={kpis.valid} color="#5f9268" status="valid" />
+            <KPIBox label="Läuft ab" value={kpis.warn} color="#c89b3f" status="warn" />
+            <KPIBox label="Abgelaufen" value={kpis.expired} color="#b26060" status="expired" />
+            <KPIBox label="Fehlt" value={kpis.missing} color="#999" status="missing" />
+          </div>
+        </>
       )}
 
       {activeTab === 'certs' && (

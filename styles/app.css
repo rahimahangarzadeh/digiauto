@@ -7593,6 +7593,44 @@ a.subtle:hover { text-decoration: underline; }
 /* =========================================================
    UNFALLSTATISTIK - EDIT MODE & MODAL
    ========================================================= */
+.view-header {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.view-header-top {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.view-header-top h1 {
+  font-family: var(--font-serif);
+  font-size: 32px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--fg-1);
+  line-height: 1.2;
+}
+
+.view-header-tabs {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-1);
+}
+
+.tab-count {
+  font-size: 13px;
+  color: var(--fg-3);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
 .header-actions {
   display: flex;
   gap: 12px;

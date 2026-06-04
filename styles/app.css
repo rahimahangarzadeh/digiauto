@@ -7905,6 +7905,73 @@ a.subtle:hover { text-decoration: underline; }
 .emp-column-menu button { width:100%; display:block; border:0; border-bottom:1px solid var(--border-1); background:#fff; padding:9px 11px; color:var(--fg-2); font:inherit; font-size:10.5px; text-align:left; cursor:pointer; }.emp-column-menu button:hover{background:var(--color-parchment)}
 .emp-status,.emp-doc-count { min-height:23px; display:inline-flex; align-items:center; gap:5px; border:1px solid var(--border-1); border-radius:999px; padding:0 8px; font-size:9.5px; font-weight:800; white-space:nowrap; }
 .emp-status.is-valid { border-color:#cde1cf;background:#eff5ed;color:#3f7a4a}.emp-status.is-warn{border-color:#ece0bc;background:#faf3de;color:#8a6a1f}.emp-status.is-expired{border-color:#eac8c2;background:#fbecea;color:#a13232}.emp-doc-count{background:#fff;color:var(--fg-2)}
+.emp-status.is-done{border-color:#cde1cf;background:#eff5ed;color:#3f7a4a}.emp-status.is-open{border-color:#ece0bc;background:#faf3de;color:#8a6a1f}.emp-status.is-archived{border-color:var(--border-1);background:var(--color-parchment);color:var(--fg-3)}
+.emp-status.is-signed{border-color:#cde1cf;background:#eff5ed;color:#3f7a4a}
+
+/* Employee instruction list */
+.emp-instruction-table { width:100%; min-width:1770px; border-collapse:collapse; table-layout:fixed; }
+.emp-instruction-table th,.emp-instruction-table td { border-bottom:1px solid var(--border-1); padding:10px 11px; color:var(--fg-2); font-size:10.5px; line-height:1.35; text-align:left; vertical-align:middle; }
+.emp-instruction-table th { position:relative; background:var(--color-parchment); color:var(--fg-3); font-size:9px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; white-space:nowrap; }
+.emp-instruction-table th > button { display:inline-flex; align-items:center; gap:5px; border:0; background:transparent; padding:0; color:inherit; font:inherit; text-transform:inherit; cursor:pointer; }
+.emp-instruction-table th:nth-child(2){width:205px}.emp-instruction-table th:nth-child(3){width:185px}.emp-instruction-table th:nth-child(4){width:110px}.emp-instruction-table th:nth-child(5){width:145px}.emp-instruction-table th:nth-child(6){width:160px}.emp-instruction-table th:nth-child(7){width:110px}.emp-instruction-table th:nth-child(8){width:105px}.emp-instruction-table th:nth-child(9){width:145px}.emp-instruction-table th:nth-child(10){width:120px}.emp-instruction-table th:nth-child(11){width:260px}.emp-instruction-table th:nth-child(12){width:85px}
+.emp-instruction-table tbody tr:not(.emp-group-row) { cursor:pointer; }.emp-instruction-table tbody tr:not(.emp-group-row):hover { background:#faf9f6; }
+.emp-instruction-table tbody tr.is-open,.emp-instruction-table tbody tr.is-open:hover { background:#fff9eb; }.emp-instruction-table tbody tr.is-open td{border-color:#eee0b9}
+.emp-instruction-table td strong{color:var(--fg-1);font-weight:750}
+.emp-version-chip { min-height:23px; display:inline-flex; align-items:center; gap:5px; border:1px solid var(--border-1); border-radius:999px; background:#fff; padding:0 8px; color:var(--fg-2); font-size:9.5px; font-weight:800; white-space:nowrap; }
+
+/* Employee job description list */
+.emp-job-table { width:100%; min-width:1510px; border-collapse:collapse; table-layout:fixed; }
+.emp-job-table th,.emp-job-table td { border-bottom:1px solid var(--border-1); padding:10px 11px; color:var(--fg-2); font-size:10.5px; line-height:1.35; text-align:left; vertical-align:middle; }
+.emp-job-table th { position:relative; background:var(--color-parchment); color:var(--fg-3); font-size:9px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; white-space:nowrap; }
+.emp-job-table th > button { display:inline-flex; align-items:center; gap:5px; border:0; background:transparent; padding:0; color:inherit; font:inherit; text-transform:inherit; cursor:pointer; }
+.emp-job-table th:nth-child(2){width:240px}.emp-job-table th:nth-child(3){width:90px}.emp-job-table th:nth-child(4),.emp-job-table th:nth-child(5){width:115px}.emp-job-table th:nth-child(6){width:130px}.emp-job-table th:nth-child(7){width:145px}.emp-job-table th:nth-child(8){width:130px}.emp-job-table th:nth-child(9){width:300px}.emp-job-table th:nth-child(10){width:90px}
+.emp-job-table tbody tr:not(.emp-group-row){cursor:pointer}.emp-job-table tbody tr:not(.emp-group-row):hover{background:#faf9f6}.emp-job-table tbody tr.is-open,.emp-job-table tbody tr.is-open:hover{background:#fff9eb}.emp-job-table tbody tr.is-open td{border-color:#eee0b9}.emp-job-table td strong{color:var(--fg-1);font-weight:750}
+
+/* Employee medical precaution list */
+.emp-medical-table { width:100%; min-width:1660px; border-collapse:collapse; table-layout:fixed; }
+.emp-medical-table th,.emp-medical-table td { border-bottom:1px solid var(--border-1); padding:10px 11px; color:var(--fg-2); font-size:10.5px; line-height:1.35; text-align:left; vertical-align:middle; }
+.emp-medical-table th { position:relative; background:var(--color-parchment); color:var(--fg-3); font-size:9px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; white-space:nowrap; }
+.emp-medical-table th > button { display:inline-flex; align-items:center; gap:5px; border:0; background:transparent; padding:0; color:inherit; font:inherit; text-transform:inherit; cursor:pointer; }
+.emp-medical-table th:nth-child(2){width:190px}.emp-medical-table th:nth-child(3){width:150px}.emp-medical-table th:nth-child(4),.emp-medical-table th:nth-child(5){width:120px}.emp-medical-table th:nth-child(6){width:125px}.emp-medical-table th:nth-child(7){width:125px}.emp-medical-table th:nth-child(8){width:145px}.emp-medical-table th:nth-child(9){width:130px}.emp-medical-table th:nth-child(10){width:300px}.emp-medical-table th:nth-child(11){width:90px}
+.emp-medical-table tbody tr:not(.emp-group-row){cursor:pointer}.emp-medical-table tbody tr:not(.emp-group-row):hover{background:#faf9f6}.emp-medical-table tbody tr.is-warn,.emp-medical-table tbody tr.is-warn:hover{background:#fff9eb}.emp-medical-table tbody tr.is-expired,.emp-medical-table tbody tr.is-expired:hover{background:#fff0ee}.emp-medical-table tbody tr.is-expired td{border-color:#efccc7}.emp-medical-table td strong{color:var(--fg-1);font-weight:750}.emp-medical-table .is-overdue{color:#a13232;font-weight:750}
+
+/* Employee driving license list */
+.emp-license-table { width:100%; min-width:1820px; border-collapse:collapse; table-layout:fixed; }
+.emp-license-table th,.emp-license-table td { border-bottom:1px solid var(--border-1); padding:10px 11px; color:var(--fg-2); font-size:10.5px; line-height:1.35; text-align:left; vertical-align:middle; }
+.emp-license-table th { position:relative; background:var(--color-parchment); color:var(--fg-3); font-size:9px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; white-space:nowrap; }
+.emp-license-table th > button { display:inline-flex; align-items:center; gap:5px; border:0; background:transparent; padding:0; color:inherit; font:inherit; text-transform:inherit; cursor:pointer; }
+.emp-license-table th:nth-child(2){width:130px}.emp-license-table th:nth-child(3){width:120px}.emp-license-table th:nth-child(4),.emp-license-table th:nth-child(5),.emp-license-table th:nth-child(6){width:125px}.emp-license-table th:nth-child(7){width:120px}.emp-license-table th:nth-child(8){width:115px}.emp-license-table th:nth-child(9){width:145px}.emp-license-table th:nth-child(10){width:130px}.emp-license-table th:nth-child(11){width:310px}.emp-license-table th:nth-child(12){width:90px}
+.emp-license-table tbody tr:not(.emp-group-row){cursor:pointer}.emp-license-table tbody tr:not(.emp-group-row):hover{background:#faf9f6}.emp-license-table tbody tr.is-warn,.emp-license-table tbody tr.is-warn:hover{background:#fff9eb}.emp-license-table tbody tr.is-expired,.emp-license-table tbody tr.is-expired:hover{background:#fff0ee}.emp-license-table tbody tr.is-expired td{border-color:#efccc7}.emp-license-table td strong{color:var(--fg-1);font-weight:750}.emp-license-table .is-overdue{color:#a13232;font-weight:750}
+
+/* Employee equipment operator list */
+.emp-operator-table { width:100%; min-width:1690px; border-collapse:collapse; table-layout:fixed; }
+.emp-operator-table th,.emp-operator-table td { border-bottom:1px solid var(--border-1); padding:10px 11px; color:var(--fg-2); font-size:10.5px; line-height:1.35; text-align:left; vertical-align:middle; }
+.emp-operator-table th { position:relative; background:var(--color-parchment); color:var(--fg-3); font-size:9px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; white-space:nowrap; }
+.emp-operator-table th > button { display:inline-flex; align-items:center; gap:5px; border:0; background:transparent; padding:0; color:inherit; font:inherit; text-transform:inherit; cursor:pointer; }
+.emp-operator-table th:nth-child(2){width:140px}.emp-operator-table th:nth-child(3){width:225px}.emp-operator-table th:nth-child(4),.emp-operator-table th:nth-child(5){width:120px}.emp-operator-table th:nth-child(6){width:120px}.emp-operator-table th:nth-child(7){width:115px}.emp-operator-table th:nth-child(8){width:145px}.emp-operator-table th:nth-child(9){width:130px}.emp-operator-table th:nth-child(10){width:310px}.emp-operator-table th:nth-child(11){width:90px}
+.emp-operator-table tbody tr:not(.emp-group-row){cursor:pointer}.emp-operator-table tbody tr:not(.emp-group-row):hover{background:#faf9f6}.emp-operator-table tbody tr.is-warn,.emp-operator-table tbody tr.is-warn:hover{background:#fff9eb}.emp-operator-table tbody tr.is-expired,.emp-operator-table tbody tr.is-expired:hover{background:#fff0ee}.emp-operator-table tbody tr.is-expired td{border-color:#efccc7}.emp-operator-table td strong{color:var(--fg-1);font-weight:750}.emp-operator-table .is-overdue{color:#a13232;font-weight:750}
+
+/* Employee equipment inspection list */
+.emp-equipment-check-table { width:100%; min-width:1760px; border-collapse:collapse; table-layout:fixed; }
+.emp-equipment-check-table th,.emp-equipment-check-table td { border-bottom:1px solid var(--border-1); padding:10px 11px; color:var(--fg-2); font-size:10.5px; line-height:1.35; text-align:left; vertical-align:middle; }
+.emp-equipment-check-table th { position:relative; background:var(--color-parchment); color:var(--fg-3); font-size:9px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; white-space:nowrap; }
+.emp-equipment-check-table th > button { display:inline-flex; align-items:center; gap:5px; border:0; background:transparent; padding:0; color:inherit; font:inherit; text-transform:inherit; cursor:pointer; }
+.emp-equipment-check-table th:nth-child(2){width:190px}.emp-equipment-check-table th:nth-child(3){width:275px}.emp-equipment-check-table th:nth-child(4),.emp-equipment-check-table th:nth-child(5){width:115px}.emp-equipment-check-table th:nth-child(6){width:120px}.emp-equipment-check-table th:nth-child(7){width:115px}.emp-equipment-check-table th:nth-child(8){width:145px}.emp-equipment-check-table th:nth-child(9){width:130px}.emp-equipment-check-table th:nth-child(10){width:310px}.emp-equipment-check-table th:nth-child(11){width:90px}
+.emp-equipment-check-table tbody tr:not(.emp-group-row){cursor:pointer}.emp-equipment-check-table tbody tr:not(.emp-group-row):hover{background:#faf9f6}.emp-equipment-check-table tbody tr.is-warn,.emp-equipment-check-table tbody tr.is-warn:hover{background:#fff9eb}.emp-equipment-check-table tbody tr.is-expired,.emp-equipment-check-table tbody tr.is-expired:hover{background:#fff0ee}.emp-equipment-check-table tbody tr.is-expired td{border-color:#efccc7}.emp-equipment-check-table td strong{color:var(--fg-1);font-weight:750}.emp-equipment-check-table .is-overdue{color:#a13232;font-weight:750}
+
+/* Employee construction site list */
+.emp-site-table { width:100%; min-width:2420px; border-collapse:collapse; table-layout:fixed; }
+.emp-site-table th,.emp-site-table td { border-bottom:1px solid var(--border-1); padding:10px 11px; color:var(--fg-2); font-size:10.5px; line-height:1.35; text-align:left; vertical-align:middle; }
+.emp-site-table th { position:relative; background:var(--color-parchment); color:var(--fg-3); font-size:9px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; white-space:nowrap; }
+.emp-site-table th > button { display:inline-flex; align-items:center; gap:5px; border:0; background:transparent; padding:0; color:inherit; font:inherit; text-transform:inherit; cursor:pointer; }
+.emp-site-table th:nth-child(2){width:205px}.emp-site-table th:nth-child(3){width:190px}.emp-site-table th:nth-child(4){width:120px}.emp-site-table th:nth-child(5){width:190px}.emp-site-table th:nth-child(6),.emp-site-table th:nth-child(7){width:150px}.emp-site-table th:nth-child(8){width:250px}.emp-site-table th:nth-child(9){width:125px}.emp-site-table th:nth-child(10){width:260px}.emp-site-table th:nth-child(11){width:145px}.emp-site-table th:nth-child(12){width:130px}.emp-site-table th:nth-child(13){width:300px}.emp-site-table th:nth-child(14){width:90px}
+.emp-site-table tbody tr:not(.emp-group-row){cursor:pointer}.emp-site-table tbody tr:not(.emp-group-row):hover{background:#faf9f6}.emp-site-table td strong{color:var(--fg-1);font-weight:750}
+
+/* Employee appointments reuse the main training calendar */
+.emp-calendar-shell { min-width:0; border:1px solid var(--border-1); border-radius:8px; background:#fff; padding:18px; box-shadow:0 5px 18px rgba(32,32,30,.045); }
+.emp-calendar-shell .view__header { margin-bottom:14px; }
+.emp-calendar-shell .cal-grid { background:#fff; }
+@media(max-width:760px){.emp-calendar-shell{padding:12px}}
 
 /* Employee master data list */
 .emp-master-table { width:100%; min-width:2550px; border-collapse:collapse; table-layout:fixed; }
@@ -7930,6 +7997,30 @@ a.subtle:hover { text-decoration: underline; }
 .emp-profile-upload { display:flex!important; align-items:center!important; gap:13px; }
 .emp-profile-upload > div { min-height:0!important; display:grid!important; align-items:start!important; gap:3px; }
 .emp-profile-upload strong { color:var(--fg-1); font-size:11px; }.emp-profile-upload small { color:var(--fg-3); font-size:10px; }
+
+/* Training record detail */
+.emp-training-record-actions { display:flex; gap:8px; }
+.emp-delete-record { min-height:33px; display:inline-flex; align-items:center; gap:6px; border:1px solid var(--border-1); border-radius:6px; background:#fff; padding:0 11px; color:var(--fg-2); font:inherit; font-size:11px; font-weight:750; cursor:pointer; }.emp-delete-record:hover{border-color:#e1b5b0;color:#a13232}
+.emp-training-record-card { border:1px solid var(--border-1); border-radius:8px; background:#fff; padding:18px; box-shadow:0 5px 18px rgba(32,32,30,.045); }
+.emp-training-record-hero { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:15px; padding:0 0 16px; }
+.emp-training-record-icon { width:55px; height:55px; display:grid; place-items:center; border-radius:9px; background:#edf5ef; color:#477d5a; }
+.emp-training-record-icon.emp-instruction-record-icon { background:#f5f0e5; color:#8a6a1f; }
+.emp-training-record-icon.emp-job-record-icon { background:#eef1f5; color:#53677f; }
+.emp-training-record-icon.emp-medical-record-icon { background:#edf4f7; color:#3d7084; }
+.emp-training-record-icon.emp-license-record-icon { background:#f0f2f7; color:#526782; }
+.emp-training-record-icon.emp-operator-record-icon { background:#eef4ed; color:#52744d; }
+.emp-training-record-icon.emp-equipment-check-record-icon { background:#eef5f2; color:#467464; }
+.emp-training-record-icon.emp-site-record-icon { background:#eef2f0; color:#506f61; }
+.emp-training-record-hero > div { display:grid; gap:5px; }.emp-training-record-hero > div > span,.emp-training-record-field label { color:var(--fg-3); font-size:9.5px; font-weight:800; letter-spacing:.35px; text-transform:uppercase; }
+.emp-training-record-hero h2 { margin:0; font-family:var(--font-serif); font-size:22px; font-weight:500; }
+.emp-training-record-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; border-top:1px solid var(--border-1); padding-top:15px; }
+.emp-training-record-field { min-width:0; min-height:57px; display:grid; grid-template-columns:25px minmax(0,1fr); align-items:start; gap:9px; border:1px solid var(--border-1); border-radius:7px; background:#fff; padding:12px 13px; color:var(--fg-2); }
+.emp-training-record-field.is-wide { grid-column:1/-1; }.emp-training-record-field > div { min-width:0; display:grid; gap:5px; }.emp-training-record-field strong { color:var(--fg-1); font-size:12px; font-weight:750; }
+.emp-training-record-field input:not([type=checkbox]),.emp-training-record-field select,.emp-training-record-field textarea { width:100%; box-sizing:border-box; border:1px solid var(--color-accent); border-radius:6px; background:#fff; padding:8px 9px; color:var(--fg-1); font:inherit; font-size:11px; }
+.emp-training-record-docs { min-height:130px; background:var(--color-ivory); }.emp-training-record-docs .emp-file-list { width:min(650px,100%); margin-top:3px; }.emp-training-record-docs .emp-file-chip { width:100%; box-sizing:border-box; }
+.emp-training-add-file { width:max-content; min-height:31px; display:inline-flex; align-items:center; gap:6px; margin-top:5px; border:1px solid var(--border-1); border-radius:5px; background:#fff; padding:0 9px; color:var(--fg-1)!important; font-size:10px!important; font-weight:750!important; letter-spacing:0!important; text-transform:none!important; cursor:pointer; }.emp-training-add-file input{display:none}
+.emp-training-record-footer { display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--border-1); margin-top:15px; padding-top:14px; }
+@media(max-width:760px){.emp-training-record-actions{width:100%;flex-wrap:wrap}.emp-training-record-grid{grid-template-columns:1fr}.emp-training-record-field.is-wide{grid-column:auto}.emp-training-record-hero{grid-template-columns:auto minmax(0,1fr)}.emp-training-record-hero>.emp-status{grid-column:1/-1;width:max-content}}
 
 @media(max-width:1100px){.emp-profile-card{grid-template-columns:auto 1fr}.emp-profile-card__actions{grid-column:1/-1}.emp-workspace{grid-template-columns:190px minmax(0,1fr)}.emp-summary-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){.emp-profile-card{grid-template-columns:1fr}.emp-profile-card__actions{flex-wrap:wrap}.emp-profile-card dl,.emp-record-form{grid-template-columns:1fr}.emp-workspace{grid-template-columns:1fr}.emp-section-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.emp-section-nav button{grid-template-columns:18px minmax(0,1fr)}.emp-section-nav button svg:last-child{display:none}.emp-summary-grid{grid-template-columns:1fr}.emp-activity>div{grid-template-columns:1fr}.emp-record-field.is-wide{grid-column:auto}.emp-bulk{align-items:stretch;flex-direction:column}.emp-page-title{align-items:flex-start;flex-direction:column}}

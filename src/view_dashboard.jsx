@@ -50,7 +50,7 @@ function KpiCard({ kpi, onNavigate }) {
   );
 }
 
-function DashboardView({ activeCompany, setNav: setCurrentNav }) {
+function DashboardView({ activeCompany, setNav: setCurrentNav, hideSummary = false }) {
   const allEmps = window.SEED.employees.filter(e =>
     activeCompany === 'all' ? true : e.company === activeCompany
   );
@@ -188,8 +188,7 @@ function DashboardView({ activeCompany, setNav: setCurrentNav }) {
 
   return (
     <div>
-      {/* ── Header ── */}
-      <div className="view__header">
+      {!hideSummary && <div className="view__header">
         <div>
           <h1 className="view__title">Dashboard</h1>
           <div className="view__subtitle">
@@ -200,9 +199,9 @@ function DashboardView({ activeCompany, setNav: setCurrentNav }) {
         </div>
         <div className="view__actions">
         </div>
-      </div>
+      </div>}
 
-      {(() => {
+      {!hideSummary && (() => {
         const kpis = [
           {
             label: 'Mitarbeiter aktiv',

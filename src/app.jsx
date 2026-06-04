@@ -45,7 +45,7 @@ function App() {
   useEffect(() => {
     setRole(tweaks.role);
     if (tweaks.role === 'employee') {
-      setNav('portal');
+      if (!['portal', 'message_center'].includes(nav)) setNav('portal');
       return;
     }
     if (nav === 'messages') setNav('dashboard');
@@ -53,7 +53,7 @@ function App() {
     if (['doc_bgbau', 'doc_audits', 'doc_references', 'doc_accidents', 'doc_risk'].includes(nav)) setNav('doc_drive');
     if (tweaks.role === 'admin') {
       if (nav === 'bgbau') return;
-      const allowed = ['dashboard', 'chatbot', 'matrix', 'auswertung', 'baustellen', 'bauleiterbesprechung', 'bgbau', 'normenmatrix', 'formulare', 'trainings', 'befaehigte_personen', 'fachaufsichten', 'unfallstatistik', 'organigramm', 'zertuebersicht', 'doc_home', 'doc_drive'];
+      const allowed = ['company_hub', 'dashboard', 'chatbot', 'matrix', 'auswertung', 'baustellen', 'bauleiterbesprechung', 'bgbau', 'normenmatrix', 'formulare', 'trainings', 'befaehigte_personen', 'fachaufsichten', 'unfallstatistik', 'organigramm', 'zertuebersicht', 'doc_home', 'doc_drive'];
       if (!allowed.includes(nav)) setNav('dashboard');
     }
   }, [tweaks.role, nav]);
@@ -180,11 +180,11 @@ function App() {
   };
 
   const titles = {
-    dashboard:'Dashboard', chatbot:'Chatbot', matrix:'Qualifikationsmatrix', employees:'Mitarbeiter', message_center:'Nachrichtenzentrale',
+    company_hub:'Firma', dashboard:'Dashboard', chatbot:'Chatbot', matrix:'Qualifikationsmatrix', employees:'Mitarbeiter', message_center:'Nachrichtenzentrale',
     trainings:'Schulungen', calendar:'Kalender', certs:'Zertifikate',
     instr:'Unterweisungen', providers:'Akademien', companies:'Firmen',
     auswertung:'Firmen-Auswertung', baustellen:'Baustellen', bauleiterbesprechung:'Bauleiterbesprechung', bgbau:'Baustellenaushang BGBAU', normenmatrix:'Normenmatrix', formulare:'Formulare', organigramm:'Organigramm', zertuebersicht:'Zertifizierungs\u00fcbersicht',
-    portal:'Mein Portal', 'portal-certs':'Zertifikate', 'portal-fuehrerschein':'F\u00fchrerschein', 'portal-unterweisungen':'Unterweisungen', 'portal-untersuchung':'Untersuchungsvorsorge', 'portal-stellenbeschr':'Stellenbeschreibung', 'portal-baustellen':'Baustellen', 'portal-geraetefuehrer':'Ger\u00e4tepr\u00fcfung', 'portal-termine':'Termine', 'portal-wartung':'Wartungsliste', stellenbeschreibungen:'Stellenbeschreibungen',
+    portal:'Portal', 'portal-certs':'Zertifikate', 'portal-fuehrerschein':'F\u00fchrerschein', 'portal-unterweisungen':'Unterweisungen', 'portal-untersuchung':'Untersuchungsvorsorge', 'portal-stellenbeschr':'Stellenbeschreibung', 'portal-baustellen':'Baustellen', 'portal-geraetefuehrer':'Ger\u00e4tepr\u00fcfung', 'portal-termine':'Termine', 'portal-wartung':'Wartungsliste', stellenbeschreibungen:'Stellenbeschreibungen',
     untersuchungsvorsorge:'Untersuchungsvorsorge', fuehrerscheinkontrolle:'F\u00fchrerscheinkontrolle', geraetefuehrer:'Ger\u00e4tef\u00fchrer', befaehigte_personen:'Bef\u00e4higte Personen', fachaufsichten:'Fachaufsichten', unfallstatistik:'Unfallstatistik',
     wartungsliste:'Termine',
     doc_home:'Startseite', doc_drive:'Meine Ablage'
@@ -195,6 +195,7 @@ function App() {
 
   let view = null;
   switch (nav) {
+    case 'company_hub': view = <CompanyHubView />; break;
     case 'dashboard': view = <DashboardView activeCompany={activeCompany} setNav={setNav} />; break;
     case 'chatbot': view = <ChatbotView activeCompany={activeCompany} />; break;
     case 'matrix':    view = <MatrixView activeCompany={activeCompany} />; break;
@@ -221,6 +222,10 @@ function App() {
     case 'organigramm':view = <OrganigrammView activeCompany={activeCompany} />; break;
     case 'zertuebersicht':view = <CertOverviewView activeCompany={activeCompany} />; break;
     case 'portal':
+      view = role === 'employee' && window.EmployeeAdminDetail
+        ? <EmployeeAdminDetail emp={window.employee('e-me')} onBack={() => {}} />
+        : (window.PortalView ? React.createElement(window.PortalView, { searchState, setSearchState, nav }) : <Empty title="Mein Portal lÃ¤dt" sub="Bitte kurz erneut Ã¶ffnen." />);
+      break;
     case 'portal-certs':
     case 'portal-fuehrerschein':
     case 'portal-unterweisungen':

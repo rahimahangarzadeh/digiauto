@@ -28,20 +28,14 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
   if (role === 'employee') {
     sections = [
       { label: 'Mein Bereich', items: [
-        { id: 'portal-certs', label: 'Zertifikate', icon: 'doc' },
-        { id: 'portal-fuehrerschein', label: 'Führerschein', icon: 'cap' },
-        { id: 'portal-unterweisungen', label: 'Unterweisungen', icon: 'flag' },
-        { id: 'portal-untersuchung', label: 'Untersuchungsvorsorge', icon: 'shield' },
-        { id: 'portal-stellenbeschr', label: 'Stellenbeschreibung', icon: 'doc' },
-        { id: 'portal-baustellen', label: 'Baustellen', icon: 'building' },
-        { id: 'portal-geraetefuehrer', label: 'Geräteprüfung', icon: 'cap' },
-        { id: 'portal-termine', label: 'Termine', icon: 'cal' },
-        { id: 'portal-wartung', label: 'Wartungsliste', icon: 'history' },
+        { id: 'portal', label: 'Portal', icon: 'dashboard' },
+        { id: 'message_center', label: 'Nachrichtenzentrale', icon: 'mail', badge: 2 },
       ]},
     ];
   } else if (role === 'admin') {
     sections = [
       { label: '\u00dcbersicht', items: [
+        { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
         { id: 'chatbot', label: 'Chatbot', icon: 'flag' },
         { id: 'matrix',    label: 'Qualifikationsmatrix', icon: 'matrix' },
@@ -68,6 +62,7 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
     // Admin and Superadmin: show all sections
     sections = [
       { label: '\u00dcbersicht', items: [
+        { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
         { id: 'chatbot', label: 'Chatbot', icon: 'flag' },
         { id: 'matrix',    label: 'Qualifikationsmatrix', icon: 'matrix' },
@@ -85,13 +80,13 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
         { id: 'organigramm',label: 'Organigramm', icon: 'users' },
         { id: 'zertuebersicht', label: 'Zertifizierungs\u00fcbersicht', icon: 'doc' },
       ]},
-      { label: 'Dokumente', items: [
-        { id: 'doc_home', label: 'Startseite', icon: 'dashboard' },
-        { id: 'doc_drive', label: 'Meine Ablage', icon: 'building' },
-      ]},
       { label: 'Verwaltung', items: [
         { id: 'employees', label: 'Mitarbeiter', icon: 'users' },
         { id: 'message_center', label: 'Nachrichtenzentrale', icon: 'mail', badge: 2 },
+      ]},
+      { label: 'Dokumente', items: [
+        { id: 'doc_home', label: 'Startseite', icon: 'dashboard' },
+        { id: 'doc_drive', label: 'Meine Ablage', icon: 'building' },
       ]},
       { label: 'Stammdaten', items: [
         { id: 'providers', label: 'Akademien & Anbieter', icon: 'building' },

@@ -90,14 +90,7 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
         { id: 'doc_drive', label: 'Meine Ablage', icon: 'building' },
       ]},
       { label: 'Verwaltung', items: [
-        { id: 'employees',      label: 'Mitarbeiter',              icon: 'users' },
-        { id: 'certs',          label: 'Zertifikate',              icon: 'doc', badge: notifications?.certs },
-        { id: 'instr',          label: 'Unterweisungen',           icon: 'flag', badge: notifications?.instr },
-        { id: 'stellenbeschreibungen', label: 'Stellenbeschreibungen', icon: 'doc', badge: notifications?.stellen },
-        { id: 'untersuchungsvorsorge', label: 'Untersuchungsvorsorge', icon: 'shield', badge: notifications?.medical },
-        { id: 'fuehrerscheinkontrolle', label: 'F\u00fchrerscheinkontrolle', icon: 'cap', badge: notifications?.license },
-        { id: 'geraetefuehrer', label: 'Ger\u00e4tef\u00fchrer', icon: 'cap', badge: notifications?.geraetefuehrer },
-        { id: 'wartungsliste',  label: 'Termine', icon: 'history' },
+        { id: 'employees', label: 'Mitarbeiter', icon: 'users' },
       ]},
       { label: 'Stammdaten', items: [
         { id: 'providers', label: 'Akademien & Anbieter', icon: 'building' },

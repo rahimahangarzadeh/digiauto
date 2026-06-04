@@ -196,6 +196,10 @@ function EmployeesView({ activeCompany }) {
     );
   };
 
+  if (selectedEmp && window.EmployeeAdminDetail) {
+    return <EmployeeAdminDetail emp={selectedEmp} onBack={() => setSelectedEmp(null)} />;
+  }
+
   return (
     <div>
       <div className="view__header">
@@ -419,7 +423,6 @@ function EmployeesView({ activeCompany }) {
 	        </div>
 	      )}
 	      {showNewEmp && <NewEmployeeModal onClose={() => setShowNewEmp(false)} />}
-      {selectedEmp && <EmpSidePanel emp={selectedEmp} onClose={() => setSelectedEmp(null)} />}
       {messageEmp && <EmployeeMessagePanel emp={messageEmp} messages={messagesForEmployee(messageEmp)} onClose={() => setMessageEmp(null)} onSend={(text) => sendEmployeeReply(messageEmp, text)} />}
       {deleteConfirm && <DeleteConfirmModal emp={deleteConfirm} count={deleteConfirm === 'bulk' ? selected.size : 1} onClose={() => setDeleteConfirm(null)} onConfirm={() => { setDeleteConfirm(null); clearSelection(); }} />}
       {registerEmp && <RegisterTrainingModal emp={registerEmp} bulkCount={registerEmp === 'bulk' ? selected.size : 0} onClose={() => setRegisterEmp(null)} onConfirm={() => { setRegisterEmp(null); clearSelection(); }} />}

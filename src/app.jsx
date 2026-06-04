@@ -180,7 +180,7 @@ function App() {
   };
 
   const titles = {
-    dashboard:'Dashboard', chatbot:'Chatbot', matrix:'Qualifikationsmatrix', employees:'Mitarbeiter',
+    dashboard:'Dashboard', chatbot:'Chatbot', matrix:'Qualifikationsmatrix', employees:'Mitarbeiter', message_center:'Nachrichtenzentrale',
     trainings:'Schulungen', calendar:'Kalender', certs:'Zertifikate',
     instr:'Unterweisungen', providers:'Akademien', companies:'Firmen',
     auswertung:'Firmen-Auswertung', baustellen:'Baustellen', bauleiterbesprechung:'Bauleiterbesprechung', bgbau:'Baustellenaushang BGBAU', normenmatrix:'Normenmatrix', formulare:'Formulare', organigramm:'Organigramm', zertuebersicht:'Zertifizierungs\u00fcbersicht',
@@ -199,6 +199,7 @@ function App() {
     case 'chatbot': view = <ChatbotView activeCompany={activeCompany} />; break;
     case 'matrix':    view = <MatrixView activeCompany={activeCompany} />; break;
     case 'employees': view = <EmployeesView activeCompany={activeCompany} />; break;
+    case 'message_center': view = <MessageCenterView />; break;
     case 'trainings': view = <TrainingsView />; break;
     case 'calendar':  view = <CalendarView activeCompany={activeCompany} selectedTraining={selectedTrainingForCalendar} selectedInstruction={selectedInstructionForCalendar} selectedDate={selectedDateForCalendar} onTrainingSelected={() => { setSelectedTrainingForCalendar(null); setSelectedInstructionForCalendar(null); setSelectedDateForCalendar(''); }} />; break;
     case 'certs':     view = <CertsView activeCompany={activeCompany} />; break;

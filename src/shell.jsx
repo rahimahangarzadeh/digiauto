@@ -91,6 +91,7 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
       ]},
       { label: 'Verwaltung', items: [
         { id: 'employees', label: 'Mitarbeiter', icon: 'users' },
+        { id: 'message_center', label: 'Nachrichtenzentrale', icon: 'mail', badge: 2 },
       ]},
       { label: 'Stammdaten', items: [
         { id: 'providers', label: 'Akademien & Anbieter', icon: 'building' },

@@ -163,7 +163,7 @@ function MatrixCellWithMenu({ cert, emp, training, isMenuOpen, onToggleMenu, onS
 
 /* Qualifikationsmatrix — Matrix + Mitarbeiter-Detailansicht */
 
-function MatrixView({ activeCompany }) {
+function MatrixView({ activeCompany, onEmployeeOpen, extraAction = null }) {
   const [filterDept, setFilterDept] = React.useState('all');
   const [filterPosition, setFilterPosition] = React.useState('all');
   const [filterStatus, setFilterStatus] = React.useState('all');
@@ -364,6 +364,10 @@ function MatrixView({ activeCompany }) {
   const visibleMatrixFilterValues = matrixFilterValues.filter(value => String(value).toLowerCase().includes(matrixFilterSearch.toLowerCase()));
 
   const handleRowClick = (e) => {
+    if (onEmployeeOpen) {
+      onEmployeeOpen(e);
+      return;
+    }
     setSelectedEmp(prev => prev?.id === e.id ? null : e);
     setTimeout(() => {
       detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -381,6 +385,7 @@ function MatrixView({ activeCompany }) {
         <div className="view__actions">
           <button className="btn btn--ghost"><Icon name="filter" size={14} /> Ansicht</button>
           <button className="btn btn--ghost"><Icon name="download" size={14} /> Excel</button>
+          {extraAction}
         </div>
       </div>
 
@@ -623,7 +628,7 @@ function MatrixView({ activeCompany }) {
       </div>
 
       {/* ── BEREICH 2: Detail-Ansicht ── */}
-      <div ref={detailRef}>
+      {!onEmployeeOpen && <div ref={detailRef}>
         <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:0.7, textTransform:'uppercase', color: selectedEmp ? 'var(--color-accent)' : 'var(--fg-3)', marginBottom:12, display:'flex', alignItems:'center', gap:8 }}>
           <span>Bereich 2</span>
           <span style={{ fontWeight:400, textTransform:'none', letterSpacing:0, color:'var(--fg-3)' }}>
@@ -647,7 +652,7 @@ function MatrixView({ activeCompany }) {
         ) : (
           <EmpDetail emp={selectedEmp} />
         )}
-      </div>
+      </div>}
       {matrixFilterPanel && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.18)', zIndex:1200, display:'flex', justifyContent:'flex-end' }} onClick={() => setMatrixFilterPanel(null)}>
           <div onClick={e => e.stopPropagation()} style={{ width:420, maxWidth:'96vw', height:'100%', background:'white', boxShadow:'-12px 0 30px rgba(0,0,0,0.18)', display:'flex', flexDirection:'column' }}>

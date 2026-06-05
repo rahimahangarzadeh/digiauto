@@ -35,11 +35,9 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
   } else if (role === 'admin') {
     sections = [
       { label: '\u00dcbersicht', items: [
-        { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+        { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'chatbot', label: 'Chatbot', icon: 'flag' },
-        { id: 'matrix',    label: 'Qualifikationsmatrix', icon: 'matrix' },
-        { id: 'auswertung',label: 'Firmen-Auswertung', icon: 'shield' },
         { id: 'baustellen', label: 'Baustellen', icon: 'building' },
         { id: 'bauleiterbesprechung', label: 'Bauleiterbesprechung', icon: 'users' },
         { id: 'bgbau', label: 'Baustellenaushang BGBAU', icon: 'doc' },
@@ -62,11 +60,9 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
     // Admin and Superadmin: show all sections
     sections = [
       { label: '\u00dcbersicht', items: [
-        { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+        { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'chatbot', label: 'Chatbot', icon: 'flag' },
-        { id: 'matrix',    label: 'Qualifikationsmatrix', icon: 'matrix' },
-        { id: 'auswertung',label: 'Firmen-Auswertung', icon: 'shield' },
         { id: 'baustellen', label: 'Baustellen', icon: 'building' },
         { id: 'bauleiterbesprechung', label: 'Bauleiterbesprechung', icon: 'users' },
         { id: 'bgbau', label: 'Baustellenaushang BGBAU', icon: 'doc' },

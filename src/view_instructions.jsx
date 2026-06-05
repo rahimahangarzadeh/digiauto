@@ -350,11 +350,11 @@ function InstructionDetail({ u }) {
 }
 
 /* Firmen-Auswertung */
-function EvaluationView() {
+function EvaluationView({ activeCompany = 'all', extraAction = null } = {}) {
   const [tab, setTab] = React.useState('schulung');
   const [entryFilter, setEntryFilter] = React.useState('all');
   const [groupFilter, setGroupFilter] = React.useState('all');
-  const companies = window.SEED.companies;
+  const companies = activeCompany === 'all' ? window.SEED.companies : window.SEED.companies.filter(company => company.id === activeCompany);
   const today = new Date(window.SEED.today || '2026-04-21');
 
   const employeeGroup = (employee) => {
@@ -375,7 +375,7 @@ function EvaluationView() {
   };
 
   const entryThresholds = { all: 0, '3': 3, '6': 6, '12': 12 };
-  const activeEmpsBase = window.SEED.employees.filter(e => e.status === 'aktiv');
+  const activeEmpsBase = window.SEED.employees.filter(e => e.status === 'aktiv' && (activeCompany === 'all' || e.company === activeCompany));
   const activeEmps = activeEmpsBase.filter((employee) => {
     const passesEntry = entryFilter === 'all' || monthsSinceEntry(employee) > entryThresholds[entryFilter];
     const passesGroup = groupFilter === 'all' || employeeGroup(employee) === groupFilter;
@@ -458,7 +458,7 @@ function EvaluationView() {
   const positions = [...new Set(activeEmps.map(e => e.position))].sort();
   const openMatrixForPosition = (position) => {
     window.dispatchEvent(new CustomEvent('navigate-to-matrix-position', {
-      detail: { position },
+      detail: { position, companyId: activeCompany },
     }));
   };
   const TabPosition = () => (
@@ -626,6 +626,7 @@ function EvaluationView() {
         </div>
         <div className="view__actions">
           <button className="btn btn--ghost"><Icon name="download" size={14} />Excel</button>
+          {extraAction}
           <button className="btn btn--ghost"><Icon name="download" size={14} />PDF</button>
         </div>
       </div>

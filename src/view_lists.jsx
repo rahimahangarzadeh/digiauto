@@ -202,26 +202,27 @@ function EmployeesView({ activeCompany }) {
 
   return (
     <div>
-      <div className="view__header">
-        <div>
-          <h1 className="view__title">Mitarbeiter</h1>
-          <div className="view__subtitle">Alle Personen der Gruppe - nach Firma, Abteilung und Status.</div>
+      <div className="company-list-head">
+        <div className="company-list-title">
+          <h1>Mitarbeiter</h1>
+          <p>Alle Personen der Gruppe - nach Firma, Abteilung und Status.</p>
         </div>
-        <div className="view__actions">
+
+        <div className="company-list-kpis">
+          {empKpis.map(kpi => (
+            <button key={kpi.key} className={empKpiFilter === kpi.key ? 'is-active' : ''}
+              style={{ '--company-kpi-color': kpi.color }}
+              onClick={() => setEmpKpiFilter(empKpiFilter === kpi.key ? 'all' : kpi.key)}>
+              <span>{kpi.label}</span>
+              <strong>{kpi.value}</strong>
+            </button>
+          ))}
+        </div>
+
+        <div className="company-list-actions">
           <button className="btn btn--ghost"><Icon name="upload" size={14} />Import</button>
           <button className="btn btn--primary" onClick={() => setShowNewEmp(true)}><Icon name="plus" size={14} />Mitarbeiter</button>
         </div>
-      </div>
-
-      <div className="job-kpis">
-        {empKpis.map(kpi => (
-          <button key={kpi.key} className={'job-kpi' + (empKpiFilter === kpi.key ? ' job-kpi--active' : '')}
-            style={{ '--job-kpi-color': kpi.color }}
-            onClick={() => setEmpKpiFilter(empKpiFilter === kpi.key ? 'all' : kpi.key)}>
-            <span>{kpi.label}</span>
-            <strong>{kpi.value}</strong>
-          </button>
-        ))}
       </div>
 
       <div className="toolbar">

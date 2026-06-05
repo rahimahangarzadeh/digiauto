@@ -196,7 +196,7 @@ function App() {
   let view = null;
   switch (nav) {
     case 'company_hub': view = <CompanyHubView />; break;
-    case 'dashboard': view = <DashboardView activeCompany={activeCompany} setNav={setNav} />; break;
+    case 'dashboard': view = <DashboardView activeCompany={activeCompany} setActiveCompany={setActiveCompany} setNav={setNav} />; break;
     case 'chatbot': view = <ChatbotView activeCompany={activeCompany} />; break;
     case 'matrix':    view = <MatrixView activeCompany={activeCompany} />; break;
     case 'employees': view = <EmployeesView activeCompany={activeCompany} />; break;

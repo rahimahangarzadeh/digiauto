@@ -124,11 +124,10 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
       </div>
 
       {/* Company switch – only in expanded mode */}
-      {!collapsed && (
+      {!collapsed && role === 'employee' && (
         <div className="sidebar__company-switch">
           <div className="sidebar__company-label">Firma</div>
-          {role !== 'employee' && <CompanySwitcher activeCompany={activeCompany} setActiveCompany={setActiveCompany} />}
-          {role === 'employee' && (() => {
+          {(() => {
             const empCompany = window.company(window.employee('e-me').company);
             return (
               <div style={{ display:'flex', alignItems:'center', gap:8, padding:'7px 10px', background:'var(--color-parchment)', borderRadius:8, marginTop:4 }}>

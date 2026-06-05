@@ -50,7 +50,7 @@ function KpiCard({ kpi, onNavigate }) {
   );
 }
 
-function DashboardView({ activeCompany, setNav: setCurrentNav, hideSummary = false }) {
+function DashboardView({ activeCompany, setActiveCompany, setNav: setCurrentNav, hideSummary = false }) {
   const allEmps = window.SEED.employees.filter(e =>
     activeCompany === 'all' ? true : e.company === activeCompany
   );
@@ -117,6 +117,7 @@ function DashboardView({ activeCompany, setNav: setCurrentNav, hideSummary = fal
   const [showAllBars, setShowAllBars] = React.useState(false);
   const [hoveredBar, setHoveredBar] = React.useState(null);
   const [expiryFilter, setExpiryFilter] = React.useState('all'); // all | warn | expired
+  const [companyMenuOpen, setCompanyMenuOpen] = React.useState(false);
 
   const visibleStats = showAllBars ? trainStats : trainStats.slice(0, 5);
   const filteredExpiring = expiring.filter(r => {
@@ -185,6 +186,12 @@ function DashboardView({ activeCompany, setNav: setCurrentNav, hideSummary = fal
       seconds: diff % 60,
     };
   };
+  const dashboardCompanyOptions = [{ id:'all', name:'Alle Firmen' }, ...window.SEED.companies];
+  const currentDashboardCompany = dashboardCompanyOptions.find(company => company.id === activeCompany) || dashboardCompanyOptions[0];
+  const chooseDashboardCompany = (companyId) => {
+    setActiveCompany?.(companyId);
+    setCompanyMenuOpen(false);
+  };
 
   return (
     <div>
@@ -198,6 +205,22 @@ function DashboardView({ activeCompany, setNav: setCurrentNav, hideSummary = fal
           </div>
         </div>
         <div className="view__actions">
+          {setActiveCompany && <div className="dashboard-company-filter-wrap">
+            <button type="button" className="dashboard-company-filter" onClick={() => setCompanyMenuOpen(open => !open)} title="Dashboard nach Firma filtern">
+              <Icon name="building" size={14} />
+              <span>Firma</span>
+              <strong>{currentDashboardCompany.name}</strong>
+              <Icon name="chev" size={13} />
+            </button>
+            {companyMenuOpen && <div className="dashboard-company-menu">
+              {dashboardCompanyOptions.map(company => (
+                <button key={company.id} type="button" className={company.id === activeCompany ? 'is-active' : ''} onClick={() => chooseDashboardCompany(company.id)}>
+                  <span>{company.name}</span>
+                  {company.id === activeCompany && <Icon name="check" size={14} />}
+                </button>
+              ))}
+            </div>}
+          </div>}
         </div>
       </div>}
 

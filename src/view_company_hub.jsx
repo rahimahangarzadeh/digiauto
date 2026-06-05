@@ -116,6 +116,7 @@ function CompanyDetail({ company, onBack }) {
   if (area === 'master') return <CompanyMasterRecord company={company} record={companyMasterRecord(company)} onBack={() => setArea('overview')} />;
   if (area === 'matrix') return <CompanyMatrixPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'evaluation') return <CompanyEvaluationPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'sites') return <CompanySitesPage company={company} onBack={() => setArea('overview')} />;
   return <div className="company-detail"><header className="company-detail__top"><div className="company-detail__intro"><button className="emp-round-back" onClick={onBack} title="Zurück"><Icon name="chevL" size={18} stroke={2} /></button><div><h1>Firma-Detail</h1><p>Alle firmenspezifischen Daten im Überblick</p></div></div><section className="company-detail__profile"><img src={company.logo} alt={company.short} /><div><h2>{company.name}</h2><dl><div><dt>Geschäftsführer</dt><dd>{company.manager}</dd></div><div><dt>Mitarbeiter</dt><dd>{company.employees}</dd></div><div><dt>Telefon</dt><dd>{company.phone}</dd></div></dl></div></section></header><div className="company-detail__body"><nav className="emp-section-nav">{COMPANY_DETAIL_AREAS.map(([id, label, icon]) => <button key={id} className={area === id ? 'is-active' : ''} onClick={() => setArea(id)}><Icon name={icon} size={16} /><span>{label}</span><Icon name="chevR" size={13} /></button>)}</nav><main className="company-detail__content">{area === 'overview' ? <DashboardView activeCompany={company.id} setNav={() => {}} hideSummary /> : <CompanyAreaPlaceholder company={company} area={area} />}</main></div></div>;
 }
 
@@ -131,6 +132,54 @@ function CompanyEvaluationPage({ company, onBack }) {
   const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   if (showAllCompanies) return <div className="emp-full company-evaluation-page"><CompanyPageTitle title="Firmen-Auswertung (Alle Firmen)" onBack={() => setShowAllCompanies(false)} /><EvaluationView activeCompany="all" /></div>;
   return <div className="emp-full company-evaluation-page"><CompanyPageTitle title={`Firmen-Auswertung (${company.name})`} onBack={onBack} /><EvaluationView activeCompany={company.id} extraAction={<button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>} /></div>;
+}
+
+function CompanySitesPage({ company, onBack }) {
+  const [selectedSite, setSelectedSite] = React.useState(null);
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  if (selectedSite) return <CompanySiteDetailPage site={selectedSite} onBack={() => setSelectedSite(null)} />;
+  if (showAllCompanies) return <div className="emp-full company-sites-page"><CompanyPageTitle title="Baustellen (Alle Firmen)" onBack={() => setShowAllCompanies(false)} /><BaustellenView activeCompany="all" onOpenSite={setSelectedSite} /></div>;
+  return <div className="emp-full company-sites-page"><CompanyPageTitle title={`Baustellen (${company.name})`} onBack={onBack} /><BaustellenView activeCompany={company.id} onOpenSite={setSelectedSite} extraAction={<button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>} /></div>;
+}
+
+function CompanySiteDetailPage({ site, onBack }) {
+  const tabs = ['Stammdaten', 'Personal', 'Personal-Pruefung', 'Fehlende Schulungen', 'Gefaehrdungsbeurteilung', 'Alarmplan', 'Dokumente'];
+  const [tab, setTab] = React.useState('Stammdaten');
+  const missing = site.id === 'bs-3' ? 2 : 0;
+  const fulfilled = site.id === 'bs-3' ? '4/6' : '6/6';
+  const ready = missing === 0;
+  return <div className="emp-full company-site-detail-page">
+    <CompanyPageTitle title={site.name} onBack={onBack} action={<button className="btn btn--primary"><Icon name="check" size={14} />Speichern</button>} />
+    <section className="company-site-hero">
+      <div>
+        <h2>{site.projectName} - {site.projectNr}</h2>
+        <p>{site.company} - {site.adresse} - Bauleiter: {site.bauleiter}</p>
+        <span className={'badge ' + (ready ? 'badge--valid' : 'badge--warn')}><span className="badge__dot" />{ready ? 'Personal reicht' : missing + ' fehlen'}</span>
+      </div>
+    </section>
+    <nav className="company-site-tabs">{tabs.map(item => <button key={item} className={tab === item ? 'is-active' : ''} onClick={() => setTab(item)}>{item}</button>)}</nav>
+    <div className="company-site-kpis">
+      <div className="kpi"><div className="kpi__label">Mitarbeiter</div><div className="kpi__value">{site.employeeIds?.length || 0}</div><div className="kpi__delta">ausgewaehlt</div></div>
+      <div className="kpi"><div className="kpi__label">Pflichtpunkte</div><div className="kpi__value" style={{ color:ready ? '#3f7a4a' : '#8a6a1f' }}>{fulfilled}</div><div className="kpi__delta">erfuellt</div></div>
+      <div className="kpi"><div className="kpi__label">Fehlende Schulungen</div><div className="kpi__value" style={{ color:missing ? '#a13232' : '#3f7a4a' }}>{missing}</div><div className="kpi__delta">nachplanen</div></div>
+      <div className="kpi"><div className="kpi__label">Status</div><div className="kpi__value" style={{ color:ready ? '#3f7a4a' : '#a13232' }}>{ready ? 'OK' : 'Offen'}</div><div className="kpi__delta">einsatzbereit</div></div>
+    </div>
+    {tab === 'Stammdaten' ? <section className="card card--pad company-site-card">
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, marginBottom:18 }}>
+        <div className="card__title">Baustellen-Details</div>
+        <button className="btn btn--ghost"><Icon name="edit" size={14} />Bearbeite Stammdaten</button>
+      </div>
+      <div className="company-site-fields">
+        <CompanyMasterField label="Projektname" icon="building" value={site.projectName} />
+        <CompanyMasterField label="Projekt-Nr." icon="doc" value={site.projectNr} />
+        <CompanyMasterField label="Bauleiter" icon="users" value={site.bauleiter} />
+        <CompanyMasterField label="Vorarbeiter" icon="users" value={site.vorarbeiter} />
+        <CompanyMasterField label="Auftraggeber" icon="building" value={site.auftraggeber} />
+        <CompanyMasterField label="Firma" icon="building" value={site.company} />
+        <CompanyMasterField label="Adresse" icon="pin" value={site.adresse} />
+      </div>
+    </section> : <section className="card card--pad company-site-card"><div className="card__title">{tab}</div><p className="muted">Beispielbereich fuer {site.name}. Details werden im naechsten Schritt aufgebaut.</p></section>}
+  </div>;
 }
 
 function companyMasterRecord(company) {

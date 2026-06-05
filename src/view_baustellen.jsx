@@ -1,4 +1,4 @@
-function BaustellenView({ activeCompany }) {
+function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite = null }) {
   const allActiveEmployees = window.SEED.employees
     .filter(e => e.status === 'aktiv');
   const activeEmployees = allActiveEmployees
@@ -496,6 +496,10 @@ function BaustellenView({ activeCompany }) {
   const openSitePanel = (site) => {
     setSelectedSiteId(site.id);
     setSitePanelTab('stammdaten');
+    if (onOpenSite) {
+      onOpenSite(site);
+      return;
+    }
     setDetailOpen(true);
   };
 
@@ -572,7 +576,9 @@ function BaustellenView({ activeCompany }) {
     });
   };
   const clearSiteFilter = (col) => setSiteColumnFilters(current => ({ ...current, [col]: [] }));
-  const listedSites = sites
+  const scopedSites = sites
+    .filter(site => activeCompany === 'all' || site.company === window.company(activeCompany)?.name);
+  const listedSites = scopedSites
     .map((site, index) => ({ site, index }))
     .filter(item => Object.entries(siteColumnFilters).every(([col, values]) => !values?.length || values.includes(siteColumnValue(item.site, col, item.index))))
     .sort((a, b) => {
@@ -581,7 +587,7 @@ function BaustellenView({ activeCompany }) {
       const cmp = String(va).localeCompare(String(vb), 'de', { numeric:true });
       return siteSort.dir === 'asc' ? cmp : -cmp;
     });
-  const siteFilterValues = siteFilterPanel ? Array.from(new Set(sites.map((site, index) => siteColumnValue(site, siteFilterPanel, index)))).sort((a,b) => String(a).localeCompare(String(b), 'de', { numeric:true })) : [];
+  const siteFilterValues = siteFilterPanel ? Array.from(new Set(scopedSites.map((site, index) => siteColumnValue(site, siteFilterPanel, index)))).sort((a,b) => String(a).localeCompare(String(b), 'de', { numeric:true })) : [];
   const visibleSiteFilterValues = siteFilterValues.filter(value => String(value).toLowerCase().includes(siteFilterSearch.toLowerCase()));
   const totalSiteEmployees = listedSites.reduce((sum, item) => sum + item.site.employeeIds.length, 0);
   const totalMissingTrainings = listedSites.reduce((sum, item) => sum + siteMetrics(item.site).status.missing, 0);
@@ -615,6 +621,7 @@ function BaustellenView({ activeCompany }) {
           <div className="view__subtitle">Baustellen melden, Personal auswaehlen und Pflichtqualifikationen pruefen.</div>
         </div>
         <div className="view__actions">
+          {extraAction}
           <button className="btn btn--primary" onClick={addSite}><Icon name="plus" size={14} />Baustelle erstellen</button>
         </div>
       </div>
@@ -668,41 +675,36 @@ function BaustellenView({ activeCompany }) {
               <th>Aktionen</th>
             </tr>
           </thead>
-          <tbody>
-            {listedSites.map(({ site, index }, visibleIndex) => {
+          <tbody>{listedSites.map(({ site, index }, visibleIndex) => {
               const metrics = siteMetrics(site);
               const status = metrics.status;
               const groupValue = siteGroupBy ? siteColumnValue(site, siteGroupBy, index) : '';
               const previousGroup = siteGroupBy && visibleIndex > 0 ? siteColumnValue(listedSites[visibleIndex - 1].site, siteGroupBy, listedSites[visibleIndex - 1].index) : null;
-              return (
-                <React.Fragment key={site.id}>
-                  {siteGroupBy && groupValue !== previousGroup && (
-                    <tr><td colSpan={siteColumns.length + 1} style={{ padding:'9px 14px', background:'var(--color-parchment)', color:'var(--fg-2)', fontWeight:700, fontSize:12 }}>{siteColumnLabel(siteGroupBy)}: {groupValue}</td></tr>
-                  )}
-                  <tr onClick={() => openSitePanel(site)} style={{ cursor:'pointer', background: detailOpen && site.id === selectedSite.id ? 'rgba(201,100,66,0.06)' : undefined }}>
-                    <td>{index + 1}</td>
-                    <td><strong>{site.name}</strong><div className="small muted">{site.projectName}</div></td>
-                    <td>{site.company}</td>
-                    <td>{site.projectNr}</td>
-                    <td>{site.bauleiter}</td>
-                    <td>{site.vorarbeiter}</td>
-                    <td>{site.auftraggeber}</td>
-                    <td>{site.adresse}</td>
-                    <td>{site.employeeIds.length}</td>
-                    <td><strong>{metrics.fulfilled}/6</strong></td>
-                    <td style={{ color: status.missing ? '#a13232' : '#3f7a4a', fontWeight:700 }}>{status.missing}</td>
-                    <td>{statusBadgeFor(site)}</td>
-                    <td onClick={event => event.stopPropagation()}>
-                      <div style={{ display:'flex', gap:8 }}>
-                        <button title="Vorschau" className="icon-btn" onClick={() => openSitePanel(site)}><Icon name="eye" size={15} /></button>
-                        <button title="Bearbeiten" className="icon-btn" onClick={() => openSitePanel(site)}><Icon name="edit" size={15} /></button>
-                        <button title="Loeschen" className="icon-btn" style={{ color:'#a13232' }}><Icon name="trash" size={15} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                </React.Fragment>
-              );
-            })}          </tbody>
+              return [
+                siteGroupBy && groupValue !== previousGroup ? <tr key={site.id + '-group'}><td colSpan={siteColumns.length + 1} style={{ padding:'9px 14px', background:'var(--color-parchment)', color:'var(--fg-2)', fontWeight:700, fontSize:12 }}>{siteColumnLabel(siteGroupBy)}: {groupValue}</td></tr> : null,
+                <tr key={site.id} onClick={() => openSitePanel(site)} style={{ cursor:'pointer', background: detailOpen && site.id === selectedSite.id ? 'rgba(201,100,66,0.06)' : undefined }}>
+                  <td>{index + 1}</td>
+                  <td><strong>{site.name}</strong><div className="small muted">{site.projectName}</div></td>
+                  <td>{site.company}</td>
+                  <td>{site.projectNr}</td>
+                  <td>{site.bauleiter}</td>
+                  <td>{site.vorarbeiter}</td>
+                  <td>{site.auftraggeber}</td>
+                  <td>{site.adresse}</td>
+                  <td>{site.employeeIds.length}</td>
+                  <td><strong>{metrics.fulfilled}/6</strong></td>
+                  <td style={{ color: status.missing ? '#a13232' : '#3f7a4a', fontWeight:700 }}>{status.missing}</td>
+                  <td>{statusBadgeFor(site)}</td>
+                  <td onClick={event => event.stopPropagation()}>
+                    <div style={{ display:'flex', gap:8 }}>
+                      <button title="Vorschau" className="icon-btn" onClick={() => openSitePanel(site)}><Icon name="eye" size={15} /></button>
+                      <button title="Bearbeiten" className="icon-btn" onClick={() => openSitePanel(site)}><Icon name="edit" size={15} /></button>
+                      <button title="Loeschen" className="icon-btn" style={{ color:'#a13232' }}><Icon name="trash" size={15} /></button>
+                    </div>
+                  </td>
+                </tr>
+              ];
+            })}</tbody>
         </table>
       </section>
 
@@ -873,8 +875,7 @@ function BaustellenView({ activeCompany }) {
                           <th>Dokument (PDF)</th>
                         </tr>
                       </thead>
-                      <tbody>
-                        {riskAssessmentRows.map(row => (
+                      <tbody>{riskAssessmentRows.map(row => (
                           <tr key={row.nr}>
                             <td className="num">{row.nr}</td>
                             <td><strong>{row.name}</strong></td>
@@ -888,8 +889,7 @@ function BaustellenView({ activeCompany }) {
                               </button>
                             </td>
                           </tr>
-                        ))}
-                      </tbody>
+                        ))}</tbody>
                     </table>
                   </div>
                 </div>

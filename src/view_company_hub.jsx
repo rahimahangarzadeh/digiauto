@@ -7,7 +7,7 @@ const COMPANY_DETAIL_AREAS = [
   ['supervisors', 'Fachaufsichten', 'shield'], ['accidents', 'Unfallstatistik', 'matrix'],
   ['organization', 'Organigramm', 'users'], ['certification', 'Zertifizierungsübersicht', 'doc'],
   ['norms', 'Normenmatrix', 'matrix'], ['forms', 'Formulare', 'doc'],
-  ['calendar', 'Schulungskalender', 'calendar'], ['authorized', 'Befähigte Personen', 'shield'],
+  ['calendar', 'Schulungskalender', 'cal'], ['authorized', 'Befähigte Personen', 'shield'],
 ];
 
 const COMPANY_META = {

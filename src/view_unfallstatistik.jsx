@@ -1,4 +1,4 @@
-function UnfallstatistikView({ activeCompany }) {
+function UnfallstatistikView({ activeCompany, extraAction = null, onOpenFirma = null }) {
   const unfallDaten = [
     {
       id: 'rohrbau',
@@ -89,6 +89,7 @@ function UnfallstatistikView({ activeCompany }) {
     return '#999';
   };
 
+  const visibleDaten = unfallDaten.filter(firma => activeCompany === 'all' || firma.id === activeCompany);
   const selectedFirma = unfallDaten.find(f => f.id === selectedFirmaId);
   const aktuellesJahr = 2025;
   const letzteMonate = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
@@ -101,8 +102,9 @@ function UnfallstatistikView({ activeCompany }) {
           <p className="view-subtitle">SCC-Unfallhäufigkeit (UH) gemäß Regelwerk 2011 - Dokument 006</p>
         </div>
         <div className="view-header-tabs">
-          <span className="tab-count">{unfallDaten.length} Firmen</span>
+          <span className="tab-count">{visibleDaten.length} Firmen</span>
           <div className="header-actions">
+            {extraAction}
             <button
               className={`btn btn--primary ${editMode ? 'btn--active' : ''}`}
               onClick={() => setEditMode(!editMode)}
@@ -121,7 +123,7 @@ function UnfallstatistikView({ activeCompany }) {
       </div>
 
       <div className="unfallstatistik-grid">
-        {unfallDaten.map((firma) => {
+        {visibleDaten.map((firma) => {
           const aktuellesUH = getCurrentUH(firma);
           const vorjahresUH = getVorjahresUH(firma);
           const risiko = getRisikostufe(aktuellesUH);
@@ -134,6 +136,10 @@ function UnfallstatistikView({ activeCompany }) {
               key={firma.id}
               className={`unfallkarte unfallkarte--${risiko}`}
               onClick={() => {
+                if (onOpenFirma) {
+                  onOpenFirma(firma);
+                  return;
+                }
                 setSelectedFirmaId(firma.id);
                 setDetailOpen(true);
               }}
@@ -225,7 +231,7 @@ function UnfallstatistikView({ activeCompany }) {
           </div>
         </div>
 
-        {unfallDaten.map((firma) => {
+        {visibleDaten.map((firma) => {
           const getTrendForYear = (currUH, prevUH) => {
             if (prevUH === null) return '—';
             if (currUH > prevUH) return '↑';
@@ -466,3 +472,5 @@ function UnfallstatistikView({ activeCompany }) {
     </div>
   );
 }
+
+window.UnfallstatistikView = UnfallstatistikView;

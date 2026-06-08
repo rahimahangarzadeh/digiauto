@@ -8179,6 +8179,26 @@ a.subtle:hover { text-decoration: underline; }
 .company-list-table .company-count{min-width:24px;height:24px;font-size:10.5px;color:var(--fg-2);background:#f0ede8}
 .company-list-table .company-row-logo{width:44px;height:24px}
 .company-sites-page .view__header{margin-top:0}
+.company-supervisors-grid{grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin-top:18px}
+.company-supervisor-card{min-height:280px;border-radius:8px;background:var(--color-ivory);padding:18px 18px 14px}
+.company-supervisor-card .card-header{min-height:30px}
+.company-supervisor-card .card-title{font-size:15px;line-height:1.25}
+.company-supervisor-card .card-description{min-height:38px;font-size:12px;line-height:1.45}
+.company-supervisor-card .card-content{flex:1}
+.company-supervisor-card .person-item{display:grid;gap:7px;margin-bottom:12px}
+.company-supervisor-card .person-name strong{font-size:12px}
+.company-supervisor-card .zertifikate-tags{display:flex;flex-wrap:wrap;gap:7px}
+.company-supervisor-card .tag{border-radius:5px;background:#f2e7df;color:var(--color-accent);padding:6px 8px;font-size:10px;font-weight:700}
+.company-supervisor-card .card-footer{margin-top:auto;border-top:1px solid var(--border-1);padding-top:12px}
+.company-supervisor-card .click-hint{color:var(--color-accent);font-weight:800}
+.company-accidents-page .view{padding:0}
+.company-accident-edit-table input{width:100%;min-height:34px;border:1px solid var(--border-1);border-radius:6px;background:white;padding:0 9px;font:inherit;font-size:12px}
+.company-organization-page .org-page{padding:0}
+.company-org-preview{min-height:220px;border:1px solid var(--border-1);background:#fff;padding:18px;color:var(--fg-1)}
+.company-org-preview>strong{display:block;border-bottom:1px solid var(--border-1);padding-bottom:10px;margin-bottom:14px}
+.company-org-preview>span{display:block;color:var(--fg-3);font-size:11px;margin-bottom:18px}
+.company-org-preview h3{margin:0 0 8px;font-family:var(--font-serif);font-size:22px;font-weight:500}
+.company-org-preview p{margin:0;color:var(--fg-2);font-size:12px;line-height:1.5}
 .company-site-topline{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:18px 0;border-bottom:1px solid var(--border-1);margin-bottom:22px}
 .company-site-titleline{display:flex;align-items:center;gap:12px;min-width:0}
 .company-site-titleline h1{margin:0;font-family:var(--font-serif);font-size:22px;font-weight:500;color:var(--fg-1);white-space:nowrap}

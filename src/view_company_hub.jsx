@@ -118,6 +118,9 @@ function CompanyDetail({ company, onBack }) {
   if (area === 'evaluation') return <CompanyEvaluationPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'sites') return <CompanySitesPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'bgbau') return <CompanyBGBauPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'supervisors') return <CompanySupervisorsPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'accidents') return <CompanyAccidentsPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'organization') return <CompanyOrganizationPage company={company} onBack={() => setArea('overview')} />;
   return <div className="company-detail"><header className="company-detail__top"><div className="company-detail__intro"><button className="emp-round-back" onClick={onBack} title="ZurÃ¼ck"><Icon name="chevL" size={18} stroke={2} /></button><div><h1>Firma-Detail</h1><p>Alle firmenspezifischen Daten im Ãœberblick</p></div></div><section className="company-detail__profile"><img src={company.logo} alt={company.short} /><div><h2>{company.name}</h2><dl><div><dt>GeschÃ¤ftsfÃ¼hrer</dt><dd>{company.manager}</dd></div><div><dt>Mitarbeiter</dt><dd>{company.employees}</dd></div><div><dt>Telefon</dt><dd>{company.phone}</dd></div></dl></div></section></header><div className="company-detail__body"><nav className="emp-section-nav">{COMPANY_DETAIL_AREAS.map(([id, label, icon]) => <button key={id} className={area === id ? 'is-active' : ''} onClick={() => setArea(id)}><Icon name={icon} size={16} /><span>{label}</span><Icon name="chevR" size={13} /></button>)}</nav><main className="company-detail__content">{area === 'overview' ? <DashboardView activeCompany={company.id} setNav={() => {}} hideSummary /> : <CompanyAreaPlaceholder company={company} area={area} />}</main></div></div>;
 }
 
@@ -141,6 +144,152 @@ function CompanySitesPage({ company, onBack }) {
   if (selectedSite) return <CompanySiteDetailPage site={selectedSite} onBack={() => setSelectedSite(null)} />;
   if (showAllCompanies) return <div className="emp-full company-sites-page"><CompanyPageTitle title="Baustellen (Alle Firmen)" onBack={() => setShowAllCompanies(false)} /><BaustellenView activeCompany="all" onOpenSite={setSelectedSite} /></div>;
   return <div className="emp-full company-sites-page"><CompanyPageTitle title={`Baustellen (${company.name})`} onBack={onBack} /><BaustellenView activeCompany={company.id} onOpenSite={setSelectedSite} extraAction={<button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>} /></div>;
+}
+
+function companySupervisorRows() {
+  const rows = [
+    { id:'fa-1', company:'tiefbau', name:'Stahlschweissaufsicht', area:'Stahlbau', responsible:'Thorsten Schmitz', people:[{ name:'Thorsten Schmitz', certificates:['FW601', 'FW446', 'GW 301'] }], status:'Aktiv', release:'Freigegeben', changed:'05.06.2026 - Sabine Janning', description:'Ueberwachung und Kontrolle von Schweissarbeiten im Stahlbau', document:'Fachaufsicht_Stahlschweissaufsicht.pdf' },
+    { id:'fa-2', company:'tiefbau', name:'Fachaufsicht Fernwaerme & GW', area:'Fernwaerme', responsible:'Christian Janning', people:[{ name:'Christian Janning', certificates:['GW 301', 'FW601'] }], status:'Aktiv', release:'Freigegeben', changed:'04.06.2026 - Sabine Janning', description:'Fachaufsicht fuer Fernwaerme- und Sachkundige-Arbeiten', document:'Fachaufsicht_Fernwaerme_GW.pdf' },
+    { id:'fa-3', company:'rohrbau', name:'Kunststoffschweissaufsicht', area:'Rohrbau', responsible:'Christian Janning', people:[{ name:'Christian Janning', certificates:['GW 301', 'GW 331 (M)', 'FW601'] }], status:'Aktiv', release:'Freigegeben', changed:'03.06.2026 - Christian Janning', description:'Ueberwachung von Kunststoffschweissarbeiten und PE-HD Verbindungen', document:'Fachaufsicht_Kunststoff.pdf' },
+    { id:'fa-4', company:'rohrbau', name:'Beauftragter nach WHG/AwSV', area:'WHG / AwSV', responsible:'Christian Janning', people:[{ name:'Christian Janning', certificates:['WHG', 'AwSV'] }], status:'Aktiv', release:'Freigegeben', changed:'31.05.2026 - Sabine Janning', description:'Wasserhaushalts- und Abwasserbestimmungen', document:'Fachaufsicht_WHG_AwSV.pdf' },
+    { id:'fa-5', company:'bohrtechnik', name:'Asbest-Sachkundige', area:'Asbest', responsible:'Thorsten Isensee', people:[{ name:'Thorsten Isensee', certificates:['Asbest I', 'Asbest II'] }, { name:'Stefan Boguta', certificates:['Asbest I', 'Asbest II'] }, { name:'Hichem Aoune', certificates:['Asbest I'] }], status:'Aktiv', release:'Freigegeben', changed:'29.05.2026 - Andreas Janning', description:'Sachkundige fuer Asbest-Arbeiten und -entsorgung', document:'Fachaufsicht_Asbest.pdf' },
+    { id:'fa-6', company:'galabau', name:'AutoCAD Spezialisten', area:'Planung', responsible:'Daniel Fehren', people:[{ name:'Daniel Fehren', certificates:['AutoCAD 2024', 'BIM'] }], status:'Aktiv', release:'Freigegeben', changed:'28.05.2026 - Sabine Janning', description:'Konstruktion und technische Zeichnungen', document:'Fachaufsicht_AutoCAD.pdf' },
+    { id:'fa-7', company:'galabau', name:'QGIS-Experten', area:'Vermessung', responsible:'Annika Tholen', people:[{ name:'Annika Tholen', certificates:['QGIS Advanced', 'GPS'] }, { name:'Emmelie Gebbeken', certificates:['QGIS Basis', 'Vermessung'] }, { name:'Simone Wilmes', certificates:['QGIS Advanced'] }, { name:'Britta Kuhl', certificates:['QGIS Basis'] }, { name:'Nadine Sommer', certificates:['QGIS Basis'] }, { name:'Monika Schmitz', certificates:['QGIS Advanced'] }], status:'Aktiv', release:'Freigegeben', changed:'27.05.2026 - Sabine Janning', description:'Geographische Informationssysteme und Vermessung', document:'Fachaufsicht_QGIS.pdf' },
+    { id:'fa-8', company:'tiefbau', name:'Schweisser', area:'Schweissen', responsible:'Alexander Bartel', people:[{ name:'Alexander Bartel', certificates:['DIN EN 9606 - 111', 'DIN EN 9606 - 135'] }, { name:'Sergej Litke', certificates:['DIN EN 9606 - 111', 'DIN EN 9606 - 131'] }], status:'Aktiv', release:'Freigegeben', changed:'26.05.2026 - Sabine Janning', description:'Qualifizierte Schweisser nach DIN EN 9606', document:'Fachaufsicht_Schweisser.pdf' },
+    { id:'fa-9', company:'bohrtechnik', name:'Elektriker', area:'Elektro', responsible:'Paul Krahn', people:[{ name:'Paul Krahn', certificates:['E-Fachkraft', 'Elektropruefung'] }, { name:'Tobias Bruns', certificates:['E-Fachkraft', 'DGUV V3'] }, { name:'Jane Wenke', certificates:['E-Fachkraft', 'Installation'] }], status:'Aktiv', release:'Freigegeben', changed:'25.05.2026 - Andreas Janning', description:'Qualifizierte Elektrofachkraefte und -fuehrer', document:'Fachaufsicht_Elektriker.pdf' },
+  ];
+  return rows.map(row => ({ ...row, companyName: window.company(row.company)?.name || row.company, certificates: row.people.flatMap(person => person.certificates).join(', ') }));
+}
+
+function CompanySupervisorsPage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  const [selected, setSelected] = React.useState(null);
+  const rows = companySupervisorRows().filter(row => showAllCompanies || row.company === company.id);
+  if (selected) return <CompanySupervisorDetail row={selected} onBack={() => setSelected(null)} />;
+  const activeCount = rows.filter(row => row.status === 'Aktiv').length;
+  const preparingCount = rows.filter(row => row.status !== 'Aktiv').length;
+  return <div className="emp-full company-supervisors-page">
+    <CompanyPageTitle title={`Fachaufsichten (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={showAllCompanies ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button> : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>} />
+    <div className="company-site-kpis">
+      <div className="company-site-kpi"><span>Fachaufsichten</span><strong>{rows.length}</strong><small>in Ansicht</small></div>
+      <div className="company-site-kpi"><span>Aktiv</span><strong style={{ color:'#3f7a4a' }}>{activeCount}</strong><small>freigegeben</small></div>
+      <div className="company-site-kpi"><span>In Vorbereitung</span><strong style={{ color:'#8a6a1f' }}>{preparingCount}</strong><small>offen</small></div>
+      <div className="company-site-kpi"><span>Dokumente</span><strong>{rows.length}</strong><small>hinterlegt</small></div>
+    </div>
+    <div className="fachaufsichten-grid company-supervisors-grid">
+      {rows.map(row => <article key={row.id} className="fachaufsicht-card company-supervisor-card" onClick={() => setSelected(row)}>
+        <div className="card-header"><h3 className="card-title">{row.name}</h3><span className={'badge ' + (row.status === 'Aktiv' ? 'badge--valid' : 'badge--warn')}>{row.status}</span></div>
+        <p className="card-description">{row.description}</p>
+        <div className="card-content"><div className="verantwortliche-list">
+          {row.people.map(person => <div key={person.name} className="person-item"><div className="person-name"><strong>{person.name}</strong></div><div className="zertifikate-tags">{person.certificates.map(cert => <span key={cert} className="tag">{cert}</span>)}</div></div>)}
+        </div></div>
+        <div className="card-footer"><span className="person-count">{row.people.length} {row.people.length === 1 ? 'Person' : 'Personen'}</span><span className="click-hint">→</span></div>
+      </article>)}
+    </div>
+  </div>;
+}
+
+function CompanyAccidentsPage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  const [selected, setSelected] = React.useState(null);
+  const AccidentView = window.UnfallstatistikView;
+  if (selected) return <CompanyAccidentDetail row={selected} onBack={() => setSelected(null)} />;
+  return <div className="emp-full company-accidents-page">
+    <CompanyPageTitle title={`Unfallstatistik (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} />
+    <AccidentView
+      activeCompany={showAllCompanies ? 'all' : company.id}
+      onOpenFirma={setSelected}
+      extraAction={showAllCompanies
+        ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
+        : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}
+    />
+  </div>;
+}
+
+function CompanyAccidentDetail({ row, onBack }) {
+  const [editing, setEditing] = React.useState(false);
+  const [form, setForm] = React.useState(row);
+  const setYear = (jahr, key, value) => setForm(current => ({ ...current, jahreData: current.jahreData.map(item => item.jahr === jahr ? { ...item, [key]: value } : item) }));
+  const current = form.jahreData[form.jahreData.length - 1];
+  return <div className="emp-full emp-master-detail company-accident-detail">
+    <CompanyPageTitle title={`Unfallstatistik bearbeiten (${form.firma})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Loeschen</button></div>} />
+    <section className="emp-master-hero"><span className="emp-avatar">UH</span><div><div className="emp-master-hero__name"><h2>{form.firma}</h2><span className="emp-active"><i />{form.intern}</span></div><dl><div><dt>UH-Quote 2025</dt><dd>{current.uh.toFixed(1)}</dd></div><div><dt>Unfaelle 2025</dt><dd>{current.unfaelle}</dd></div><div><dt>Arbeitsstunden</dt><dd>{current.stunden.toLocaleString('de-DE')}</dd></div></dl></div><button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button></section>
+    <div className="emp-master-layout"><main className="emp-master-main">
+      <CompanyMasterDataCard title="Firmendaten" icon="building"><div className="emp-master-field-grid">
+        <CompanyMasterField label="Firma" icon="building" value={form.firma} editing={editing}><input value={form.firma} onChange={event => setForm(current => ({ ...current, firma:event.target.value }))} /></CompanyMasterField>
+        <CompanyMasterField label="Interne Nummer" icon="doc" value={form.intern} editing={editing}><input value={form.intern} onChange={event => setForm(current => ({ ...current, intern:event.target.value }))} /></CompanyMasterField>
+      </div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Jahreswerte" icon="matrix"><div className="unfallstatistik-tabelle company-accident-edit-table"><table><thead><tr><th>Jahr</th><th>Unfaelle</th><th>Arbeitsstunden</th><th>UH-Quote</th><th>Dokument</th></tr></thead><tbody>{form.jahreData.map(item => <tr key={item.jahr}><td className="jahr-cell">{item.jahr}</td><td>{editing ? <input type="number" value={item.unfaelle} onChange={event => setYear(item.jahr, 'unfaelle', Number(event.target.value))} /> : item.unfaelle}</td><td>{editing ? <input type="number" value={item.stunden} onChange={event => setYear(item.jahr, 'stunden', Number(event.target.value))} /> : item.stunden.toLocaleString('de-DE')}</td><td>{editing ? <input type="number" step="0.1" value={item.uh} onChange={event => setYear(item.jahr, 'uh', Number(event.target.value))} /> : (item.uh === 0 ? '-' : item.uh.toFixed(2))}</td><td><button className="btn btn--ghost"><Icon name="doc" size={13} />PDF</button></td></tr>)}</tbody></table></div></CompanyMasterDataCard>
+    </main><aside className="emp-master-aside"><CompanyMasterDataCard title="Erklaerung" icon="shield"><p className="emp-master-description">UH = Anzahl der Arbeitsunfaelle mal 1.000.000 geteilt durch geleistete Arbeitsstunden.</p></CompanyMasterDataCard><CompanyMasterDataCard title="Geaendert" icon="history"><p className="emp-last-change">08.06.2026, 10:15 Uhr - von Sabine Janning</p></CompanyMasterDataCard></aside></div>
+    {editing && <div className="emp-master-savebar"><button className="btn btn--ghost" onClick={() => { setForm(row); setEditing(false); }}>Abbrechen</button><button className="btn btn--primary" onClick={() => setEditing(false)}>Speichern</button></div>}
+  </div>;
+}
+
+function CompanyOrganizationPage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  const [selected, setSelected] = React.useState(null);
+  const OrgView = window.OrganigrammView;
+  if (selected) return <CompanyOrganizationDetail row={selected} onBack={() => setSelected(null)} />;
+  return <div className="emp-full company-organization-page">
+    <CompanyPageTitle title={`Organigramm (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} />
+    <OrgView
+      activeCompany={showAllCompanies ? 'all' : company.id}
+      onOpenDoc={setSelected}
+      extraAction={showAllCompanies
+        ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
+        : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}
+    />
+  </div>;
+}
+
+function CompanyOrganizationDetail({ row, onBack }) {
+  const [editing, setEditing] = React.useState(false);
+  const [form, setForm] = React.useState(row);
+  const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
+  return <div className="emp-full emp-master-detail company-organization-detail">
+    <CompanyPageTitle title={`Organigramm bearbeiten (${form.company})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Loeschen</button></div>} />
+    <section className="emp-master-hero"><span className="emp-avatar">OR</span><div><div className="emp-master-hero__name"><h2>{form.name}</h2><span className="emp-active"><i />{form.status}</span></div><dl><div><dt>Firma</dt><dd>{form.company}</dd></div><div><dt>Dokument</dt><dd>{form.documentNo}</dd></div><div><dt>Version</dt><dd>{form.version}</dd></div></dl></div><button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button></section>
+    <div className="emp-master-layout"><main className="emp-master-main">
+      <CompanyMasterDataCard title="Organigramm-Daten" icon="users"><div className="emp-master-field-grid">
+        <CompanyMasterField label="Name Organigramm" icon="doc" value={form.name} editing={editing}><input value={form.name} onChange={event => set('name', event.target.value)} /></CompanyMasterField>
+        <CompanyMasterField label="Firmenname" icon="building" value={form.company} editing={editing}><input value={form.company} onChange={event => set('company', event.target.value)} /></CompanyMasterField>
+        <CompanyMasterField label="Dokumentennummer" icon="doc" value={form.documentNo} editing={editing}><input value={form.documentNo} onChange={event => set('documentNo', event.target.value)} /></CompanyMasterField>
+        <CompanyMasterField label="Versionsnummer" icon="history" value={form.version} editing={editing}><input value={form.version} onChange={event => set('version', event.target.value)} /></CompanyMasterField>
+        <CompanyMasterField label="Datum der Erstellung" icon="calendar" value={form.createdAt} editing={editing}><input value={form.createdAt} onChange={event => set('createdAt', event.target.value)} /></CompanyMasterField>
+        <CompanyMasterField label="Ersteller" icon="users" value={form.createdBy} editing={editing}><input value={form.createdBy} onChange={event => set('createdBy', event.target.value)} /></CompanyMasterField>
+        <CompanyMasterField label="Status" icon="shield" value={form.status} editing={editing}><select value={form.status} onChange={event => set('status', event.target.value)}><option>Freigegeben</option><option>In Pruefung</option><option>Entwurf</option></select></CompanyMasterField>
+      </div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Geltungsbereich" icon="matrix">{editing ? <textarea className="emp-master-description-input" value={form.scope} onChange={event => set('scope', event.target.value)} /> : <p className="emp-master-description">{form.scope}</p>}</CompanyMasterDataCard>
+    </main><aside className="emp-master-aside"><CompanyMasterDataCard title="PDF-Vorschau" icon="eye"><div className="company-org-preview"><strong>Organigramm</strong><span>{form.documentNo} - Version {form.version}</span><h3>{form.company}</h3><p>{form.scope}</p></div><button className="btn btn--ghost" style={{ marginTop:12 }}><Icon name="download" size={14} />PDF exportieren</button></CompanyMasterDataCard></aside></div>
+    {editing && <div className="emp-master-savebar"><button className="btn btn--ghost" onClick={() => { setForm(row); setEditing(false); }}>Abbrechen</button><button className="btn btn--primary" onClick={() => setEditing(false)}>Speichern</button></div>}
+  </div>;
+}
+
+function CompanySupervisorDetail({ row, onBack }) {
+  const [editing, setEditing] = React.useState(false);
+  const [form, setForm] = React.useState(row);
+  const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
+  const Field = ({ label, value, children }) => <div className="emp-master-field"><Icon name="doc" size={15} /><div><span>{label}</span>{editing ? children : <strong>{value}</strong>}</div></div>;
+  return <div className="emp-full emp-master-detail company-supervisor-detail">
+    <CompanyPageTitle title={`Fachaufsicht bearbeiten (${form.name})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Loeschen</button></div>} />
+    <section className="emp-master-hero"><span className="emp-avatar">FA</span><div><div className="emp-master-hero__name"><h2>{form.name}</h2><span className="emp-active"><i />{form.status}</span></div><dl><div><dt>Firma</dt><dd>{form.companyName}</dd></div><div><dt>Verantwortlich</dt><dd>{form.responsible}</dd></div></dl></div><button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button></section>
+    <div className="emp-master-layout"><main className="emp-master-main">
+      <CompanyMasterDataCard title="Fachaufsicht" icon="shield"><div className="emp-master-field-grid">
+        <Field label="Name" value={form.name}><input value={form.name} onChange={event => set('name', event.target.value)} /></Field>
+        <Field label="Firma" value={form.companyName}><input value={form.companyName} onChange={event => set('companyName', event.target.value)} /></Field>
+        <Field label="Bereich" value={form.area}><input value={form.area} onChange={event => set('area', event.target.value)} /></Field>
+        <Field label="Status" value={form.status}><select value={form.status} onChange={event => set('status', event.target.value)}><option>Aktiv</option><option>In Vorbereitung</option><option>Inaktiv</option></select></Field>
+      </div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Verantwortung" icon="users"><div className="emp-master-field-grid">
+        <Field label="Verantwortlich" value={form.responsible}><input value={form.responsible} onChange={event => set('responsible', event.target.value)} /></Field>
+        <Field label="Zertifikate" value={form.certificates}><input value={form.certificates} onChange={event => set('certificates', event.target.value)} /></Field>
+        <Field label="Freigabe" value={form.release}><select value={form.release} onChange={event => set('release', event.target.value)}><option>Freigegeben</option><option>Nicht frei</option></select></Field>
+        <Field label="Dokument" value={form.document}><input value={form.document} onChange={event => set('document', event.target.value)} /></Field>
+      </div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Beschreibung" icon="doc">{editing ? <textarea className="emp-master-description-input" value={form.description} onChange={event => set('description', event.target.value)} /> : <p className="emp-master-description">{form.description}</p>}</CompanyMasterDataCard>
+    </main><aside className="emp-master-aside"><CompanyMasterDataCard title="Geaendert" icon="history"><p className="emp-last-change">{form.changed}</p></CompanyMasterDataCard><CompanyMasterDataCard title="Dokument" icon="doc"><button className="btn btn--ghost"><Icon name="doc" size={14} />{form.document}</button></CompanyMasterDataCard></aside></div>
+    {editing && <div className="emp-master-savebar"><button className="btn btn--ghost" onClick={() => { setForm(row); setEditing(false); }}>Abbrechen</button><button className="btn btn--primary" onClick={() => setEditing(false)}>Speichern</button></div>}
+  </div>;
 }
 
 function CompanySiteDetailPage({ site, onBack }) {

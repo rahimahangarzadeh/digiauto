@@ -1,6 +1,6 @@
 /* Organigramm document list - frontend only */
 
-function OrganigrammView() {
+function OrganigrammView({ activeCompany = 'all', extraAction = null, onOpenDoc = null }) {
   const [notice, setNotice] = React.useState('');
   const [previewDoc, setPreviewDoc] = React.useState(null);
   const [statusFilter, setStatusFilter] = React.useState('all');
@@ -14,6 +14,7 @@ function OrganigrammView() {
   const docs = [
     {
       nr: '1',
+      companyId: 'tiefbau',
       name: 'Organigramm Janning Tiefbau',
       company: 'Janning Tiefbau GmbH',
       scope: 'Tiefbau, Baustellenleitung, Poliere und Kolonnen',
@@ -25,6 +26,7 @@ function OrganigrammView() {
     },
     {
       nr: '2',
+      companyId: 'bohrtechnik',
       name: 'Organigramm Janning Bohrtechnik',
       company: 'Janning Bohrtechnik GmbH',
       scope: 'Horizontalbohrungen, Fachaufsicht, Bauleitung und Spezialtechnik',
@@ -32,10 +34,11 @@ function OrganigrammView() {
       version: '1.2',
       createdAt: '15.03.2026',
       createdBy: 'Sabine Janning',
-      status: 'In Prüfung',
+      status: 'In PrÃ¼fung',
     },
     {
       nr: '3',
+      companyId: 'rohrbau',
       name: 'Organigramm Janning Rohrbau',
       company: 'Janning Rohrbau GmbH',
       scope: 'Rohrbau, DVGW, Versorgung, Bauleitung und Montage',
@@ -47,11 +50,12 @@ function OrganigrammView() {
     },
   ];
 
-  const filteredDocs = docs.filter((doc) => statusFilter === 'all' || doc.status === statusFilter);
+  const scopedDocs = docs.filter((doc) => activeCompany === 'all' || doc.companyId === activeCompany);
+  const filteredDocs = scopedDocs.filter((doc) => statusFilter === 'all' || doc.status === statusFilter);
 
   const statusClass = (status) => {
     if (status === 'Freigegeben') return 'badge badge--valid';
-    if (status === 'In Prüfung') return 'badge badge--warn';
+    if (status === 'In PrÃ¼fung') return 'badge badge--warn';
     return 'badge';
   };
 
@@ -63,6 +67,7 @@ function OrganigrammView() {
           <div className="view__subtitle">Dokumentenliste aller Firmen-Organigramme mit PDF-Vorschau.</div>
         </div>
         <div className="view__actions org-actions">
+          {extraAction}
           <button className="btn btn--ghost" onClick={() => setNotice('PDF-Export vorbereitet.')}>
             <Icon name="download" size={15} />PDF exportieren
           </button>
@@ -76,10 +81,10 @@ function OrganigrammView() {
 
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:18 }}>
         {[
-          ['all', 'Organigramme', docs.length, '#111111'],
-          ['Freigegeben', 'Freigegeben', docs.filter((doc) => doc.status === 'Freigegeben').length, '#3f7a4a'],
-          ['In Prüfung', 'In Prüfung', docs.filter((doc) => doc.status === 'In Prüfung').length, '#8a6a1f'],
-          ['Entwurf', 'Entwurf', docs.filter((doc) => doc.status === 'Entwurf').length, '#2d6fa3'],
+          ['all', 'Organigramme', scopedDocs.length, '#111111'],
+          ['Freigegeben', 'Freigegeben', scopedDocs.filter((doc) => doc.status === 'Freigegeben').length, '#3f7a4a'],
+          ['In PrÃ¼fung', 'In PrÃ¼fung', scopedDocs.filter((doc) => doc.status === 'In PrÃ¼fung').length, '#8a6a1f'],
+          ['Entwurf', 'Entwurf', scopedDocs.filter((doc) => doc.status === 'Entwurf').length, '#2d6fa3'],
         ].map(([key, label, value, color]) => (
           <button
             key={key}
@@ -124,7 +129,7 @@ function OrganigrammView() {
             <strong>Organigramm-Dokumente</strong>
             <div className="small muted">Nr., Name, Firmenname, Geltungsbereich, Dokumentennummer, Version, Datum, Ersteller und PDF-Vorschau.</div>
           </div>
-          <div className="small muted">{filteredDocs.length} Einträge</div>
+          <div className="small muted">{filteredDocs.length} EintrÃ¤ge</div>
         </div>
         <div className="tbl-wrap" style={{ border: 0, borderRadius: 0 }}>
           <table className="tbl">
@@ -144,7 +149,7 @@ function OrganigrammView() {
             </thead>
             <tbody>
               {filteredDocs.map((doc) => (
-                <tr key={doc.documentNo}>
+                <tr key={doc.documentNo} onClick={() => onOpenDoc ? onOpenDoc(doc) : setPreviewDoc(doc)} style={{ cursor:'pointer' }}>
                   <td className="num">{doc.nr}</td>
                   <td><strong>{doc.name}</strong></td>
                   <td>{doc.company}</td>
@@ -159,7 +164,7 @@ function OrganigrammView() {
                     </span>
                   </td>
                   <td style={{ textAlign:'center' }}>
-                    <button className="job-small-btn" onClick={() => setPreviewDoc(doc)}>Vorschau</button>
+                    <button className="job-small-btn" onClick={(event) => { event.stopPropagation(); setPreviewDoc(doc); }}>Vorschau</button>
                   </td>
                 </tr>
               ))}
@@ -190,7 +195,7 @@ function OrganigrammView() {
               </div>
             </div>
             <div style={{ padding:14, display:'flex', justifyContent:'flex-end', gap:8, borderTop:'1px solid var(--border-1)' }}>
-              <button className="btn btn--ghost" onClick={() => setPreviewDoc(null)}>Schließen</button>
+              <button className="btn btn--ghost" onClick={() => setPreviewDoc(null)}>SchlieÃŸen</button>
               <button className="btn btn--primary"><Icon name="download" size={14} />PDF exportieren</button>
             </div>
           </div>

@@ -121,6 +121,7 @@ function CompanyDetail({ company, onBack }) {
   if (area === 'supervisors') return <CompanySupervisorsPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'accidents') return <CompanyAccidentsPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'organization') return <CompanyOrganizationPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'certification') return <CompanyCertificationPage company={company} onBack={() => setArea('overview')} />;
   return <div className="company-detail"><header className="company-detail__top"><div className="company-detail__intro"><button className="emp-round-back" onClick={onBack} title="ZurÃ¼ck"><Icon name="chevL" size={18} stroke={2} /></button><div><h1>Firma-Detail</h1><p>Alle firmenspezifischen Daten im Ãœberblick</p></div></div><section className="company-detail__profile"><img src={company.logo} alt={company.short} /><div><h2>{company.name}</h2><dl><div><dt>GeschÃ¤ftsfÃ¼hrer</dt><dd>{company.manager}</dd></div><div><dt>Mitarbeiter</dt><dd>{company.employees}</dd></div><div><dt>Telefon</dt><dd>{company.phone}</dd></div></dl></div></section></header><div className="company-detail__body"><nav className="emp-section-nav">{COMPANY_DETAIL_AREAS.map(([id, label, icon]) => <button key={id} className={area === id ? 'is-active' : ''} onClick={() => setArea(id)}><Icon name={icon} size={16} /><span>{label}</span><Icon name="chevR" size={13} /></button>)}</nav><main className="company-detail__content">{area === 'overview' ? <DashboardView activeCompany={company.id} setNav={() => {}} hideSummary /> : <CompanyAreaPlaceholder company={company} area={area} />}</main></div></div>;
 }
 
@@ -262,6 +263,20 @@ function CompanyOrganizationDetail({ row, onBack }) {
       <CompanyMasterDataCard title="Geltungsbereich" icon="matrix">{editing ? <textarea className="emp-master-description-input" value={form.scope} onChange={event => set('scope', event.target.value)} /> : <p className="emp-master-description">{form.scope}</p>}</CompanyMasterDataCard>
     </main><aside className="emp-master-aside"><CompanyMasterDataCard title="PDF-Vorschau" icon="eye"><div className="company-org-preview"><strong>Organigramm</strong><span>{form.documentNo} - Version {form.version}</span><h3>{form.company}</h3><p>{form.scope}</p></div><button className="btn btn--ghost" style={{ marginTop:12 }}><Icon name="download" size={14} />PDF exportieren</button></CompanyMasterDataCard></aside></div>
     {editing && <div className="emp-master-savebar"><button className="btn btn--ghost" onClick={() => { setForm(row); setEditing(false); }}>Abbrechen</button><button className="btn btn--primary" onClick={() => setEditing(false)}>Speichern</button></div>}
+  </div>;
+}
+
+function CompanyCertificationPage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  const CertView = window.CertOverviewView;
+  return <div className="emp-full company-certification-page">
+    <CompanyPageTitle title={`Zertifizierungsuebersicht (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} />
+    <CertView
+      activeCompany={showAllCompanies ? 'all' : company.id}
+      extraAction={showAllCompanies
+        ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
+        : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}
+    />
   </div>;
 }
 

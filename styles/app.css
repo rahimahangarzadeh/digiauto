@@ -826,6 +826,26 @@ button { font-family: inherit; }
   padding: 12px 13px;
 }
 
+.chatbot-page--home{min-height:calc(100vh - 72px);display:flex;justify-content:center;background:radial-gradient(circle at center top,rgba(255,255,255,.95),rgba(247,245,238,.72) 58%,rgba(241,238,230,.9));padding:64px 24px}
+.chatbot-home{width:min(1080px,100%);display:flex;flex-direction:column;align-items:center}
+.chatbot-home__hero{display:flex;align-items:center;justify-content:center;gap:26px;margin-bottom:54px}
+.chatbot-home__hero img{width:76px;height:76px;object-fit:contain}
+.chatbot-home__hero h1{margin:0;color:#111;font-family:var(--font-serif);font-size:68px;font-weight:500;line-height:1;letter-spacing:0}
+.chatbot-home__composer{width:min(940px,100%);min-height:170px;display:grid;grid-template-rows:1fr auto;border:1px solid #ded7cd;border-radius:28px;background:rgba(255,255,255,.72);box-shadow:0 12px 36px rgba(45,36,27,.07);overflow:hidden}
+.chatbot-home__composer textarea{width:100%;min-height:92px;resize:none;border:0;outline:0;background:transparent;padding:34px 40px 8px;color:#1f1f1d;font:inherit;font-size:26px;line-height:1.35}
+.chatbot-home__composer textarea::placeholder{color:#6f716f;opacity:1}
+.chatbot-home__composer-actions{height:62px;display:flex;align-items:center;justify-content:space-between;padding:0 32px 24px 38px}
+.chatbot-home__composer-actions button{display:inline-grid;place-items:center;border:0;background:transparent;color:#111;cursor:pointer;font:inherit}
+.chatbot-home__composer-actions>button{font-size:36px;font-weight:300;line-height:1}
+.chatbot-home__composer-actions>div{display:flex;align-items:center;gap:24px}
+.chatbot-voice-bars{width:36px;height:32px;display:inline-flex!important;align-items:center;gap:4px}
+.chatbot-voice-bars span{width:3px;border-radius:999px;background:#111}
+.chatbot-voice-bars span:nth-child(1){height:14px}.chatbot-voice-bars span:nth-child(2){height:22px}.chatbot-voice-bars span:nth-child(3){height:30px}.chatbot-voice-bars span:nth-child(4){height:22px}.chatbot-voice-bars span:nth-child(5){height:14px}
+.chatbot-home__prompts{width:min(900px,100%);display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin-top:26px}
+.chatbot-home__prompts button{border:1px solid #d9d2c9;border-radius:999px;background:rgba(255,255,255,.82);box-shadow:0 2px 8px rgba(45,36,27,.06);padding:6px 16px;color:#222;font:inherit;font-size:18px;line-height:1.15;text-align:left;cursor:pointer}
+.chatbot-home__prompts button:hover{border-color:var(--color-accent);color:#111;background:#fff}
+@media(max-width:760px){.chatbot-page--home{padding:38px 14px}.chatbot-home__hero{gap:14px;margin-bottom:30px}.chatbot-home__hero img{width:52px;height:52px}.chatbot-home__hero h1{font-size:42px}.chatbot-home__composer{min-height:148px;border-radius:22px}.chatbot-home__composer textarea{padding:26px 24px 4px;font-size:21px}.chatbot-home__composer-actions{padding:0 22px 20px}.chatbot-home__prompts button{font-size:15px}}
+
 .chatbot-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 340px;
@@ -8194,6 +8214,7 @@ a.subtle:hover { text-decoration: underline; }
 .company-accidents-page .view{padding:0}
 .company-accident-edit-table input{width:100%;min-height:34px;border:1px solid var(--border-1);border-radius:6px;background:white;padding:0 9px;font:inherit;font-size:12px}
 .company-organization-page .org-page{padding:0}
+.company-certification-page .cert-overview{padding:0}
 .company-org-preview{min-height:220px;border:1px solid var(--border-1);background:#fff;padding:18px;color:var(--fg-1)}
 .company-org-preview>strong{display:block;border-bottom:1px solid var(--border-1);padding-bottom:10px;margin-bottom:14px}
 .company-org-preview>span{display:block;color:var(--fg-3);font-size:11px;margin-bottom:18px}

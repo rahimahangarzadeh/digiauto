@@ -1,6 +1,6 @@
 ﻿/* Zertifizierungsübersicht - firm certifications (ISO, SCC, etc.) */
 
-function CertOverviewView({ activeCompany }) {
+function CertOverviewView({ activeCompany, extraAction = null }) {
   const initialCertData = {
     tiefbau: [
       { id: 'iso9001', name: 'DIN EN ISO 9001:2015', validUntil: '2028-06-07' },
@@ -258,6 +258,7 @@ function CertOverviewView({ activeCompany }) {
   const getAllAudits = () => {
     const allAudits = [];
     Object.entries(auditsByCompany).forEach(([companyId, audits]) => {
+      if (activeCompany !== 'all' && companyId !== activeCompany) return;
       const company = companies.find((item) => item.id === companyId);
       allAudits.push(...audits.map((audit) => ({
         ...audit,
@@ -299,6 +300,7 @@ function CertOverviewView({ activeCompany }) {
             Erst Firma auswählen, dann Zertifikate und Ablaufstatus prüfen.
           </div>
         </div>
+        {extraAction && <div className="view__actions">{extraAction}</div>}
       </div>
 
       <div className="cert-layout">

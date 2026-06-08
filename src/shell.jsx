@@ -36,14 +36,15 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
     sections = [
       { label: '\u00dcbersicht', items: [
         { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-        { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'chatbot', label: 'Chatbot', icon: 'flag' },
+      ]},
+      { label: 'Verwaltung', items: [
+        { id: 'employees', label: 'Mitarbeiter', icon: 'users' },
+        { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'bauleiterbesprechung', label: 'Bauleiterbesprechung', icon: 'users' },
-        { id: 'normenmatrix', label: 'Normenmatrix', icon: 'matrix' },
-        { id: 'formulare', label: 'Formulare', icon: 'doc' },
-        { id: 'calendar',       label: 'Schulungskalender',        icon: 'cal' },
+        { id: 'message_center', label: 'Nachrichtenzentrale', icon: 'mail', badge: 2 },
+        { id: 'providers', label: 'Akademien & Anbieter', icon: 'building' },
         { id: 'trainings', label: 'Schulungen', icon: 'cap' },
-        { id: 'befaehigte_personen', label: 'Bef\u00e4higte Personen', icon: 'shield' },
       ]},
       { label: 'Dokumente', items: [
         { id: 'doc_home', label: 'Startseite', icon: 'dashboard' },
@@ -55,26 +56,19 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
     sections = [
       { label: '\u00dcbersicht', items: [
         { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-        { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'chatbot', label: 'Chatbot', icon: 'flag' },
-        { id: 'bauleiterbesprechung', label: 'Bauleiterbesprechung', icon: 'users' },
-        { id: 'normenmatrix', label: 'Normenmatrix', icon: 'matrix' },
-        { id: 'formulare', label: 'Formulare', icon: 'doc' },
-        { id: 'calendar',       label: 'Schulungskalender',        icon: 'cal' },
-        { id: 'trainings', label: 'Schulungen', icon: 'cap' },
-        { id: 'befaehigte_personen', label: 'Bef\u00e4higte Personen', icon: 'shield' },
       ]},
       { label: 'Verwaltung', items: [
         { id: 'employees', label: 'Mitarbeiter', icon: 'users' },
+        { id: 'company_hub', label: 'Firma', icon: 'building' },
+        { id: 'bauleiterbesprechung', label: 'Bauleiterbesprechung', icon: 'users' },
         { id: 'message_center', label: 'Nachrichtenzentrale', icon: 'mail', badge: 2 },
+        { id: 'providers', label: 'Akademien & Anbieter', icon: 'building' },
+        { id: 'trainings', label: 'Schulungen', icon: 'cap' },
       ]},
       { label: 'Dokumente', items: [
         { id: 'doc_home', label: 'Startseite', icon: 'dashboard' },
         { id: 'doc_drive', label: 'Meine Ablage', icon: 'building' },
-      ]},
-      { label: 'Stammdaten', items: [
-        { id: 'providers', label: 'Akademien & Anbieter', icon: 'building' },
-        { id: 'companies', label: 'Firmen', icon: 'building' },
       ]},
     ];
   }

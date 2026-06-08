@@ -1,11 +1,13 @@
 ﻿/* Company list and company-scoped detail workspace */
 
 const COMPANY_DETAIL_AREAS = [
-  ['overview', 'Ãœbersicht', 'dashboard'], ['master', 'Stammdaten', 'building'],
+  ['overview', 'Übersicht', 'dashboard'], ['master', 'Stammdaten', 'building'],
   ['matrix', 'Qualifikationsmatrix', 'matrix'], ['evaluation', 'Firmen-Auswertung', 'shield'],
   ['sites', 'Baustellen', 'building'], ['bgbau', 'Baustellenaushang', 'doc'],
   ['supervisors', 'Fachaufsichten', 'shield'], ['accidents', 'Unfallstatistik', 'matrix'],
-  ['organization', 'Organigramm', 'users'], ['certification', 'ZertifizierungsÃ¼bersicht', 'doc'],
+  ['organization', 'Organigramm', 'users'], ['certification', 'Zertifizierungsübersicht', 'doc'],
+  ['norms', 'Normenmatrix', 'matrix'], ['forms', 'Formulare', 'doc'],
+  ['calendar', 'Schulungskalender', 'calendar'], ['authorized', 'Befähigte Personen', 'shield'],
 ];
 
 const COMPANY_META = {
@@ -65,48 +67,43 @@ function CompanyHubView() {
   const filterValues = filterPanel ? Array.from(new Set(allRows.map(company => String(columnValue(company, filterPanel))))).sort((a, b) => a.localeCompare(b, 'de', { numeric:true })) : [];
   const visibleFilterValues = filterValues.filter(value => value.toLowerCase().includes(filterSearch.toLowerCase()));
 
-  const CompanyColumnHeader = ({ column }) => {
-    const active = sort.key === column.key || (columnFilters[column.key] || []).length > 0 || groupBy === column.key;
-    return <th style={{ position:'relative', whiteSpace:'nowrap' }}>
-      <button type="button" onClick={() => setColumnMenu(columnMenu === column.key ? null : column.key)} style={{ color:active ? 'var(--fg-1)' : undefined, fontWeight:active ? 700 : undefined }}>
-        {column.label}<span>{sort.key === column.key ? (sort.dir === 'asc' ? 'â†‘' : 'â†“') : 'âŒ„'}</span>
-      </button>
-      {columnMenu === column.key && <div className="company-column-menu">
-        <button onClick={() => setCompanySort(column.key, 'asc')}>A bis Z</button>
-        <button onClick={() => setCompanySort(column.key, 'desc')}>Z bis A</button>
-        <button onClick={() => { setFilterPanel(column.key); setFilterSearch(''); setColumnMenu(null); }}>Filtern nach</button>
-        <button onClick={() => { setGroupBy(groupBy === column.key ? '' : column.key); setCompanySort(column.key, 'asc'); }}>Gruppieren nach â€ž{column.label}â€œ</button>
-      </div>}
-    </th>;
-  };
+  const sortLabel = sort.key === 'name' ? 'Name (A-Z)' : columnLabel(sort.key);
+  const kpiIcon = { all:'building', active:'check', preparing:'clock', inactive:'x' };
+  const statusTone = company => company.status === 'Aktiv' ? 'valid' : company.status === 'In Vorbereitung' ? 'warn' : 'expired';
 
   return <div className="company-hub">
     <header className="company-list-head">
       <div className="company-list-title"><h1>Firma</h1><p>Firmen der Janning-Gruppe verwalten und im Detail ansehen.</p></div>
-      <div className="company-list-kpis">{kpis.map(kpi => <button key={kpi.key} className={kpiFilter === kpi.key ? 'is-active' : ''} style={{ '--company-kpi-color':kpi.color }} onClick={() => setKpiFilter(kpi.key)}><span>{kpi.label}</span><strong>{kpi.value}</strong></button>)}</div>
+      <div className="company-list-kpis">{kpis.map(kpi => <button key={kpi.key} className={kpiFilter === kpi.key ? 'is-active' : ''} style={{ '--company-kpi-color':kpi.color }} onClick={() => setKpiFilter(kpi.key)}><Icon name={kpiIcon[kpi.key]} size={24} /><span>{kpi.label}</span><strong>{kpi.value}</strong></button>)}</div>
       <div className="company-list-actions"><button className="btn btn--ghost"><Icon name="download" size={14} />Exportieren</button><button className="btn btn--primary"><Icon name="plus" size={14} />Firma</button></div>
     </header>
-    <div className="company-list-count">{rows.length} Firmen</div>
+    <div className="company-viewbar">
+      <button className="company-sort-button"><Icon name="filter" size={16} />Sortieren: <strong>{sortLabel}</strong><Icon name="chev" size={14} /></button>
+      <div className="company-view-toggle"><button className="is-active" title="Kartenansicht"><Icon name="dashboard" size={18} /></button><button title="Listenansicht"><Icon name="matrix" size={18} /></button></div>
+    </div>
     {(sort.key !== 'name' || sort.dir !== 'asc' || groupBy || kpiFilter !== 'all') && <div className="company-list-resetbar">
       {(sort.key !== 'name' || sort.dir !== 'asc') && <button className="btn btn--ghost" onClick={() => setSort({ key:'name', dir:'asc' })}>Sortierung zurÃ¼cksetzen</button>}
       {groupBy && <button className="btn btn--ghost" onClick={() => setGroupBy('')}>Gruppierung aufheben</button>}
       {kpiFilter !== 'all' && <button className="btn btn--ghost" onClick={() => setKpiFilter('all')}>KPI-Filter aufheben</button>}
     </div>}
     {Object.entries(columnFilters).some(([, values]) => values?.length) && <div className="company-filter-chips">{Object.entries(columnFilters).flatMap(([key, values]) => (values || []).map(value => <span key={key + value}><small>{columnLabel(key)}:</small><strong>{value}</strong><button onClick={() => toggleFilter(key, value)}><Icon name="x" size={13} /></button></span>))}<button className="btn btn--ghost" onClick={() => setColumnFilters({})}>Alle Filter lÃ¶schen</button></div>}
-    <div className="tbl-wrap company-list-table"><table className="tbl"><thead><tr>{columns.map(column => <CompanyColumnHeader key={column.key} column={column} />)}</tr></thead><tbody>{rows.map((company, index) => {
-      const groupValue = groupBy ? String(columnValue(company, groupBy)) : '';
-      const previous = groupBy && index > 0 ? String(columnValue(rows[index - 1], groupBy)) : null;
-      return <React.Fragment key={company.id}>
-        {groupBy && groupValue !== previous && <tr className="company-group-row"><td colSpan={columns.length}>{columnLabel(groupBy)}: {groupValue}</td></tr>}
-        <tr onClick={() => setSelectedCompany(company)}>
-          <td><div className="company-name-cell"><div><strong>{company.name}</strong><small>{company.short}</small></div></div></td>
-          <td className="num"><span className="company-count">{company.employees}</span></td>
-          <td>{company.manager}</td><td>{company.address}</td><td>{company.phone}</td><td>{company.description}</td>
-          <td><img className="company-row-logo" src={company.logo} alt={company.short} /></td>
-          <td><span className={'badge ' + (company.status === 'Aktiv' ? 'badge--valid' : company.status === 'In Vorbereitung' ? 'badge--warn' : 'badge--expired')}><span className="badge__dot" />{company.status}</span></td>
-        </tr>
-      </React.Fragment>;
-    })}</tbody></table></div>
+    <section className="company-card-grid">
+      {rows.map(company => <article key={company.id} className="company-card">
+        <div className="company-card__top">
+          <img src={company.logo} alt={company.short} />
+          <div>
+            <h2>{company.name}</h2>
+            <p>{company.short}</p>
+          </div>
+          <span className={'company-status company-status--' + statusTone(company)}><i />{company.status}</span>
+        </div>
+        <div className="company-card__meta">
+          <span><Icon name="users" size={18} /><strong>{company.employees}</strong>Mitarbeiter</span>
+          <span><Icon name="users" size={18} /><em>Geschäftsführer</em><strong>{company.manager}</strong></span>
+        </div>
+        <button className="company-card__open" onClick={() => setSelectedCompany(company)}><Icon name="eye" size={22} />Öffnen</button>
+      </article>)}
+    </section>
     {filterPanel && <div className="company-filter-backdrop" onClick={() => setFilterPanel(null)}><section className="company-filter-panel" onClick={event => event.stopPropagation()}><header><strong>{columnLabel(filterPanel)} filtern</strong><button onClick={() => setFilterPanel(null)}><Icon name="x" size={15} /></button></header><label><Icon name="search" size={15} /><input autoFocus value={filterSearch} onChange={event => setFilterSearch(event.target.value)} placeholder="Suchen..." /></label><div>{visibleFilterValues.map(value => <label key={value}><input type="checkbox" checked={(columnFilters[filterPanel] || []).includes(value)} onChange={() => toggleFilter(filterPanel, value)} /><span>{value}</span></label>)}</div><footer><button className="btn btn--ghost" onClick={() => setColumnFilters(current => ({ ...current, [filterPanel]:[] }))}>ZurÃ¼cksetzen</button><button className="btn btn--primary" onClick={() => setFilterPanel(null)}>Anwenden</button></footer></section></div>}
   </div>;
 }
@@ -122,6 +119,10 @@ function CompanyDetail({ company, onBack }) {
   if (area === 'accidents') return <CompanyAccidentsPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'organization') return <CompanyOrganizationPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'certification') return <CompanyCertificationPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'norms') return <CompanyNormsPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'forms') return <CompanyFormsPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'calendar') return <CompanyCalendarPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'authorized') return <CompanyAuthorizedPeoplePage company={company} onBack={() => setArea('overview')} />;
   return <div className="company-detail"><header className="company-detail__top"><div className="company-detail__intro"><button className="emp-round-back" onClick={onBack} title="ZurÃ¼ck"><Icon name="chevL" size={18} stroke={2} /></button><div><h1>Firma-Detail</h1><p>Alle firmenspezifischen Daten im Ãœberblick</p></div></div><section className="company-detail__profile"><img src={company.logo} alt={company.short} /><div><h2>{company.name}</h2><dl><div><dt>GeschÃ¤ftsfÃ¼hrer</dt><dd>{company.manager}</dd></div><div><dt>Mitarbeiter</dt><dd>{company.employees}</dd></div><div><dt>Telefon</dt><dd>{company.phone}</dd></div></dl></div></section></header><div className="company-detail__body"><nav className="emp-section-nav">{COMPANY_DETAIL_AREAS.map(([id, label, icon]) => <button key={id} className={area === id ? 'is-active' : ''} onClick={() => setArea(id)}><Icon name={icon} size={16} /><span>{label}</span><Icon name="chevR" size={13} /></button>)}</nav><main className="company-detail__content">{area === 'overview' ? <DashboardView activeCompany={company.id} setNav={() => {}} hideSummary /> : <CompanyAreaPlaceholder company={company} area={area} />}</main></div></div>;
 }
 
@@ -272,6 +273,46 @@ function CompanyCertificationPage({ company, onBack }) {
   return <div className="emp-full company-certification-page">
     <CompanyPageTitle title={`Zertifizierungsuebersicht (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} />
     <CertView
+      activeCompany={showAllCompanies ? 'all' : company.id}
+      extraAction={showAllCompanies
+        ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
+        : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}
+    />
+  </div>;
+}
+
+function CompanyNormsPage({ company, onBack }) {
+  return <div className="emp-full company-norms-page">
+    <CompanyPageTitle title={`Normenmatrix (${company.name})`} onBack={onBack} />
+    <NormenmatrixView />
+  </div>;
+}
+
+function CompanyFormsPage({ company, onBack }) {
+  return <div className="emp-full company-forms-page">
+    <CompanyPageTitle title={`Formulare (${company.name})`} onBack={onBack} />
+    <FormulareView />
+  </div>;
+}
+
+function CompanyCalendarPage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  return <div className="emp-full company-calendar-page">
+    <CompanyPageTitle title={`Schulungskalender (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} />
+    <CalendarView
+      activeCompany={showAllCompanies ? 'all' : company.id}
+      extraAction={showAllCompanies
+        ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
+        : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}
+    />
+  </div>;
+}
+
+function CompanyAuthorizedPeoplePage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  return <div className="emp-full company-authorized-page">
+    <CompanyPageTitle title={`Befähigte Personen (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} />
+    <BefaehigtePersonenView
       activeCompany={showAllCompanies ? 'all' : company.id}
       extraAction={showAllCompanies
         ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>

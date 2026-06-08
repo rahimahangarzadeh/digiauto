@@ -1,4 +1,4 @@
-function BGBauAushangView({ activeCompany }) {
+function BGBauAushangView({ activeCompany, extraAction = null, title = 'Baustellenaushang BG BAU' }) {
   const statusCfg = {
     geplant: { label: 'Geplant', color: '#2d6fa3', bg: '#e8f1fb', border: '#bcd3ee' },
     aktiv: { label: 'Aktiv', color: '#3f7a4a', bg: '#eff5ed', border: '#cde1cf' },
@@ -268,10 +268,11 @@ function BGBauAushangView({ activeCompany }) {
 
       <div className="view__header">
         <div>
-          <h1 className="view__title">Baustellenaushang BG BAU</h1>
+          <h1 className="view__title">{title}</h1>
           <div className="view__subtitle">Aushang-Dokumente je Baustelle mit Status, Verantwortlichen und PDF-Vorschau.</div>
         </div>
         <div className="view__actions">
+          {extraAction}
           <button className="btn btn--primary"><Icon name="plus" size={14} />Aushang anlegen</button>
         </div>
       </div>

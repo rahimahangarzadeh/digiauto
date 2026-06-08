@@ -8302,4 +8302,26 @@ a.subtle:hover { text-decoration: underline; }
 .alarm-a4-phone{grid-row:1 / span 3;grid-column:2;display:grid;place-items:center}
 .alarm-a4-phone img{width:86px}
 .company-site-alarm-a4 footer{padding:14px;font-size:11px;line-height:1.45}
+.company-bgbau-table{min-width:1280px}
+.company-bgbau-table th{height:44px;padding:0 14px;background:var(--color-parchment);color:var(--fg-3);font-size:10px;text-transform:uppercase;letter-spacing:.35px;text-align:left}
+.company-bgbau-table td{padding:12px 14px;border-bottom:1px solid var(--border-1);font-size:12px;color:var(--fg-2);vertical-align:middle}
+.company-bgbau-table tbody tr{cursor:pointer}
+.company-bgbau-table tbody tr:hover td{background:rgba(201,100,66,.035)}
+.company-bgbau-table td strong{display:block;color:var(--fg-1);font-weight:800}
+.company-bgbau-table td small{display:block;margin-top:4px;color:var(--fg-3);font-size:11px;max-width:340px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.company-bgbau-hero{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;border:1px solid var(--border-1);border-radius:8px;background:var(--color-ivory);padding:18px 20px;margin-bottom:18px}
+.company-bgbau-hero strong{color:var(--fg-3);font-size:11px;text-transform:uppercase}
+.company-bgbau-hero h2{margin:6px 0 6px;font-family:var(--font-serif);font-size:24px;font-weight:500;color:var(--fg-1)}
+.company-bgbau-hero p{margin:0;color:var(--fg-2);font-size:13px}
+.company-bgbau-detail-layout{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(360px,.8fr);gap:18px;align-items:start}
+.company-bgbau-detail-layout .company-bgbau-preview-card{grid-column:1 / -1}
+.company-bgbau-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 28px}
+.company-bgbau-fields label{display:grid;gap:6px;border-bottom:1px solid var(--border-1);padding-bottom:10px}
+.company-bgbau-fields span{font-size:10px;font-weight:800;color:var(--fg-3);text-transform:uppercase;letter-spacing:.35px}
+.company-bgbau-fields strong{color:var(--fg-1);font-size:13px}
+.company-bgbau-fields input{border:1px solid var(--border-1);border-radius:6px;background:white;color:var(--fg-1);font:inherit;font-size:13px;padding:9px 10px}
+.company-bgbau-preview{min-height:230px;border:2px solid #3f7a4a;background:white;padding:18px;color:#111}
+.company-bgbau-preview h3{margin:0 0 18px;color:#3f7a4a;font-size:22px}
+.company-bgbau-preview strong{display:block;font-size:18px;margin-bottom:8px}
+.company-bgbau-preview p{margin:8px 0;color:#222}
 @media(max-width:1250px){.company-list-head{grid-template-columns:1fr}.company-list-actions{justify-content:flex-start}.company-list-kpis{grid-template-columns:repeat(2,minmax(140px,1fr))}.company-list-count{text-align:left}}

@@ -1,18 +1,18 @@
-/* Company list and company-scoped detail workspace */
+﻿/* Company list and company-scoped detail workspace */
 
 const COMPANY_DETAIL_AREAS = [
-  ['overview', 'Übersicht', 'dashboard'], ['master', 'Stammdaten', 'building'],
+  ['overview', 'Ãœbersicht', 'dashboard'], ['master', 'Stammdaten', 'building'],
   ['matrix', 'Qualifikationsmatrix', 'matrix'], ['evaluation', 'Firmen-Auswertung', 'shield'],
   ['sites', 'Baustellen', 'building'], ['bgbau', 'Baustellenaushang', 'doc'],
   ['supervisors', 'Fachaufsichten', 'shield'], ['accidents', 'Unfallstatistik', 'matrix'],
-  ['organization', 'Organigramm', 'users'], ['certification', 'Zertifizierungsübersicht', 'doc'],
+  ['organization', 'Organigramm', 'users'], ['certification', 'ZertifizierungsÃ¼bersicht', 'doc'],
 ];
 
 const COMPANY_META = {
-  tiefbau: { manager:'Michael Janning', address:'Lingener Straße 42, 48529 Nordhorn', phone:'+49 5921 8801-0', description:'Tiefbau, Kanalsanierung und Infrastrukturprojekte.', status:'Aktiv' },
+  tiefbau: { manager:'Michael Janning', address:'Lingener StraÃŸe 42, 48529 Nordhorn', phone:'+49 5921 8801-0', description:'Tiefbau, Kanalsanierung und Infrastrukturprojekte.', status:'Aktiv' },
   bohrtechnik: { manager:'Andreas Janning', address:'Gewerbepark 8, 48531 Nordhorn', phone:'+49 5921 8802-0', description:'Horizontalbohrungen und grabenlose Verlegetechnik.', status:'Aktiv' },
-  rohrbau: { manager:'Stefan Janning', address:'Südring 18, 48527 Nordhorn', phone:'+49 5921 8803-0', description:'Rohrleitungsbau für Gas-, Wasser- und Versorgungsnetze.', status:'Aktiv' },
-  galabau: { manager:'Thomas Janning', address:'Mühlenstraße 37, 48599 Gronau', phone:'+49 2562 8804-0', description:'Garten-, Landschafts- und Außenanlagenbau.', status:'In Vorbereitung' },
+  rohrbau: { manager:'Stefan Janning', address:'SÃ¼dring 18, 48527 Nordhorn', phone:'+49 5921 8803-0', description:'Rohrleitungsbau fÃ¼r Gas-, Wasser- und Versorgungsnetze.', status:'Aktiv' },
+  galabau: { manager:'Thomas Janning', address:'MÃ¼hlenstraÃŸe 37, 48599 Gronau', phone:'+49 2562 8804-0', description:'Garten-, Landschafts- und AuÃŸenanlagenbau.', status:'In Vorbereitung' },
   transporte: { manager:'Michael Janning', address:'Am Hafen 12, 49808 Lingen', phone:'+49 591 8805-0', description:'Baustellenlogistik, Transporte und Materialversorgung.', status:'Inaktiv' },
 };
 
@@ -37,7 +37,7 @@ function CompanyHubView() {
 
   const columns = [
     { key:'name', label:'Name Firma' }, { key:'employees', label:'Anzahl Mitarbeiter' },
-    { key:'manager', label:'Geschäftsführer' }, { key:'address', label:'Adresse' },
+    { key:'manager', label:'GeschÃ¤ftsfÃ¼hrer' }, { key:'address', label:'Adresse' },
     { key:'phone', label:'Tel' }, { key:'description', label:'Beschreibung' },
     { key:'logo', label:'Logo' }, { key:'status', label:'Status' },
   ];
@@ -69,13 +69,13 @@ function CompanyHubView() {
     const active = sort.key === column.key || (columnFilters[column.key] || []).length > 0 || groupBy === column.key;
     return <th style={{ position:'relative', whiteSpace:'nowrap' }}>
       <button type="button" onClick={() => setColumnMenu(columnMenu === column.key ? null : column.key)} style={{ color:active ? 'var(--fg-1)' : undefined, fontWeight:active ? 700 : undefined }}>
-        {column.label}<span>{sort.key === column.key ? (sort.dir === 'asc' ? '↑' : '↓') : '⌄'}</span>
+        {column.label}<span>{sort.key === column.key ? (sort.dir === 'asc' ? 'â†‘' : 'â†“') : 'âŒ„'}</span>
       </button>
       {columnMenu === column.key && <div className="company-column-menu">
         <button onClick={() => setCompanySort(column.key, 'asc')}>A bis Z</button>
         <button onClick={() => setCompanySort(column.key, 'desc')}>Z bis A</button>
         <button onClick={() => { setFilterPanel(column.key); setFilterSearch(''); setColumnMenu(null); }}>Filtern nach</button>
-        <button onClick={() => { setGroupBy(groupBy === column.key ? '' : column.key); setCompanySort(column.key, 'asc'); }}>Gruppieren nach „{column.label}“</button>
+        <button onClick={() => { setGroupBy(groupBy === column.key ? '' : column.key); setCompanySort(column.key, 'asc'); }}>Gruppieren nach â€ž{column.label}â€œ</button>
       </div>}
     </th>;
   };
@@ -88,11 +88,11 @@ function CompanyHubView() {
     </header>
     <div className="company-list-count">{rows.length} Firmen</div>
     {(sort.key !== 'name' || sort.dir !== 'asc' || groupBy || kpiFilter !== 'all') && <div className="company-list-resetbar">
-      {(sort.key !== 'name' || sort.dir !== 'asc') && <button className="btn btn--ghost" onClick={() => setSort({ key:'name', dir:'asc' })}>Sortierung zurücksetzen</button>}
+      {(sort.key !== 'name' || sort.dir !== 'asc') && <button className="btn btn--ghost" onClick={() => setSort({ key:'name', dir:'asc' })}>Sortierung zurÃ¼cksetzen</button>}
       {groupBy && <button className="btn btn--ghost" onClick={() => setGroupBy('')}>Gruppierung aufheben</button>}
       {kpiFilter !== 'all' && <button className="btn btn--ghost" onClick={() => setKpiFilter('all')}>KPI-Filter aufheben</button>}
     </div>}
-    {Object.entries(columnFilters).some(([, values]) => values?.length) && <div className="company-filter-chips">{Object.entries(columnFilters).flatMap(([key, values]) => (values || []).map(value => <span key={key + value}><small>{columnLabel(key)}:</small><strong>{value}</strong><button onClick={() => toggleFilter(key, value)}><Icon name="x" size={13} /></button></span>))}<button className="btn btn--ghost" onClick={() => setColumnFilters({})}>Alle Filter löschen</button></div>}
+    {Object.entries(columnFilters).some(([, values]) => values?.length) && <div className="company-filter-chips">{Object.entries(columnFilters).flatMap(([key, values]) => (values || []).map(value => <span key={key + value}><small>{columnLabel(key)}:</small><strong>{value}</strong><button onClick={() => toggleFilter(key, value)}><Icon name="x" size={13} /></button></span>))}<button className="btn btn--ghost" onClick={() => setColumnFilters({})}>Alle Filter lÃ¶schen</button></div>}
     <div className="tbl-wrap company-list-table"><table className="tbl"><thead><tr>{columns.map(column => <CompanyColumnHeader key={column.key} column={column} />)}</tr></thead><tbody>{rows.map((company, index) => {
       const groupValue = groupBy ? String(columnValue(company, groupBy)) : '';
       const previous = groupBy && index > 0 ? String(columnValue(rows[index - 1], groupBy)) : null;
@@ -107,7 +107,7 @@ function CompanyHubView() {
         </tr>
       </React.Fragment>;
     })}</tbody></table></div>
-    {filterPanel && <div className="company-filter-backdrop" onClick={() => setFilterPanel(null)}><section className="company-filter-panel" onClick={event => event.stopPropagation()}><header><strong>{columnLabel(filterPanel)} filtern</strong><button onClick={() => setFilterPanel(null)}><Icon name="x" size={15} /></button></header><label><Icon name="search" size={15} /><input autoFocus value={filterSearch} onChange={event => setFilterSearch(event.target.value)} placeholder="Suchen..." /></label><div>{visibleFilterValues.map(value => <label key={value}><input type="checkbox" checked={(columnFilters[filterPanel] || []).includes(value)} onChange={() => toggleFilter(filterPanel, value)} /><span>{value}</span></label>)}</div><footer><button className="btn btn--ghost" onClick={() => setColumnFilters(current => ({ ...current, [filterPanel]:[] }))}>Zurücksetzen</button><button className="btn btn--primary" onClick={() => setFilterPanel(null)}>Anwenden</button></footer></section></div>}
+    {filterPanel && <div className="company-filter-backdrop" onClick={() => setFilterPanel(null)}><section className="company-filter-panel" onClick={event => event.stopPropagation()}><header><strong>{columnLabel(filterPanel)} filtern</strong><button onClick={() => setFilterPanel(null)}><Icon name="x" size={15} /></button></header><label><Icon name="search" size={15} /><input autoFocus value={filterSearch} onChange={event => setFilterSearch(event.target.value)} placeholder="Suchen..." /></label><div>{visibleFilterValues.map(value => <label key={value}><input type="checkbox" checked={(columnFilters[filterPanel] || []).includes(value)} onChange={() => toggleFilter(filterPanel, value)} /><span>{value}</span></label>)}</div><footer><button className="btn btn--ghost" onClick={() => setColumnFilters(current => ({ ...current, [filterPanel]:[] }))}>ZurÃ¼cksetzen</button><button className="btn btn--primary" onClick={() => setFilterPanel(null)}>Anwenden</button></footer></section></div>}
   </div>;
 }
 
@@ -117,7 +117,8 @@ function CompanyDetail({ company, onBack }) {
   if (area === 'matrix') return <CompanyMatrixPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'evaluation') return <CompanyEvaluationPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'sites') return <CompanySitesPage company={company} onBack={() => setArea('overview')} />;
-  return <div className="company-detail"><header className="company-detail__top"><div className="company-detail__intro"><button className="emp-round-back" onClick={onBack} title="Zurück"><Icon name="chevL" size={18} stroke={2} /></button><div><h1>Firma-Detail</h1><p>Alle firmenspezifischen Daten im Überblick</p></div></div><section className="company-detail__profile"><img src={company.logo} alt={company.short} /><div><h2>{company.name}</h2><dl><div><dt>Geschäftsführer</dt><dd>{company.manager}</dd></div><div><dt>Mitarbeiter</dt><dd>{company.employees}</dd></div><div><dt>Telefon</dt><dd>{company.phone}</dd></div></dl></div></section></header><div className="company-detail__body"><nav className="emp-section-nav">{COMPANY_DETAIL_AREAS.map(([id, label, icon]) => <button key={id} className={area === id ? 'is-active' : ''} onClick={() => setArea(id)}><Icon name={icon} size={16} /><span>{label}</span><Icon name="chevR" size={13} /></button>)}</nav><main className="company-detail__content">{area === 'overview' ? <DashboardView activeCompany={company.id} setNav={() => {}} hideSummary /> : <CompanyAreaPlaceholder company={company} area={area} />}</main></div></div>;
+  if (area === 'bgbau') return <CompanyBGBauPage company={company} onBack={() => setArea('overview')} />;
+  return <div className="company-detail"><header className="company-detail__top"><div className="company-detail__intro"><button className="emp-round-back" onClick={onBack} title="ZurÃ¼ck"><Icon name="chevL" size={18} stroke={2} /></button><div><h1>Firma-Detail</h1><p>Alle firmenspezifischen Daten im Ãœberblick</p></div></div><section className="company-detail__profile"><img src={company.logo} alt={company.short} /><div><h2>{company.name}</h2><dl><div><dt>GeschÃ¤ftsfÃ¼hrer</dt><dd>{company.manager}</dd></div><div><dt>Mitarbeiter</dt><dd>{company.employees}</dd></div><div><dt>Telefon</dt><dd>{company.phone}</dd></div></dl></div></section></header><div className="company-detail__body"><nav className="emp-section-nav">{COMPANY_DETAIL_AREAS.map(([id, label, icon]) => <button key={id} className={area === id ? 'is-active' : ''} onClick={() => setArea(id)}><Icon name={icon} size={16} /><span>{label}</span><Icon name="chevR" size={13} /></button>)}</nav><main className="company-detail__content">{area === 'overview' ? <DashboardView activeCompany={company.id} setNav={() => {}} hideSummary /> : <CompanyAreaPlaceholder company={company} area={area} />}</main></div></div>;
 }
 
 function CompanyMatrixPage({ company, onBack }) {
@@ -211,7 +212,7 @@ function CompanySiteDetailPage({ site, onBack }) {
           <tbody>{siteEmployees.map((employee, index) => {
             const allOk = ready || index < Math.max(2, siteEmployees.length - 1);
             const deviceTypes = ['Bagger', 'Minibagger', 'Teleskopstapler', 'Personenkraftwagen'];
-            const Check = ({ ok }) => ok ? <span className="company-site-check">✓</span> : <span className="company-site-dash">-</span>;
+            const Check = ({ ok }) => ok ? <span className="company-site-check">âœ“</span> : <span className="company-site-dash">-</span>;
             const released = index === 0;
             return <tr key={employee.id}>
               <td><strong>{employee.name}</strong><small>{window.company(employee.company)?.short || employee.company} - {employee.position}</small></td>
@@ -313,7 +314,7 @@ function CompanySiteDetailPage({ site, onBack }) {
             <div><b>Adresse</b><p>{site.adresse}</p></div>
             <div><b>Bauleiter</b><p>{site.bauleiter}</p></div>
             <div><b>Ersthelfer</b><p>{siteEmployees.slice(0, 2).map(employee => employee.name).join(', ') || 'Markus Brinker'}</p></div>
-            <footer>Notruf 112 · Rettungspunkt vor Ort</footer>
+            <footer>Notruf 112 Â· Rettungspunkt vor Ort</footer>
           </div>
         </div>
         <div className="company-site-alarm-info">
@@ -335,7 +336,7 @@ function CompanySiteDetailPage({ site, onBack }) {
             { ...docs[2], category:'Verkehrssicherung', release:'Mitarbeiter sichtbar' },
             { name:'Alarmplan_' + site.projectNr + '.pdf', date:'05.06.2026', status:'freigegeben', category:'Alarmplan', release:'Mitarbeiter sichtbar' },
           ].map(doc => <tr key={doc.name}>
-            <td><Icon name="doc" size={15} /><div><strong>{doc.name}</strong><small>PDF · Beispielanhang</small></div></td>
+            <td><Icon name="doc" size={15} /><div><strong>{doc.name}</strong><small>PDF Â· Beispielanhang</small></div></td>
             <td>{doc.category}</td>
             <td>{doc.date}</td>
             <td><span className={'badge ' + (doc.status === 'freigegeben' ? 'badge--valid' : 'badge--warn')}><span className="badge__dot" />{doc.status}</span></td>
@@ -389,6 +390,32 @@ function CompanySiteDetailPage({ site, onBack }) {
   </div>;
 }
 
+function companyBGBauRows() {
+  const employees = window.SEED?.employees || [];
+  return [
+    { id:'bgbau-1', nr:'BG-2026-001', company:'tiefbau', project:'Kanalsanierung Nordhorn', address:'Lingener Strasse 42, 48529 Nordhorn', start:'2026-04-15', end:'2026-06-28', status:'Aktiv', responsible:'Alexander Petersen', employees:12, doc:'BGBAU_Kanalsanierung_Nordhorn.pdf', description:'Aushang fuer Kanalsanierung Nordhorn mit Notfall- und Ansprechpartnerdaten.' },
+    { id:'bgbau-2', nr:'BG-2026-006', company:'tiefbau', project:'Hausanschluss Nordring', address:'Nordring 12, 48529 Nordhorn', start:'2026-05-18', end:'2026-06-20', status:'In Pruefung', responsible:'Alexander Petersen', employees:3, doc:'BGBAU_Hausanschluss_Nordring.pdf', description:'Aushang fuer kleinere Tiefbau-Baustelle, Personalpruefung noch offen.' },
+    { id:'bgbau-3', nr:'BG-2026-002', company:'rohrbau', project:'Hausanschluesse Suedring', address:'Suedring 18, 48527 Nordhorn', start:'2026-05-20', end:'2026-07-10', status:'Aktiv', responsible:'Stefan Mueller', employees:9, doc:'BGBAU_Suedring.pdf', description:'Aushang fuer Rohrbauarbeiten Suedring.' },
+  ].map(row => ({ ...row, companyName: window.company(row.company)?.name || row.company, employeeList: employees.filter(employee => employee.company === row.company).slice(0, row.employees) }));
+}
+
+function CompanyBGBauPage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  const BGBauView = window.BGBauAushangView;
+  return <div className="emp-full company-bgbau-page company-bgbau-page--native">
+    <CompanyPageTitle title={`Baustellenaushang (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} />
+    <BGBauView
+      activeCompany={showAllCompanies ? 'all' : company.id}
+      title="Baustellenaushang"
+      extraAction={<React.Fragment>
+        {showAllCompanies
+          ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
+          : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}
+      </React.Fragment>}
+    />
+  </div>;
+}
+
 function companyMasterRecord(company) {
   return { name:company.name, employees:company.employees, manager:company.manager, address:company.address, phone:company.phone, logo:company.logo, status:company.status, description:company.description, changed:'05.06.2026, 09:40 Uhr - von Sabine Janning' };
 }
@@ -403,18 +430,18 @@ function CompanyMasterRecord({ company, record, onBack }) {
   const set = (key, value) => setForm(current => ({ ...current, [key]:value }));
   return <div className="emp-full emp-master-detail company-master-detail">
     <CompanyPageTitle title={`Stammdaten (${company.name})`} onBack={onBack} action={<button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Alle bearbeiten</button>} />
-    <section className="emp-master-hero"><span className="company-master-hero-logo"><img src={form.logo} alt={company.short} /></span><div><div className="emp-master-hero__name"><h2>{form.name}</h2><span className="emp-active"><i />{form.status}</span></div><dl><div><dt>Geschäftsführer</dt><dd>{form.manager}</dd></div><div><dt>Mitarbeiter</dt><dd>{form.employees}</dd></div></dl></div><button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Alle bearbeiten</button></section>
+    <section className="emp-master-hero"><span className="company-master-hero-logo"><img src={form.logo} alt={company.short} /></span><div><div className="emp-master-hero__name"><h2>{form.name}</h2><span className="emp-active"><i />{form.status}</span></div><dl><div><dt>GeschÃ¤ftsfÃ¼hrer</dt><dd>{form.manager}</dd></div><div><dt>Mitarbeiter</dt><dd>{form.employees}</dd></div></dl></div><button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Alle bearbeiten</button></section>
     <div className="emp-master-layout"><main className="emp-master-main">
-      <CompanyMasterDataCard title="Firmendaten" icon="building"><div className="emp-master-field-grid"><CompanyMasterField label="Name Firma" icon="building" value={form.name} editing={editing}><input value={form.name} onChange={event => set('name', event.target.value)} /></CompanyMasterField><CompanyMasterField label="Anzahl Mitarbeiter" icon="users" value={form.employees} editing={editing}><input value={form.employees} onChange={event => set('employees', event.target.value)} /></CompanyMasterField><CompanyMasterField label="Geschäftsführer" icon="users" value={form.manager} editing={editing}><input value={form.manager} onChange={event => set('manager', event.target.value)} /></CompanyMasterField><CompanyMasterField label="Status" icon="shield" value={form.status} editing={editing}><select value={form.status} onChange={event => set('status', event.target.value)}><option>Aktiv</option><option>In Vorbereitung</option><option>Inaktiv</option></select></CompanyMasterField></div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Firmendaten" icon="building"><div className="emp-master-field-grid"><CompanyMasterField label="Name Firma" icon="building" value={form.name} editing={editing}><input value={form.name} onChange={event => set('name', event.target.value)} /></CompanyMasterField><CompanyMasterField label="Anzahl Mitarbeiter" icon="users" value={form.employees} editing={editing}><input value={form.employees} onChange={event => set('employees', event.target.value)} /></CompanyMasterField><CompanyMasterField label="GeschÃ¤ftsfÃ¼hrer" icon="users" value={form.manager} editing={editing}><input value={form.manager} onChange={event => set('manager', event.target.value)} /></CompanyMasterField><CompanyMasterField label="Status" icon="shield" value={form.status} editing={editing}><select value={form.status} onChange={event => set('status', event.target.value)}><option>Aktiv</option><option>In Vorbereitung</option><option>Inaktiv</option></select></CompanyMasterField></div></CompanyMasterDataCard>
       <CompanyMasterDataCard title="Kontakt" icon="phone"><div className="emp-master-contact-list"><CompanyMasterField label="Adresse" icon="pin" value={form.address} editing={editing}><input value={form.address} onChange={event => set('address', event.target.value)} /></CompanyMasterField><CompanyMasterField label="Tel" icon="phone" value={form.phone} editing={editing}><input value={form.phone} onChange={event => set('phone', event.target.value)} /></CompanyMasterField></div></CompanyMasterDataCard>
       <CompanyMasterDataCard title="Beschreibung" icon="doc">{editing ? <textarea className="emp-master-description-input" value={form.description} onChange={event => set('description', event.target.value)} /> : <p className="emp-master-description">{form.description}</p>}</CompanyMasterDataCard>
-    </main><aside className="emp-master-aside"><CompanyMasterDataCard title="Geändert" icon="history"><p className="emp-last-change">{form.changed}</p></CompanyMasterDataCard><CompanyMasterDataCard title="Logo" icon="doc"><div className="company-master-photo"><img src={form.logo} alt={company.short} /><div><strong>Firmenlogo</strong><small>PNG oder JPG</small><label><Icon name="upload" size={14} />Logo ändern<input type="file" accept="image/*" /></label></div></div></CompanyMasterDataCard></aside></div>
+    </main><aside className="emp-master-aside"><CompanyMasterDataCard title="GeÃ¤ndert" icon="history"><p className="emp-last-change">{form.changed}</p></CompanyMasterDataCard><CompanyMasterDataCard title="Logo" icon="doc"><div className="company-master-photo"><img src={form.logo} alt={company.short} /><div><strong>Firmenlogo</strong><small>PNG oder JPG</small><label><Icon name="upload" size={14} />Logo Ã¤ndern<input type="file" accept="image/*" /></label></div></div></CompanyMasterDataCard></aside></div>
     {editing && <div className="emp-master-savebar"><button className="btn btn--ghost" onClick={() => setEditing(false)}>Abbrechen</button><button className="btn btn--primary" onClick={() => setEditing(false)}>Speichern</button></div>}
   </div>;
 }
 
 function CompanyPageTitle({ title, onBack, action }) {
-  return <header className="emp-page-title"><div>{onBack && <button className="emp-round-back" onClick={onBack} title="Zurück"><Icon name="chevL" size={18} stroke={2} /></button>}<h1>{title}</h1></div>{action}</header>;
+  return <header className="emp-page-title"><div>{onBack && <button className="emp-round-back" onClick={onBack} title="ZurÃ¼ck"><Icon name="chevL" size={18} stroke={2} /></button>}<h1>{title}</h1></div>{action}</header>;
 }
 
 function CompanyMasterDataCard({ title, icon, children }) {
@@ -427,7 +454,7 @@ function CompanyMasterField({ label, icon, value, editing, children }) {
 
 function CompanyAreaPlaceholder({ company, area }) {
   const found = COMPANY_DETAIL_AREAS.find(item => item[0] === area);
-  return <section className="company-area-placeholder"><Icon name={found?.[2] || 'doc'} size={26} /><h2>{found?.[1]}</h2><p>Der Bereich für {company.name} wird im nächsten Schritt aufgebaut.</p></section>;
+  return <section className="company-area-placeholder"><Icon name={found?.[2] || 'doc'} size={26} /><h2>{found?.[1]}</h2><p>Der Bereich fÃ¼r {company.name} wird im nÃ¤chsten Schritt aufgebaut.</p></section>;
 }
 
 window.CompanyHubView = CompanyHubView;

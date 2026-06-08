@@ -9,8 +9,8 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
     .map(e => e.id)
     .slice(start, start + count);
   const tiefbauIds = Array.from(new Set(['e-me', ...companyEmployeeIds('tiefbau', 10)])).slice(0, 10);
+  const tiefbauShortIds = Array.from(new Set(['e-me', ...companyEmployeeIds('tiefbau', 3)])).slice(0, 3);
   const rohrbauIds = companyEmployeeIds('rohrbau', 9);
-  const bohrtechnikIds = companyEmployeeIds('bohrtechnik', 8);
   const initialSites = [
     {
       id: 'bs-1',
@@ -24,9 +24,28 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
       adresse: 'Lingener Strasse 42, 48529 Nordhorn',
       employeeIds: tiefbauIds,
       releasedEmployeeIds: ['e-me'],
+      demoFulfilled: 6,
+      demoMissing: 0,
+      demoReady: true,
     },
     {
       id: 'bs-2',
+      name: 'Baustelle Nordring',
+      company: 'Janning Tiefbau GmbH',
+      projectName: 'Hausanschluss Nordring',
+      projectNr: 'BAU-2026-019',
+      bauleiter: 'Alexander Petersen',
+      vorarbeiter: 'Dirk Juergens',
+      auftraggeber: 'Stadt Nordhorn',
+      adresse: 'Nordring 12, 48529 Nordhorn',
+      employeeIds: tiefbauShortIds,
+      releasedEmployeeIds: [],
+      demoFulfilled: 4,
+      demoMissing: 2,
+      demoReady: false,
+    },
+    {
+      id: 'bs-3',
       name: 'Rohrgraben Suedring',
       company: 'Janning Rohrbau GmbH',
       projectName: 'Hausanschluesse Suedring',
@@ -37,19 +56,9 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
       adresse: 'Suedring 18, 48527 Nordhorn',
       employeeIds: rohrbauIds,
       releasedEmployeeIds: [],
-    },
-    {
-      id: 'bs-3',
-      name: 'Bohrung Gewerbepark',
-      company: 'Janning Bohrtechnik GmbH',
-      projectName: 'Horizontalbohrung Gewerbepark',
-      projectNr: 'BAU-2026-028',
-      bauleiter: 'Dirk Berg',
-      vorarbeiter: 'Mehmet Brinker',
-      auftraggeber: 'Gewerbepark Bentheim GmbH',
-      adresse: 'Industriestrasse 7, 48455 Bad Bentheim',
-      employeeIds: bohrtechnikIds,
-      releasedEmployeeIds: [],
+      demoFulfilled: 6,
+      demoMissing: 0,
+      demoReady: true,
     },
   ];
 
@@ -247,6 +256,9 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
   const ready = total > 0 && missingChecks.length === 0;
 
   const siteStatus = (site) => {
+    if (typeof site.demoMissing === 'number') {
+      return { missing: site.demoMissing, ready: !!site.demoReady };
+    }
     const employees = activeEmployees.filter(e => site.employeeIds.includes(e.id));
     const withTraining = (ids) => employees.filter(emp => ids.some(id => hasTraining(emp, id))).length;
     const siteChecks = [
@@ -536,6 +548,10 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
   const siteColumnLabel = (key) => siteColumns.find(col => col.key === key)?.label || key;
   const siteMetrics = (site) => {
     const employees = activeEmployees.filter(e => site.employeeIds.includes(e.id));
+    if (typeof site.demoFulfilled === 'number' || typeof site.demoMissing === 'number') {
+      const status = siteStatus(site);
+      return { employees, siteTotal: employees.length, siteChecks: [], fulfilled: site.demoFulfilled ?? Math.max(0, 6 - status.missing), status };
+    }
     const siteTotal = employees.length;
     const siteWith = (ids) => employees.filter(emp => ids.some(id => hasTraining(emp, id))).length;
     const siteChecks = [

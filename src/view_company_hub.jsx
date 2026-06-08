@@ -145,26 +145,50 @@ function CompanySitesPage({ company, onBack }) {
 function CompanySiteDetailPage({ site, onBack }) {
   const tabs = ['Stammdaten', 'Personal', 'Personal-Pruefung', 'Fehlende Schulungen', 'Gefaehrdungsbeurteilung', 'Alarmplan', 'Dokumente'];
   const [tab, setTab] = React.useState('Stammdaten');
-  const missing = site.id === 'bs-3' ? 2 : 0;
-  const fulfilled = site.id === 'bs-3' ? '4/6' : '6/6';
+  const [alarmMode, setAlarmMode] = React.useState('empty');
+  const [alarmPreviewOpen, setAlarmPreviewOpen] = React.useState(false);
+  const missing = typeof site.demoMissing === 'number' ? site.demoMissing : 0;
+  const fulfilledCount = typeof site.demoFulfilled === 'number' ? site.demoFulfilled : (missing ? 4 : 6);
+  const fulfilled = fulfilledCount + '/6';
   const ready = missing === 0;
-  return <div className="emp-full company-site-detail-page">
-    <CompanyPageTitle title={site.name} onBack={onBack} action={<button className="btn btn--primary"><Icon name="check" size={14} />Speichern</button>} />
-    <section className="company-site-hero">
-      <div>
-        <h2>{site.projectName} - {site.projectNr}</h2>
-        <p>{site.company} - {site.adresse} - Bauleiter: {site.bauleiter}</p>
-        <span className={'badge ' + (ready ? 'badge--valid' : 'badge--warn')}><span className="badge__dot" />{ready ? 'Personal reicht' : missing + ' fehlen'}</span>
-      </div>
-    </section>
-    <nav className="company-site-tabs">{tabs.map(item => <button key={item} className={tab === item ? 'is-active' : ''} onClick={() => setTab(item)}>{item}</button>)}</nav>
-    <div className="company-site-kpis">
-      <div className="kpi"><div className="kpi__label">Mitarbeiter</div><div className="kpi__value">{site.employeeIds?.length || 0}</div><div className="kpi__delta">ausgewaehlt</div></div>
-      <div className="kpi"><div className="kpi__label">Pflichtpunkte</div><div className="kpi__value" style={{ color:ready ? '#3f7a4a' : '#8a6a1f' }}>{fulfilled}</div><div className="kpi__delta">erfuellt</div></div>
-      <div className="kpi"><div className="kpi__label">Fehlende Schulungen</div><div className="kpi__value" style={{ color:missing ? '#a13232' : '#3f7a4a' }}>{missing}</div><div className="kpi__delta">nachplanen</div></div>
-      <div className="kpi"><div className="kpi__label">Status</div><div className="kpi__value" style={{ color:ready ? '#3f7a4a' : '#a13232' }}>{ready ? 'OK' : 'Offen'}</div><div className="kpi__delta">einsatzbereit</div></div>
-    </div>
-    {tab === 'Stammdaten' ? <section className="card card--pad company-site-card">
+  const siteEmployees = (window.SEED?.employees || []).filter(employee => (site.employeeIds || []).includes(employee.id));
+  const checkRows = [
+    { label:'SCC 016', rule:'90% der Baustellenbesetzung', value:ready ? 'erfuellt' : 'offen' },
+    { label:'SCC 017 / 018', rule:'mind. 1 Fuehrungskraft', value:'erfuellt' },
+    { label:'Erste Hilfe', rule:'10% der Baustellenbesetzung', value:ready ? 'erfuellt' : 'offen' },
+    { label:'MVAS 99', rule:'mind. 1 Person', value:'erfuellt' },
+    { label:'GW 129', rule:'mind. 1 Person', value:'erfuellt' },
+    { label:'Geraetefuehrer', rule:'mind. 1 freigegebene Person', value:'erfuellt' },
+  ];
+  const missingRows = checkRows.filter(row => row.value === 'offen');
+  const docs = [
+    { name:'Baustellenaushang.pdf', date:'20.05.2026', status:'freigegeben' },
+    { name:'Unterweisung-Baustelle.pdf', date:'18.05.2026', status:'in Pruefung' },
+    { name:'Verkehrssicherung-Plan.pdf', date:'15.05.2026', status:'freigegeben' },
+  ];
+  const alarmPlan = {
+    nr:'FB 7.2',
+    firma:'Janning Group',
+    fragebogen:'Christian Janning',
+    stand:'01/26',
+    baustelle:site.projectName,
+    auftraggeber:site.auftraggeber,
+    telefonAuftraggeber:'',
+    auftragnehmer:'Janning Group\nJ.-D.-Lauenstein-Str. 24 | 49767 Twist',
+    telefonAuftragnehmer:'05936 89639-0',
+    bauleiter:site.bauleiter,
+    telefonBauleiter:'',
+    ersthelfer:siteEmployees[0]?.name || 'Markus Brinker',
+    telefonErsthelfer:'+49 5921 1004',
+    sicherheit:'Rahim Ahangarzadeh',
+    telefonSicherheit:'',
+    durchgangsarzt:'',
+    telefonDurchgangsarzt:'',
+    krankenhaus:'',
+    telefonKrankenhaus:'',
+  };
+  const renderTab = () => {
+    if (tab === 'Stammdaten') return <section className="card card--pad company-site-card">
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, marginBottom:18 }}>
         <div className="card__title">Baustellen-Details</div>
         <button className="btn btn--ghost"><Icon name="edit" size={14} />Bearbeite Stammdaten</button>
@@ -178,7 +202,190 @@ function CompanySiteDetailPage({ site, onBack }) {
         <CompanyMasterField label="Firma" icon="building" value={site.company} />
         <CompanyMasterField label="Adresse" icon="pin" value={site.adresse} />
       </div>
-    </section> : <section className="card card--pad company-site-card"><div className="card__title">{tab}</div><p className="muted">Beispielbereich fuer {site.name}. Details werden im naechsten Schritt aufgebaut.</p></section>}
+    </section>;
+    if (tab === 'Personal') return <section className="card card--pad company-site-card company-site-personal-card">
+      <div className="company-site-card-head"><div><div className="card__title">Mitarbeiter der Baustelle</div><div className="card__sub">{siteEmployees.length} Mitarbeiter im Projekt</div></div><button className="btn btn--ghost"><Icon name="edit" size={14} />Liste bearbeiten</button></div>
+      <div className="company-site-personal-wrap">
+        <table className="company-site-personal-table">
+          <thead><tr><th>Mitarbeiter</th><th>SCC 016</th><th>SCC 017 / 018</th><th>Erste Hilfe</th><th>MVAS 99</th><th>GW 129</th><th>Geraetefuehrer</th><th>Freigabe Portal</th></tr></thead>
+          <tbody>{siteEmployees.map((employee, index) => {
+            const allOk = ready || index < Math.max(2, siteEmployees.length - 1);
+            const deviceTypes = ['Bagger', 'Minibagger', 'Teleskopstapler', 'Personenkraftwagen'];
+            const Check = ({ ok }) => ok ? <span className="company-site-check">✓</span> : <span className="company-site-dash">-</span>;
+            const released = index === 0;
+            return <tr key={employee.id}>
+              <td><strong>{employee.name}</strong><small>{window.company(employee.company)?.short || employee.company} - {employee.position}</small></td>
+              <td><Check ok={allOk || index % 2 === 0} /></td>
+              <td><Check ok={allOk || index % 3 !== 0} /></td>
+              <td><Check ok={allOk || index % 2 !== 0} /></td>
+              <td><Check ok={allOk || index % 4 !== 0} /></td>
+              <td><Check ok={allOk || index % 3 === 0} /></td>
+              <td>{index < 4 ? <span className="badge"><span className="badge__dot" />{deviceTypes[index % deviceTypes.length]}</span> : <span className="company-site-dash">-</span>}</td>
+              <td><label className="company-site-release"><input type="checkbox" checked={released} readOnly /><span className={'badge ' + (released ? 'badge--valid' : '')}><span className="badge__dot" />{released ? 'Freigegeben' : 'Nicht frei'}</span></label></td>
+            </tr>;
+          })}</tbody>
+        </table>
+      </div>
+    </section>;
+    if (tab === 'Personal-Pruefung') return <section className="card card--pad company-site-card">
+      <div className="card__title">Personal-Pruefung</div>
+      <div className="company-site-check-grid">{checkRows.map(row => <div key={row.label} className={row.value === 'erfuellt' ? 'is-ok' : 'is-open'}><strong>{row.label}</strong><small>{row.rule}</small><span>{row.value}</span></div>)}</div>
+    </section>;
+    if (tab === 'Fehlende Schulungen') return <section className="card card--pad company-site-card">
+      <div className="company-site-card-head"><div><div className="card__title">Fehlende Schulungen</div><div className="card__sub">{missingRows.length ? 'Personal muss nachgeplant werden.' : 'Keine fehlenden Schulungen.'}</div></div>{missingRows.length > 0 && <button className="btn btn--primary"><Icon name="plus" size={14} />Schulung planen</button>}</div>
+      <div className="company-site-missing">{missingRows.length ? missingRows.map(row => <div key={row.label}><div><strong>{row.label}</strong><small>{row.rule}</small></div><span className="badge badge--warn"><span className="badge__dot" />offen</span></div>) : <div className="company-site-empty">Alle Pflichtpunkte sind erfuellt.</div>}</div>
+    </section>;
+    if (tab === 'Gefaehrdungsbeurteilung') {
+      const riskRows = [
+        { nr:1, name:'Baustellenanmeldung BG BAU', notRequired:false, done:true, date:'18.05.2026', description:'Baustellenanmeldung fuer ' + site.projectName + ' vorbereitet.', document:'BG-BAU-Anmeldung.pdf' },
+        { nr:2, name:'Betriebs-Gefaehrdungsbeurteilung', notRequired:false, done:true, date:'19.05.2026', description:'Betriebliche Grundgefaehrdungen fuer Tiefbauarbeiten geprueft.', document:'Betriebs-Gefaehrdungsbeurteilung.pdf' },
+        { nr:3, name:'Ergaenzende Gefaehrdungsbeurteilung Baustelle', notRequired:false, done:ready, date:'22.05.2026', description:ready ? 'Ergaenzung fuer Verkehrsbereich dokumentiert.' : 'Ergaenzung fuer Verkehrsbereich noch offen.', document:'Ergaenzende-GBU-Baustelle.pdf' },
+        { nr:4, name:'Projektbezogene Unterweisung', notRequired:false, done:true, date:'20.05.2026', description:'Projektbezogene Unterweisung mit dem Baustellenteam dokumentiert.', document:'Projektbezogene-Unterweisung.pdf' },
+        { nr:5, name:'Erstunterweisung Baustellen', notRequired:false, done:true, date:'20.05.2026', description:'Erstunterweisung fuer neue Baustellenbesetzung abgeschlossen.', document:'Erstunterweisung-Baustelle.pdf' },
+      ];
+      return <section className="card card--pad company-site-card company-site-risk-card">
+        <div className="company-site-card-head">
+          <div><div className="card__title">Gefaehrdungsbeurteilung</div><div className="card__sub">{site.name} - {site.projectName}</div></div>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}><span className="badge badge--accent"><span className="badge__dot" />Beispiel ausgefuellt</span><button className="btn btn--ghost"><Icon name="edit" size={14} />Bearbeiten</button></div>
+        </div>
+        <div className="company-site-risk-wrap">
+          <table className="tbl company-site-risk-table">
+            <thead><tr><th>Nr.</th><th>Name</th><th>Nicht erforderlich</th><th>Erledigt</th><th>Datum</th><th>Beschreibung</th><th>Dokument (PDF)</th></tr></thead>
+            <tbody>{riskRows.map(row => <tr key={row.nr}>
+              <td className="num">{row.nr}</td>
+              <td><strong>{row.name}</strong></td>
+              <td><input type="checkbox" checked={row.notRequired} readOnly /></td>
+              <td><input type="checkbox" checked={row.done} readOnly /></td>
+              <td>{row.date}</td>
+              <td>{row.description}</td>
+              <td><button className="btn btn--ghost company-site-doc-chip"><Icon name="doc" size={13} />{row.document}</button></td>
+            </tr>)}</tbody>
+          </table>
+        </div>
+      </section>;
+    }
+    if (tab === 'Alarmplan') {
+      const alarmFields = [
+        ['nr','Nr.', alarmPlan.nr], ['firma','Firma', alarmPlan.firma],
+        ['fragebogen','Fragebogen durch', alarmPlan.fragebogen], ['stand','Stand', alarmPlan.stand],
+        ['baustelle','Baustelle', alarmPlan.baustelle, true], ['auftraggeber','Auftraggeber', alarmPlan.auftraggeber],
+        ['telefonAuftraggeber','Telefon Auftraggeber', alarmPlan.telefonAuftraggeber],
+        ['telefonAuftragnehmer','Telefon Auftragnehmer', alarmPlan.telefonAuftragnehmer],
+        ['bauleiter','Bauleiter Fa. Janning', alarmPlan.bauleiter], ['telefonBauleiter','Telefon Bauleiter', alarmPlan.telefonBauleiter],
+        ['ersthelfer','Ersthelfer', alarmPlan.ersthelfer], ['telefonErsthelfer','Telefon Ersthelfer', alarmPlan.telefonErsthelfer],
+        ['sicherheit','Fachkraft fuer Arbeitssicherheit', alarmPlan.sicherheit], ['telefonSicherheit','Telefon Fachkraft', alarmPlan.telefonSicherheit],
+        ['durchgangsarzt','Naechster Durchgangsarzt', alarmPlan.durchgangsarzt], ['telefonDurchgangsarzt','Telefon Durchgangsarzt', alarmPlan.telefonDurchgangsarzt],
+        ['krankenhaus','Naechstes Krankenhaus', alarmPlan.krankenhaus], ['telefonKrankenhaus','Telefon Krankenhaus', alarmPlan.telefonKrankenhaus],
+      ];
+      if (alarmMode === 'empty') return <section className="card card--pad company-site-card company-site-alarm-card">
+        <div className="company-site-card-head"><div><div className="card__title">Alarmplan</div><div className="card__sub">A4-PDF fuer die ausgewaehlte Baustelle.</div></div><span className="badge badge--warn"><span className="badge__dot" />Noch nicht erstellt</span></div>
+        <div className="company-site-alarm-empty">
+          <div><strong>Alarmplan {site.projectNr}.pdf</strong><small>{site.projectName} - A4 Druckvorlage nach Janning-Vorlage</small></div>
+          <button className="btn btn--primary" onClick={() => setAlarmMode('edit')}><Icon name="plus" size={14} />Alarmplan erstellen</button>
+        </div>
+      </section>;
+      if (alarmMode === 'edit') return <section className="card card--pad company-site-card company-site-alarm-card">
+        <div className="company-site-card-head"><div><div className="card__title">Alarmplan erstellen</div><div className="card__sub">{site.projectNr} - {site.company}</div></div></div>
+        <div className="company-site-alarm-form">
+          {alarmFields.map(([key, label, value, wide]) => <label key={key} className={wide ? 'is-wide' : ''}><span>{label}</span><input value={value || ''} readOnly /></label>)}
+          <label className="is-wide"><span>Auftragnehmer</span><textarea value={alarmPlan.auftragnehmer} readOnly rows={3} /></label>
+        </div>
+        <div className="company-site-form-actions"><button className="btn btn--ghost" onClick={() => setAlarmMode('empty')}>Abbrechen</button><button className="btn btn--ghost" onClick={() => setAlarmPreviewOpen(true)}><Icon name="eye" size={14} />Vorschau</button><button className="btn btn--primary" onClick={() => setAlarmMode('ready')}>Speichern</button></div>
+      </section>;
+      return <section className="card card--pad company-site-card company-site-alarm-card">
+        <div className="company-site-card-head"><div><div className="card__title">Alarmplan</div><div className="card__sub">A4-PDF fuer die ausgewaehlte Baustelle.</div></div><span className="badge badge--valid"><span className="badge__dot" />Alarmplan vorhanden</span></div>
+        <div className="company-site-alarm-empty">
+          <div><strong>Alarmplan {site.projectNr}.pdf</strong><small>{site.projectName} - A4 Druckvorlage nach Janning-Vorlage</small></div>
+          <div style={{ display:'flex', gap:8 }}><button className="btn btn--ghost" onClick={() => setAlarmMode('edit')}><Icon name="edit" size={14} />Bearbeiten</button><button className="btn btn--ghost" onClick={() => setAlarmPreviewOpen(true)}><Icon name="eye" size={14} />Vorschau</button><button className="btn btn--primary"><Icon name="download" size={14} />PDF anzeigen</button></div>
+        </div>
+      </section>;
+    }
+    if (false && tab === 'Alarmplan') return <section className="card card--pad company-site-card company-site-alarm-card">
+      <div className="company-site-card-head">
+        <div><div className="card__title">Alarmplan</div><div className="card__sub">Aushang und Notfallkontakte fuer die Baustelle.</div></div>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}><span className="badge badge--valid"><span className="badge__dot" />vorhanden</span><button className="btn btn--ghost"><Icon name="edit" size={14} />Bearbeiten</button><button className="btn btn--primary"><Icon name="download" size={14} />PDF anzeigen</button></div>
+      </div>
+      <div className="company-site-alarm-layout">
+        <div className="company-site-alarm-preview">
+          <div className="company-site-alarm-sheet">
+            <header><strong>ALARMPLAN</strong><span>{site.projectNr}</span></header>
+            <div><b>Baustelle</b><p>{site.projectName}</p></div>
+            <div><b>Adresse</b><p>{site.adresse}</p></div>
+            <div><b>Bauleiter</b><p>{site.bauleiter}</p></div>
+            <div><b>Ersthelfer</b><p>{siteEmployees.slice(0, 2).map(employee => employee.name).join(', ') || 'Markus Brinker'}</p></div>
+            <footer>Notruf 112 · Rettungspunkt vor Ort</footer>
+          </div>
+        </div>
+        <div className="company-site-alarm-info">
+          <div><span>Dokument</span><strong>Alarmplan_{site.projectNr}.pdf</strong></div>
+          <div><span>Stand</span><strong>05.06.2026</strong></div>
+          <div><span>Freigabe</span><strong>Sabine Janning</strong></div>
+          <div><span>Status</span><strong style={{ color:'#3f7a4a' }}>Freigegeben</strong></div>
+        </div>
+      </div>
+    </section>;
+    return <section className="card card--pad company-site-card">
+      <div className="company-site-card-head"><div><div className="card__title">Dokumente</div><div className="card__sub">Baustellenunterlagen und Freigaben</div></div><button className="btn btn--ghost"><Icon name="plus" size={14} />Dokument hochladen</button></div>
+      <div className="company-site-doc-table-wrap">
+        <table className="company-site-doc-table">
+          <thead><tr><th>Dokument</th><th>Kategorie</th><th>Datum</th><th>Status</th><th>Freigabe</th><th>Aktionen</th></tr></thead>
+          <tbody>{[
+            { ...docs[0], category:'BG BAU', release:'Mitarbeiter sichtbar' },
+            { ...docs[1], category:'Unterweisung', release:'intern' },
+            { ...docs[2], category:'Verkehrssicherung', release:'Mitarbeiter sichtbar' },
+            { name:'Alarmplan_' + site.projectNr + '.pdf', date:'05.06.2026', status:'freigegeben', category:'Alarmplan', release:'Mitarbeiter sichtbar' },
+          ].map(doc => <tr key={doc.name}>
+            <td><Icon name="doc" size={15} /><div><strong>{doc.name}</strong><small>PDF · Beispielanhang</small></div></td>
+            <td>{doc.category}</td>
+            <td>{doc.date}</td>
+            <td><span className={'badge ' + (doc.status === 'freigegeben' ? 'badge--valid' : 'badge--warn')}><span className="badge__dot" />{doc.status}</span></td>
+            <td>{doc.release}</td>
+            <td><div className="company-site-doc-actions"><button className="icon-btn"><Icon name="eye" size={14} /></button><button className="icon-btn"><Icon name="download" size={14} /></button><button className="icon-btn"><Icon name="edit" size={14} /></button></div></td>
+          </tr>)}</tbody>
+        </table>
+      </div>
+    </section>;
+  };
+  return <div className="emp-full company-site-detail-page">
+    <header className="company-site-topline">
+      <div className="company-site-titleline">
+        <button className="emp-round-back" onClick={onBack} title="Zurueck"><Icon name="chevL" size={18} stroke={2} /></button>
+        <h1>{site.name}</h1>
+        <span className={'badge ' + (ready ? 'badge--valid' : 'badge--warn')}><span className="badge__dot" />{ready ? 'Personal reicht' : missing + ' fehlen'}</span>
+        <p>{site.company} - {site.adresse} - Bauleiter: {site.bauleiter}</p>
+      </div>
+      <button className="btn btn--primary is-danger"><Icon name="trash" size={14} />Loeschen</button>
+    </header>
+    <nav className="company-site-tabs">{tabs.map(item => <button key={item} className={tab === item ? 'is-active' : ''} onClick={() => setTab(item)}>{item}</button>)}</nav>
+    <div className="company-site-kpis">
+      <div className="company-site-kpi"><span>Mitarbeiter</span><strong>{site.employeeIds?.length || 0}</strong><small>ausgewaehlt</small></div>
+      <div className="company-site-kpi"><span>Pflichtpunkte</span><strong style={{ color:ready ? '#3f7a4a' : '#8a6a1f' }}>{fulfilled}</strong><small>erfuellt</small></div>
+      <div className="company-site-kpi"><span>Fehlende Schulungen</span><strong style={{ color:missing ? '#a13232' : '#3f7a4a' }}>{missing}</strong><small>nachplanen</small></div>
+      <div className="company-site-kpi"><span>Status</span><strong style={{ color:ready ? '#3f7a4a' : '#a13232' }}>{ready ? 'OK' : 'Offen'}</strong><small>einsatzbereit</small></div>
+    </div>
+    {renderTab()}
+    {alarmPreviewOpen && <div className="company-site-alarm-modal" onClick={() => setAlarmPreviewOpen(false)}>
+      <div className="company-site-alarm-modal__box" onClick={event => event.stopPropagation()}>
+        <header><div><strong>Alarmplan Vorschau</strong><small>{site.projectNr} - A4</small></div><div><button className="btn btn--primary">PDF anzeigen / Drucken</button><button className="company-site-modal-close" onClick={() => setAlarmPreviewOpen(false)}>x</button></div></header>
+        <div className="company-site-alarm-modal__body">
+          <div className="company-site-alarm-a4">
+            <section className="alarm-a4-top"><div><b>Nr:</b> {alarmPlan.nr}<br /><b>Firma:</b> {alarmPlan.firma}<br /><br />Fragebogen durch: {alarmPlan.fragebogen}<br />Stand: {alarmPlan.stand}</div><h2>ALARMPLAN</h2><div><img src="assets/logos/janning-group-alarmplan.png" alt="Janning Group" /></div></section>
+            <section className="alarm-a4-row"><b>Baustelle:</b><span>{alarmPlan.baustelle}</span><b></b></section>
+            <section className="alarm-a4-row"><b>Auftraggeber:</b><span>{alarmPlan.auftraggeber}</span><b>Tel.</b><span>{alarmPlan.telefonAuftraggeber}</span></section>
+            <section className="alarm-a4-row"><b>Auftragnehmer:</b><span>{alarmPlan.auftragnehmer}</span><b>Tel.</b><span>{alarmPlan.telefonAuftragnehmer}</span></section>
+            <section className="alarm-a4-row"><b>Bauleiter Fa. Janning:</b><span>{alarmPlan.bauleiter}</span><b>Tel.</b><span>{alarmPlan.telefonBauleiter}</span></section>
+            <section className="alarm-a4-row"><b>Ersthelfer:</b><span>{alarmPlan.ersthelfer}</span><b>Tel.</b><span>{alarmPlan.telefonErsthelfer}</span></section>
+            <section className="alarm-a4-row"><b>Fachkraft fuer Arbeitssicherheit:</b><span>{alarmPlan.sicherheit}</span><b>Tel.</b><span>{alarmPlan.telefonSicherheit}</span></section>
+            <section className="alarm-a4-row"><b>Naechster Durchgangsarzt:</b><span>{alarmPlan.durchgangsarzt}</span><b>Tel.</b><span>{alarmPlan.telefonDurchgangsarzt}</span></section>
+            <section className="alarm-a4-row"><b>Naechstes Krankenhaus:</b><span>{alarmPlan.krankenhaus}</span><b>Tel.</b><span>{alarmPlan.telefonKrankenhaus}</span></section>
+            <section className="alarm-a4-band">Verhalten bei Unfaellen<br />Ruhe bewahren</section>
+            <section className="alarm-a4-notruf">NOTRUF: 112</section>
+            <section className="alarm-a4-steps"><div>1. Unfall melden</div><div className="alarm-a4-phone"><img src="assets/icons/alarm-phone.svg" alt="" /></div><div><b>WO</b> geschah es?<br /><b>WAS</b> geschah?<br /><b>WIE</b> viele Verletzte?</div><div>2. Erste Hilfe</div><div>Verletzungen versorgen und Verletzten betreuen.</div><div>3. Weitere Massnahmen</div><div>Krankenwagen oder Feuerwehr einweisen.</div></section>
+            <footer>Jeder Arbeitsunfall ist zu melden. Bei schweren oder toedlichen Arbeitsunfaellen sofortige Meldung an Vorgesetzte und Fachkraft fuer Arbeitssicherheit.</footer>
+          </div>
+        </div>
+      </div>
+    </div>}
   </div>;
 }
 

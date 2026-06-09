@@ -8313,6 +8313,19 @@ a.subtle:hover { text-decoration: underline; }
 .company-site-doc-table td strong{display:block;color:var(--fg-1);font-weight:800}
 .company-site-doc-table td small{display:block;margin-top:3px;color:var(--fg-3);font-size:11px}
 .company-site-doc-actions{display:flex;gap:7px}
+.company-info-matrix-card{overflow:hidden}
+.company-info-matrix-wrap{overflow:auto;border:1px solid var(--border-1);border-radius:8px;background:var(--color-ivory)}
+.company-info-matrix-table{min-width:1280px;width:100%;border-collapse:collapse}
+.company-info-matrix-table th{height:44px;border-bottom:1px solid var(--border-1);background:var(--color-parchment);padding:0 13px;text-align:left}
+.company-info-matrix-table th button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;border:0;background:transparent;padding:0;color:var(--fg-3);font:inherit;font-size:10px;font-weight:800;text-align:left;text-transform:uppercase;letter-spacing:.32px;cursor:pointer}
+.company-info-matrix-table td{border-bottom:1px solid var(--border-1);padding:13px;color:var(--fg-2);font-size:12px;line-height:1.45;vertical-align:top}
+.company-info-matrix-table tbody tr{cursor:pointer;transition:background 120ms}
+.company-info-matrix-table tbody tr:hover td{background:rgba(201,100,66,.04)}
+.company-info-matrix-table tbody tr:last-child td{border-bottom:0}
+.company-info-matrix-table td:first-child{min-width:240px}
+.company-info-matrix-table td strong{display:block;color:var(--fg-1);font-size:12px;font-weight:800}
+.company-info-matrix-table td small{display:block;margin-top:4px;color:var(--fg-3);font-size:10.5px}
+.company-info-matrix-detail .emp-master-field textarea{min-height:76px}
 .company-site-alarm-empty{display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid var(--border-1);border-radius:8px;background:var(--color-ivory);padding:15px 16px}
 .company-site-alarm-empty strong{display:block;color:var(--fg-1);font-size:14px}
 .company-site-alarm-empty small{display:block;margin-top:5px;color:var(--fg-3);font-size:12px}

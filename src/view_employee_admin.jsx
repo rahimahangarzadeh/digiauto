@@ -5,7 +5,7 @@ const EMPLOYEE_DETAIL_AREAS = [
   ['instructions','Unterweisungen','flag'], ['jobs','Stellenbeschreibungen','doc'],
   ['medical','Untersuchungsvorsorge','shield'], ['license','Führerscheinkontrolle','cal'],
   ['operators','Geräteführer','settings'], ['checks','Geräteprüfung','check'],
-  ['sites','Baustellen','building'], ['appointments','Termine','clock'],
+  ['sites','Baustellen','building'], ['appointments','Termine','clock'], ['infoMatrix','Informationslenkungsmatrix','doc'],
 ];
 
 function EmployeeAdminDetail({ emp, onBack }) {
@@ -38,6 +38,7 @@ function EmployeeAdminDetail({ emp, onBack }) {
   if (area === 'checks') return <EmployeeEquipmentCheckArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setEquipmentCheckRecord} />;
   if (area === 'sites') return <EmployeeSiteArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setSiteRecord} />;
   if (area === 'appointments') return <EmployeeAppointmentsArea emp={emp} onBack={() => setArea('dashboard')} />;
+  if (area === 'infoMatrix') return <EmployeeInformationMatrixArea emp={emp} onBack={() => setArea('dashboard')} />;
   if (area === 'trainings') return <EmployeeTrainingArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setRecord} />;
 
   return (
@@ -148,6 +149,63 @@ function EmployeeOverviewAside() {
 function EmployeeAreaPlaceholder({ area }) {
   const found = EMPLOYEE_DETAIL_AREAS.find(item => item[0] === area);
   return <div className="emp-placeholder"><Icon name={found?.[2] || 'doc'} size={24} /><h2>{found?.[1]}</h2><p>Dieser Bereich wird im nächsten Schritt ausgearbeitet.</p></div>;
+}
+
+function EmployeeInformationMatrixArea({ emp, onBack }) {
+  const [selected, setSelected] = React.useState(null);
+  const rows = (window.companyInformationMatrixRows ? window.companyInformationMatrixRows() : [])
+    .filter(row => row.company === emp.company && row.released);
+  if (selected) return <EmployeeInformationMatrixDetail emp={emp} row={selected} onBack={() => setSelected(null)} />;
+  return <div className="emp-full company-info-matrix-page">
+    <EmpPageTitle title={`Informationslenkungsmatrix (${emp.firstName} ${emp.lastName})`} onBack={onBack} />
+    <div className="company-site-kpis">
+      <div className="company-site-kpi"><span>Freigegeben</span><strong>{rows.length}</strong><small>für Mitarbeiter sichtbar</small></div>
+      <div className="company-site-kpi"><span>Vorlage</span><strong>SGU_036</strong><small>Version 001</small></div>
+      <div className="company-site-kpi"><span>Firma</span><strong>{window.company(emp.company)?.short || '-'}</strong><small>{window.company(emp.company)?.name || '-'}</small></div>
+      <div className="company-site-kpi"><span>Stand</span><strong>24.02.2026</strong><small>aus PDF</small></div>
+    </div>
+    <section className="card card--pad company-info-matrix-card">
+      <div className="company-info-matrix-wrap">
+        <table className="company-info-matrix-table">
+          <thead><tr><th>Bezeichnung Dokument/ Nachweis</th><th>Standort</th><th>erstellt von</th><th>Freigabe</th><th>Archivierung</th><th>Aufbewahrungsfrist</th><th>Gesetz</th><th>Verantwortlich für Vernichtung</th></tr></thead>
+          <tbody>{rows.map(row => <tr key={row.id} onClick={() => setSelected(row)}>
+            <td><strong>{row.bezeichnung}</strong><small>{row.companyName}</small></td>
+            <td>{row.standort}</td>
+            <td>{row.erstelltVon}</td>
+            <td>{row.freigabe}</td>
+            <td>{row.archivierung}</td>
+            <td>{row.aufbewahrung}</td>
+            <td>{row.gesetz}</td>
+            <td>{row.vernichtung}</td>
+          </tr>)}</tbody>
+        </table>
+      </div>
+    </section>
+  </div>;
+}
+
+function EmployeeInformationMatrixDetail({ emp, row, onBack }) {
+  return <div className="emp-full emp-master-detail company-info-matrix-detail">
+    <EmpPageTitle title={`${row.bezeichnung} (${emp.firstName} ${emp.lastName})`} onBack={onBack} />
+    <section className="emp-master-hero"><span className="emp-avatar">IL</span><div><div className="emp-master-hero__name"><h2>{row.bezeichnung}</h2><span className="emp-active"><i />Freigegeben</span></div><dl><div><dt>Firma</dt><dd>{row.companyName}</dd></div><div><dt>Stand</dt><dd>{row.stand}</dd></div><div><dt>Vorlage</dt><dd>{row.source}</dd></div></dl></div></section>
+    <div className="emp-master-layout"><main className="emp-master-main">
+      <MasterDataCard title="Dokument / Nachweis" icon="doc"><div className="emp-master-field-grid">
+        <MasterDataField label="Bezeichnung Dokument/ Nachweis" icon="doc" value={row.bezeichnung} />
+        <MasterDataField label="Standort" icon="pin" value={row.standort} />
+        <MasterDataField label="erstellt von" icon="users" value={row.erstelltVon} />
+        <MasterDataField label="Freigabe" icon="shield" value={row.freigabe} />
+      </div></MasterDataCard>
+      <MasterDataCard title="Lenkung und Archivierung" icon="history"><div className="emp-master-field-grid">
+        <MasterDataField label="Archivierung" icon="building" value={row.archivierung} />
+        <MasterDataField label="Aufbewahrungsfrist" icon="clock" value={row.aufbewahrung} />
+        <MasterDataField label="Gesetz" icon="doc" value={row.gesetz} />
+        <MasterDataField label="Verantwortlich fur Vernichtung" icon="users" value={row.vernichtung} />
+      </div></MasterDataCard>
+    </main><aside className="emp-master-aside">
+      <MasterDataCard title="Mitarbeiterfreigabe" icon="check"><p className="emp-last-change">Dieser Eintrag ist für Mitarbeiter sichtbar.</p></MasterDataCard>
+      <MasterDataCard title="Vorlage" icon="doc"><p className="emp-last-change"><strong>{row.source}</strong><br />Interne Nr.: SGU_036<br />Stand: {row.stand}</p></MasterDataCard>
+    </aside></div>
+  </div>;
 }
 
 function EmployeeAppointmentsArea({emp,onBack}) {

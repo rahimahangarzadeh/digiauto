@@ -6,7 +6,7 @@ const COMPANY_DETAIL_AREAS = [
   ['sites', 'Baustellen', 'building'], ['meetings', 'Bauleiterbesprechung', 'users'], ['bgbau', 'Baustellenaushang', 'doc'],
   ['supervisors', 'Fachaufsichten', 'shield'], ['accidents', 'Unfallstatistik', 'matrix'],
   ['organization', 'Organigramm', 'users'], ['certification', 'Zertifizierungsübersicht', 'doc'],
-  ['norms', 'Normenmatrix', 'matrix'], ['forms', 'Formulare', 'doc'],
+  ['norms', 'Normenmatrix', 'matrix'], ['infoMatrix', 'Informationslenkungsmatrix', 'doc'], ['forms', 'Formulare', 'doc'],
   ['calendar', 'Schulungskalender', 'cal'], ['authorized', 'Befähigte Personen', 'shield'],
   ['documents', 'Dokumente', 'doc'], ['drive', 'Meine Ablage', 'building'],
 ];
@@ -122,6 +122,7 @@ function CompanyDetail({ company, onBack }) {
   if (area === 'organization') return <CompanyOrganizationPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'certification') return <CompanyCertificationPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'norms') return <CompanyNormsPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'infoMatrix') return <CompanyInformationMatrixPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'forms') return <CompanyFormsPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'calendar') return <CompanyCalendarPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'authorized') return <CompanyAuthorizedPeoplePage company={company} onBack={() => setArea('overview')} />;
@@ -298,6 +299,105 @@ function CompanyNormsPage({ company, onBack }) {
   return <div className="emp-full company-norms-page">
     <CompanyPageTitle title={`Normenmatrix (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
     <NormenmatrixView />
+  </div>;
+}
+
+function companyInformationMatrixRows() {
+  const baseRows = [
+    { id:'ilm-1', company:'tiefbau', bezeichnung:'Lieferscheine', standort:'Buro / Lager', erstelltVon:'Lieferant', freigabe:'Einkauf / Lager', released:true, archivierung:'digital im Portal', aufbewahrung:'10 Jahre', gesetz:'§147 AO, §257 HGB', vernichtung:'Mario Kostring / Daniel Brouwer' },
+    { id:'ilm-2', company:'tiefbau', bezeichnung:'Bestellscheine', standort:'Buro', erstelltVon:'Einkauf', freigabe:'GF', released:false, archivierung:'digital im Portal', aufbewahrung:'10 Jahre', gesetz:'§147 AO, §257 HGB', vernichtung:'Mario Kostring' },
+    { id:'ilm-3', company:'tiefbau', bezeichnung:'Dienstleistungsvertrage', standort:'Buro', erstelltVon:'GF', freigabe:'GF', released:false, archivierung:'digital + Ordner Vertrag', aufbewahrung:'10 Jahre', gesetz:'§147 AO, §257 HGB', vernichtung:'Christian Janning / Bastian Bothe / Alexander Braun' },
+    { id:'ilm-4', company:'tiefbau', bezeichnung:'Angebote', standort:'Buro Kalkulation', erstelltVon:'Kalkulation', freigabe:'GF', released:true, archivierung:'digital', aufbewahrung:'6 Jahre', gesetz:'§147 Abs. 3 AO, §257 Abs. 2 HGB', vernichtung:'Kathrin Janning' },
+    { id:'ilm-5', company:'tiefbau', bezeichnung:'Auftrage (Kunden)', standort:'Buro', erstelltVon:'Kalkulation / Bauleitung', freigabe:'GF', released:true, archivierung:'digital + Ordner', aufbewahrung:'10 Jahre', gesetz:'§147 AO', vernichtung:'Kathrin Janning' },
+    { id:'ilm-6', company:'bohrtechnik', bezeichnung:'Normvorschriften (DVGW, DIN, TRGS)', standort:'Buro / Portal', erstelltVon:'externe Normstellen', freigabe:'UM-Beauftragter', released:true, archivierung:'digital', aufbewahrung:'gultige Version', gesetz:'ISO 9001 / ISO 14001', vernichtung:'Rahim Ahangarzadeh' },
+    { id:'ilm-7', company:'rohrbau', bezeichnung:'Prufvorschriften', standort:'Buro / Portal', erstelltVon:'Hersteller / Behorden', freigabe:'SiGeKo / UM', released:true, archivierung:'digital', aufbewahrung:'gultige Version', gesetz:'ISO 9001 / SCC', vernichtung:'SiGeKo' },
+    { id:'ilm-8', company:'galabau', bezeichnung:'Qualitatsmanagementunterlagen', standort:'Portal QSGU', erstelltVon:'Geschaftsfuhrung', freigabe:'Geschaftsfuhrung', released:true, archivierung:'digital', aufbewahrung:'gultige Version', gesetz:'ISO 9001 / SCC / ISO 14001', vernichtung:'Rahim Ahangarzadeh' },
+    { id:'ilm-9', company:'transporte', bezeichnung:'Gefahrstoffverzeichnis', standort:'Portal', erstelltVon:'Gefahrstoffbeauftragter', freigabe:'GF', released:false, archivierung:'digital', aufbewahrung:'gultige Version', gesetz:'GefStoffV §6 + TRGS 400', vernichtung:'Mario Kostring' },
+    { id:'ilm-10', company:'tiefbau', bezeichnung:'Betriebsanweisungen', standort:'Portal', erstelltVon:'QSGU / Gefahrstoffbeauftragter', freigabe:'QSGU / Geschaftsfuhrung', released:true, archivierung:'digital', aufbewahrung:'bis neue Version + mindestens 10 Jahre', gesetz:'ISO 9001 / SCC / GefStoffV', vernichtung:'Rahim Ahangarzadeh / Mario Kostring' },
+  ];
+  return baseRows.map(row => ({ ...row, companyName: window.company(row.company)?.name || row.company, source:'SGU_036.pdf', stand:'24.02.2026', version:'001' }));
+}
+
+function CompanyInformationMatrixPage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  const [selected, setSelected] = React.useState(null);
+  const [sort, setSort] = React.useState({ key:'bezeichnung', dir:'asc' });
+  const columns = [
+    ['bezeichnung', 'Bezeichnung Dokument/ Nachweis'],
+    ['standort', 'Standort'],
+    ['erstelltVon', 'erstellt von'],
+    ['freigabe', 'Freigabe'],
+    ['released', 'Freigabe für Mitarbeiter'],
+    ['archivierung', 'Archivierung'],
+    ['aufbewahrung', 'Aufbewahrungsfrist'],
+    ['gesetz', 'Gesetz'],
+    ['vernichtung', 'Verantwortlich fur Vernichtung'],
+  ];
+  const rows = companyInformationMatrixRows()
+    .filter(row => showAllCompanies || row.company === company.id)
+    .sort((a, b) => String(a[sort.key] || '').localeCompare(String(b[sort.key] || ''), 'de', { numeric:true }) * (sort.dir === 'asc' ? 1 : -1));
+  const changeSort = key => setSort(current => current.key === key ? { key, dir:current.dir === 'asc' ? 'desc' : 'asc' } : { key, dir:'asc' });
+  if (selected) return <CompanyInformationMatrixDetail row={selected} onBack={() => setSelected(null)} />;
+  return <div className="emp-full company-info-matrix-page">
+    <CompanyPageTitle title={`Informationslenkungsmatrix (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
+    <div className="company-site-kpis">
+      <div className="company-site-kpi"><span>Eintrage</span><strong>{rows.length}</strong><small>in Ansicht</small></div>
+      <div className="company-site-kpi"><span>Vorlage</span><strong>SGU_036</strong><small>Version 001</small></div>
+      <div className="company-site-kpi"><span>Stand</span><strong>24.02.2026</strong><small>aus PDF</small></div>
+      <div className="company-site-kpi"><span>Archivierung</span><strong>{rows.filter(row => row.archivierung.toLowerCase().includes('digital')).length}</strong><small>digital</small></div>
+    </div>
+    <section className="card card--pad company-info-matrix-card">
+      <div className="company-site-card-head">
+        <div />
+        <button className="btn btn--primary"><Icon name="plus" size={14} />Eintrag anlegen</button>
+      </div>
+      <div className="company-info-matrix-wrap">
+        <table className="company-info-matrix-table">
+          <thead><tr>{columns.map(([key, label]) => <th key={key}><button onClick={() => changeSort(key)}>{label}<span>{sort.key === key ? (sort.dir === 'asc' ? '↑' : '↓') : '⌄'}</span></button></th>)}</tr></thead>
+          <tbody>{rows.map(row => <tr key={row.id} onClick={() => setSelected(row)}>
+            <td><strong>{row.bezeichnung}</strong><small>{row.companyName}</small></td>
+            <td>{row.standort}</td>
+            <td>{row.erstelltVon}</td>
+            <td>{row.freigabe}</td>
+            <td><span className={'badge ' + (row.released ? 'badge--valid' : '')}><span className="badge__dot" />{row.released ? 'Freigegeben' : 'Nicht frei'}</span></td>
+            <td>{row.archivierung}</td>
+            <td>{row.aufbewahrung}</td>
+            <td>{row.gesetz}</td>
+            <td>{row.vernichtung}</td>
+          </tr>)}</tbody>
+        </table>
+      </div>
+    </section>
+  </div>;
+}
+
+function CompanyInformationMatrixDetail({ row, onBack }) {
+  const [editing, setEditing] = React.useState(false);
+  const [form, setForm] = React.useState(row);
+  const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
+  const Field = ({ label, keyName, icon = 'doc', wide }) => <CompanyMasterField label={label} icon={icon} value={form[keyName]} editing={editing}>{wide ? <textarea value={form[keyName]} onChange={event => set(keyName, event.target.value)} /> : <input value={form[keyName]} onChange={event => set(keyName, event.target.value)} />}</CompanyMasterField>;
+  return <div className="emp-full emp-master-detail company-info-matrix-detail">
+    <CompanyPageTitle title={`Informationslenkungsmatrix (${form.bezeichnung})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Loschen</button></div>} />
+    <section className="emp-master-hero"><span className="emp-avatar">IL</span><div><div className="emp-master-hero__name"><h2>{form.bezeichnung}</h2><span className="emp-active"><i />SGU_036</span></div><dl><div><dt>Firma</dt><dd>{form.companyName}</dd></div><div><dt>Stand</dt><dd>{form.stand}</dd></div><div><dt>Version</dt><dd>{form.version}</dd></div></dl></div><button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button></section>
+    <div className="emp-master-layout"><main className="emp-master-main">
+      <CompanyMasterDataCard title="Dokument / Nachweis" icon="doc"><div className="emp-master-field-grid">
+        <Field label="Bezeichnung Dokument/ Nachweis" keyName="bezeichnung" icon="doc" />
+        <Field label="Standort" keyName="standort" icon="pin" />
+        <Field label="erstellt von" keyName="erstelltVon" icon="users" />
+        <Field label="Freigabe" keyName="freigabe" icon="shield" />
+        <CompanyMasterField label="Freigabe für Mitarbeiter" icon="check" value={form.released ? 'Freigegeben' : 'Nicht frei'} editing={editing}><select value={form.released ? 'ja' : 'nein'} onChange={event => set('released', event.target.value === 'ja')}><option value="ja">Freigegeben</option><option value="nein">Nicht frei</option></select></CompanyMasterField>
+      </div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Lenkung und Archivierung" icon="history"><div className="emp-master-field-grid">
+        <Field label="Archivierung" keyName="archivierung" icon="building" />
+        <Field label="Aufbewahrungsfrist" keyName="aufbewahrung" icon="clock" />
+        <Field label="Gesetz" keyName="gesetz" icon="doc" />
+        <Field label="Verantwortlich fur Vernichtung" keyName="vernichtung" icon="users" />
+      </div></CompanyMasterDataCard>
+    </main><aside className="emp-master-aside">
+      <CompanyMasterDataCard title="Vorlage" icon="doc"><p className="emp-last-change"><strong>{form.source}</strong><br />Interne Nr.: SGU_036<br />Stand: {form.stand}</p></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Geandert" icon="history"><p className="emp-last-change">09.06.2026, 11:20 Uhr - von Rahim Ahangarzadeh</p></CompanyMasterDataCard>
+    </aside></div>
+    {editing && <div className="emp-master-savebar"><button className="btn btn--ghost" onClick={() => { setForm(row); setEditing(false); }}>Abbrechen</button><button className="btn btn--primary" onClick={() => setEditing(false)}>Speichern</button></div>}
   </div>;
 }
 
@@ -709,3 +809,4 @@ function CompanyAreaPlaceholder({ company, area }) {
 }
 
 window.CompanyHubView = CompanyHubView;
+window.companyInformationMatrixRows = companyInformationMatrixRows;

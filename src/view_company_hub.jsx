@@ -3,7 +3,7 @@
 const COMPANY_DETAIL_AREAS = [
   ['overview', 'Übersicht', 'dashboard'], ['master', 'Stammdaten', 'building'],
   ['matrix', 'Qualifikationsmatrix', 'matrix'], ['evaluation', 'Firmen-Auswertung', 'shield'],
-  ['sites', 'Baustellen', 'building'], ['meetings', 'Bauleiterbesprechung', 'users'], ['bgbau', 'Baustellenaushang', 'doc'],
+  ['sites', 'Baustellen', 'building'], ['subcontractors', 'Nachunternehmer', 'users'], ['meetings', 'Bauleiterbesprechung', 'users'], ['bgbau', 'Baustellenaushang', 'doc'],
   ['supervisors', 'Fachaufsichten', 'shield'], ['accidents', 'Unfallstatistik', 'matrix'],
   ['organization', 'Organigramm', 'users'], ['certification', 'Zertifizierungsübersicht', 'doc'],
   ['norms', 'Normenmatrix', 'matrix'], ['infoMatrix', 'Informationslenkungsmatrix', 'doc'], ['forms', 'Formulare', 'doc'],
@@ -115,6 +115,7 @@ function CompanyDetail({ company, onBack }) {
   if (area === 'matrix') return <CompanyMatrixPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'evaluation') return <CompanyEvaluationPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'sites') return <CompanySitesPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'subcontractors') return <CompanySubcontractorsPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'meetings') return <CompanyMeetingsPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'bgbau') return <CompanyBGBauPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'supervisors') return <CompanySupervisorsPage company={company} onBack={() => setArea('overview')} />;
@@ -151,6 +152,95 @@ function CompanySitesPage({ company, onBack }) {
   if (selectedSite) return <CompanySiteDetailPage site={selectedSite} onBack={() => setSelectedSite(null)} />;
   if (showAllCompanies) return <div className="emp-full company-sites-page"><CompanyPageTitle title="Baustellen (Alle Firmen)" onBack={() => setShowAllCompanies(false)} /><BaustellenView activeCompany="all" onOpenSite={setSelectedSite} /></div>;
   return <div className="emp-full company-sites-page"><CompanyPageTitle title={`Baustellen (${company.name})`} onBack={onBack} /><BaustellenView activeCompany={company.id} onOpenSite={setSelectedSite} extraAction={<button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>} /></div>;
+}
+
+function companySubcontractorRows() {
+  const rows = [
+    { id:'sub-1', company:'tiefbau', firma:'Nordhorn Verkehrssicherung GmbH', contact:'Thomas Lange', trade:'Verkehrssicherung', phone:'+49 5921 4048-0', email:'t.lange@nordhorn-vs.de', address:'Bentheimer Strasse 18, 48529 Nordhorn', status:'Freigegeben', hse:true, hseDate:'12.05.2026', rating:true, ratingDate:'28.05.2026', history:'v2.1 - 3 Versionen', description:'Absicherung, Beschilderung und Verkehrslenkung fuer innerstaedtische Baustellen.', documents:['HSE_Nordhorn-Verkehrssicherung_2026.pdf', 'Unterweisung_Baustelle.pdf'] },
+    { id:'sub-2', company:'tiefbau', firma:'Emsland Pflastertechnik GmbH', contact:'Piotr Nowak', trade:'Pflasterarbeiten', phone:'+49 591 77442-0', email:'info@emsland-pflaster.de', address:'Am Bauhof 7, 49808 Lingen', status:'In Pruefung', hse:false, hseDate:'-', rating:false, ratingDate:'-', history:'v1.0 - 1 Version', description:'Wiederherstellung von Gehwegen, Pflasterflaechen und Zufahrten.', documents:['Angebot_Pflastertechnik.pdf'] },
+    { id:'sub-3', company:'tiefbau', firma:'Meyer Kabelzug Service', contact:'Daniel Meyer', trade:'Kabelzug / Leerrohr', phone:'+49 2562 30091-0', email:'dm@meyer-kabelzug.de', address:'Industrieweg 4, 48599 Gronau', status:'Freigegeben', hse:true, hseDate:'03.06.2026', rating:true, ratingDate:'04.06.2026', history:'v1.4 - 2 Versionen', description:'Kabelzug, Leerrohrpruefung und Unterstuetzung bei Tiefbauanschluessen.', documents:['HSE_Meyer-Kabelzug_2026.pdf'] },
+    { id:'sub-4', company:'rohrbau', firma:'Suedring Schweissservice GmbH', contact:'Bastian Bothe', trade:'Schweissarbeiten PE / Stahl', phone:'+49 5921 55290-0', email:'bb@suedring-schweiss.de', address:'Suedring 42, 48527 Nordhorn', status:'Freigegeben', hse:true, hseDate:'18.04.2026', rating:true, ratingDate:'20.04.2026', history:'v3.0 - 5 Versionen', description:'Schweissaufsicht und Ausfuehrung fuer Rohrleitungsbau.', documents:['HSE_Schweissservice_2026.pdf', 'Schweissernachweise.pdf'] },
+    { id:'sub-5', company:'bohrtechnik', firma:'Bentheim Bohrspuelung KG', contact:'Hichem Aoune', trade:'Bohrspuelung / Entsorgung', phone:'+49 5922 88110-0', email:'service@bohrspuelung-bentheim.de', address:'Gewerbepark 22, 48455 Bad Bentheim', status:'Gesperrt', hse:false, hseDate:'-', rating:false, ratingDate:'-', history:'v1.2 - 2 Versionen', description:'Bohrspuelung, Transport und Entsorgung. HSE-Nachweis fehlt aktuell.', documents:['Entsorgungsnachweis.pdf'] },
+  ];
+  return rows.map(row => ({ ...row, companyName: window.company(row.company)?.name || row.company }));
+}
+
+function CompanySubcontractorsPage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  const [selected, setSelected] = React.useState(null);
+  const [sort, setSort] = React.useState({ key:'firma', dir:'asc' });
+  const columns = [
+    ['firma', 'Firma'], ['contact', 'Ansprechpartner'], ['trade', 'Gewerk / Leistung'],
+    ['contactLinks', 'Kontakt'], ['status', 'Status'],
+    ['hse', 'HSE-Anforderungen'], ['hseDate', 'HSE-Anforderungen unterschrieben am'],
+    ['rating', 'Bewertung von Nachunternehmern'], ['ratingDate', 'Bewertung unterschrieben am'],
+    ['history', 'Versionshistorie'], ['description', 'Beschreibung'], ['documents', 'Dokumente'],
+  ];
+  const rows = companySubcontractorRows()
+    .filter(row => showAllCompanies || row.company === company.id)
+    .sort((a, b) => String(a[sort.key] || '').localeCompare(String(b[sort.key] || ''), 'de', { numeric:true }) * (sort.dir === 'asc' ? 1 : -1));
+  const changeSort = key => setSort(current => current.key === key ? { key, dir:current.dir === 'asc' ? 'desc' : 'asc' } : { key, dir:'asc' });
+  if (selected) return <CompanySubcontractorDetail row={selected} onBack={() => setSelected(null)} />;
+  return <div className="emp-full company-subcontractors-page">
+    <CompanyPageTitle title={`Nachunternehmer (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
+    <div className="company-site-kpis">
+      <div className="company-site-kpi"><span>Nachunternehmer</span><strong>{rows.length}</strong><small>in Ansicht</small></div>
+      <div className="company-site-kpi"><span>Freigegeben</span><strong style={{ color:'#3f7a4a' }}>{rows.filter(row => row.status === 'Freigegeben').length}</strong><small>einsatzbereit</small></div>
+      <div className="company-site-kpi"><span>HSE vorhanden</span><strong>{rows.filter(row => row.hse).length}</strong><small>mit Dokument</small></div>
+      <div className="company-site-kpi"><span>Offen</span><strong style={{ color:'#a13232' }}>{rows.filter(row => !row.hse || row.status !== 'Freigegeben').length}</strong><small>zu pruefen</small></div>
+    </div>
+    <section className="card card--pad company-subcontractor-card">
+      <div className="company-site-card-head"><div /><button className="btn btn--primary"><Icon name="plus" size={14} />Nachunternehmer anlegen</button></div>
+      <div className="company-subcontractor-wrap">
+        <table className="company-subcontractor-table">
+          <thead><tr>{columns.map(([key, label]) => <th key={key}><button onClick={() => changeSort(key)}>{label}<span>{sort.key === key ? (sort.dir === 'asc' ? '↑' : '↓') : '⌄'}</span></button></th>)}</tr></thead>
+          <tbody>{rows.map(row => <tr key={row.id} onClick={() => setSelected(row)}>
+            <td><strong>{row.firma}</strong><small>{row.companyName}</small></td>
+            <td>{row.contact}</td><td>{row.trade}</td><td><span className="company-contact-stickers"><button title={row.phone}><Icon name="phone" size={14} /></button><button title={row.email}><Icon name="mail" size={14} /></button><button title={row.address}><Icon name="pin" size={14} /></button></span></td>
+            <td><span className={'badge ' + (row.status === 'Freigegeben' ? 'badge--valid' : 'badge--warn')}><span className="badge__dot" />{row.status}</span></td>
+            <td><span className={'badge ' + (row.hse ? 'badge--valid' : 'badge--warn')}><span className="badge__dot" />{row.hse ? 'Ja - Nachweis gespeichert' : 'Nein - Dokument fehlt'}</span></td>
+            <td>{row.hseDate}</td><td><span className={'badge ' + (row.rating ? 'badge--valid' : 'badge--warn')}><span className="badge__dot" />{row.rating ? 'Ja' : 'Nein'}</span></td><td>{row.ratingDate}</td><td>{row.history}</td><td>{row.description}</td><td><span className="emp-doc-count"><Icon name="doc" size={13} />{row.documents.length}</span></td>
+          </tr>)}</tbody>
+        </table>
+      </div>
+    </section>
+  </div>;
+}
+
+function CompanySubcontractorDetail({ row, onBack }) {
+  const [editing, setEditing] = React.useState(false);
+  const [form, setForm] = React.useState(row);
+  const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
+  const Field = ({ label, keyName, icon = 'doc', wide }) => <CompanyMasterField label={label} icon={icon} value={Array.isArray(form[keyName]) ? form[keyName].join(', ') : form[keyName]} editing={editing}>{wide ? <textarea value={form[keyName]} onChange={event => set(keyName, event.target.value)} /> : <input value={form[keyName]} onChange={event => set(keyName, event.target.value)} />}</CompanyMasterField>;
+  return <div className="emp-full emp-master-detail company-subcontractor-detail">
+    <CompanyPageTitle title={`Nachunternehmer (${form.firma})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Loeschen</button></div>} />
+    <section className="emp-master-hero"><span className="emp-avatar">NU</span><div><div className="emp-master-hero__name"><h2>{form.firma}</h2><span className={'emp-active ' + (!form.hse ? 'is-warn' : '')}><i />{form.hse ? 'HSE vorhanden' : 'HSE fehlt'}</span></div><dl><div><dt>Firma</dt><dd>{form.companyName}</dd></div><div><dt>Gewerk</dt><dd>{form.trade}</dd></div><div><dt>Status</dt><dd>{form.status}</dd></div></dl></div><button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button></section>
+    <div className="emp-master-layout"><main className="emp-master-main">
+      <CompanyMasterDataCard title="Nachunternehmer" icon="building"><div className="emp-master-field-grid">
+        <Field label="Firma" keyName="firma" icon="building" />
+        <Field label="Ansprechpartner" keyName="contact" icon="users" />
+        <Field label="Gewerk / Leistung" keyName="trade" icon="doc" />
+        <Field label="Status" keyName="status" icon="shield" />
+      </div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Kontakt" icon="phone"><div className="emp-master-field-grid">
+        <Field label="Telefon" keyName="phone" icon="phone" />
+        <Field label="E-Mail" keyName="email" icon="mail" />
+        <Field label="Adresse" keyName="address" icon="pin" />
+      </div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="HSE-Anforderungen" icon="shield"><div className="emp-master-field-grid">
+        <CompanyMasterField label="HSE-Anforderungen" icon="check" value={form.hse ? 'Ja - Nachweis als Dokument gespeichert' : 'Nein - Dokument fehlt'} editing={editing}><select value={form.hse ? 'ja' : 'nein'} onChange={event => set('hse', event.target.value === 'ja')}><option value="ja">Ja - mit Beweis als Dokument speichern</option><option value="nein">Nein</option></select></CompanyMasterField>
+        <Field label="HSE-Anforderungen unterschrieben am" keyName="hseDate" icon="cal" />
+        <CompanyMasterField label="Bewertung von Nachunternehmern" icon="check" value={form.rating ? 'Ja' : 'Nein'} editing={editing}><select value={form.rating ? 'ja' : 'nein'} onChange={event => set('rating', event.target.value === 'ja')}><option value="ja">Ja</option><option value="nein">Nein</option></select></CompanyMasterField>
+        <Field label="Bewertung von Nachunternehmern unterschrieben am" keyName="ratingDate" icon="cal" />
+        <Field label="Versionshistorie" keyName="history" icon="history" />
+      </div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Beschreibung" icon="doc">{editing ? <textarea className="emp-master-description-input" value={form.description} onChange={event => set('description', event.target.value)} /> : <p className="emp-master-description">{form.description}</p>}</CompanyMasterDataCard>
+    </main><aside className="emp-master-aside">
+      <CompanyMasterDataCard title="Dokumente" icon="doc"><div className="company-file-chip-list">{form.documents.map(doc => <span key={doc} className="company-file-chip"><Icon name="doc" size={14} />{doc}<button>x</button></span>)}{editing && <button className="btn btn--ghost"><Icon name="plus" size={14} />Anlagen hinzufuegen</button>}</div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Geaendert" icon="history"><p className="emp-last-change">09.06.2026, 13:10 Uhr - von Sabine Janning</p></CompanyMasterDataCard>
+    </aside></div>
+    {editing && <div className="emp-master-savebar"><button className="btn btn--ghost" onClick={() => { setForm(row); setEditing(false); }}>Abbrechen</button><button className="btn btn--primary" onClick={() => setEditing(false)}>Speichern</button></div>}
+  </div>;
 }
 
 function CompanyMeetingsPage({ company, onBack }) {
@@ -504,6 +594,10 @@ function CompanySiteDetailPage({ site, onBack }) {
   const fulfilled = fulfilledCount + '/6';
   const ready = missing === 0;
   const siteEmployees = (window.SEED?.employees || []).filter(employee => (site.employeeIds || []).includes(employee.id));
+  const siteCompanyId = (window.SEED?.companies || []).find(company => company.name === site.company)?.id || ((site.company || '').toLowerCase().includes('rohrbau') ? 'rohrbau' : 'tiefbau');
+  const siteSubcontractors = companySubcontractorRows()
+    .filter(row => row.company === siteCompanyId)
+    .slice(0, site.id === 'bs-2' ? 1 : 2);
   const checkRows = [
     { label:'SCC 016', rule:'90% der Baustellenbesetzung', value:ready ? 'erfuellt' : 'offen' },
     { label:'SCC 017 / 018', rule:'mind. 1 Fuehrungskraft', value:'erfuellt' },
@@ -553,6 +647,7 @@ function CompanySiteDetailPage({ site, onBack }) {
         <CompanyMasterField label="Auftraggeber" icon="building" value={site.auftraggeber} />
         <CompanyMasterField label="Firma" icon="building" value={site.company} />
         <CompanyMasterField label="Adresse" icon="pin" value={site.adresse} />
+        <div className="emp-master-field company-site-sub-field"><Icon name="users" size={15} /><div><span>Nachunternehmer</span><div className="company-site-sub-chips">{siteSubcontractors.map(sub => <span key={sub.id} className="company-site-sub-chip"><strong>{sub.firma}</strong><small>{sub.trade}</small><em className={sub.hse ? 'is-ok' : 'is-open'}>{sub.hse ? 'HSE unterschrieben' : 'HSE fehlt'}</em></span>)}</div></div></div>
       </div>
     </section>;
     if (tab === 'Personal') return <section className="card card--pad company-site-card company-site-personal-card">

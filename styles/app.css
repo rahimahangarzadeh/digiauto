@@ -8248,6 +8248,10 @@ a.subtle:hover { text-decoration: underline; }
 .company-site-list small,.company-site-docs small,.company-site-missing small,.company-site-alarm small{display:block;margin-top:3px;color:var(--fg-3);font-size:11px}
 .company-site-check-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
 .company-site-check-grid>div{display:grid;gap:7px;padding:14px;border:1px solid var(--border-1);border-radius:8px;background:var(--color-ivory)}
+
+/* Align Firma and Mitarbeiter page titles with Bauleiterbesprechung */
+.company-list-title h1{font-family:var(--font-serif);font-size:30px;font-weight:500;letter-spacing:0;color:var(--fg-1)}
+.company-list-title p{margin:6px 0 0;color:var(--fg-2);font-size:13px;line-height:1.4}
 .company-site-check-grid>div.is-ok{background:#eff5ed;border-color:#cde1cf}
 .company-site-check-grid>div.is-open{background:#fdf3e0;border-color:#ead8a9}
 .company-site-check-grid strong{color:var(--fg-1)}
@@ -8370,8 +8374,8 @@ a.subtle:hover { text-decoration: underline; }
 /* Company card gallery */
 .company-hub{gap:26px}
 .company-list-head{grid-template-columns:minmax(330px,1fr) minmax(560px,760px) auto;align-items:start;gap:28px;margin-bottom:18px}
-.company-list-title h1{font-family:var(--font-sans);font-size:34px;font-weight:850;letter-spacing:0;color:#0e1b25}
-.company-list-title p{margin-top:12px;color:#49515a;font-size:15px;line-height:1.4}
+.company-list-title h1{font-family:var(--font-serif);font-size:34px;font-weight:500;letter-spacing:0;color:var(--fg-1)}
+.company-list-title p{margin-top:6px;color:var(--fg-2);font-size:14.5px;line-height:1.4}
 .company-list-kpis{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:16px}
 .company-list-kpis button{min-height:78px;display:grid;grid-template-columns:34px 1fr;grid-template-rows:auto auto;align-content:center;align-items:center;justify-content:start;gap:2px 12px;border:1px solid #e2ded8;border-radius:9px;background:rgba(255,255,255,.82);padding:14px 17px;color:#0e1b25;box-shadow:0 8px 22px rgba(36,30,24,.08)}
 .company-list-kpis button.is-active{border-color:#e2ded8;background:rgba(255,255,255,.9);box-shadow:0 8px 22px rgba(36,30,24,.08)}

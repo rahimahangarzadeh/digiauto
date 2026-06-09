@@ -12,11 +12,11 @@ const COMPANY_DETAIL_AREAS = [
 ];
 
 const COMPANY_META = {
-  tiefbau: { manager:'Michael Janning', address:'Lingener StraÃŸe 42, 48529 Nordhorn', phone:'+49 5921 8801-0', description:'Tiefbau, Kanalsanierung und Infrastrukturprojekte.', status:'Aktiv' },
-  bohrtechnik: { manager:'Andreas Janning', address:'Gewerbepark 8, 48531 Nordhorn', phone:'+49 5921 8802-0', description:'Horizontalbohrungen und grabenlose Verlegetechnik.', status:'Aktiv' },
-  rohrbau: { manager:'Stefan Janning', address:'SÃ¼dring 18, 48527 Nordhorn', phone:'+49 5921 8803-0', description:'Rohrleitungsbau fÃ¼r Gas-, Wasser- und Versorgungsnetze.', status:'Aktiv' },
-  galabau: { manager:'Thomas Janning', address:'MÃ¼hlenstraÃŸe 37, 48599 Gronau', phone:'+49 2562 8804-0', description:'Garten-, Landschafts- und AuÃŸenanlagenbau.', status:'In Vorbereitung' },
-  transporte: { manager:'Michael Janning', address:'Am Hafen 12, 49808 Lingen', phone:'+49 591 8805-0', description:'Baustellenlogistik, Transporte und Materialversorgung.', status:'Inaktiv' },
+  tiefbau: { manager:'Christian Janning und Alex Braun', address:'Lingener StraÃŸe 42, 48529 Nordhorn', phone:'+49 5921 8801-0', description:'Tiefbau, Kanalsanierung und Infrastrukturprojekte.', status:'Aktiv' },
+  bohrtechnik: { manager:'Christian Janning', address:'Gewerbepark 8, 48531 Nordhorn', phone:'+49 5921 8802-0', description:'Horizontalbohrungen und grabenlose Verlegetechnik.', status:'Aktiv' },
+  rohrbau: { manager:'Christian Janning und Bastian Bothe', address:'SÃ¼dring 18, 48527 Nordhorn', phone:'+49 5921 8803-0', description:'Rohrleitungsbau fÃ¼r Gas-, Wasser- und Versorgungsnetze.', status:'Aktiv' },
+  galabau: { manager:'Christian Janning', address:'MÃ¼hlenstraÃŸe 37, 48599 Gronau', phone:'+49 2562 8804-0', description:'Garten-, Landschafts- und AuÃŸenanlagenbau.', status:'In Vorbereitung' },
+  transporte: { manager:'Christian Janning', address:'Am Hafen 12, 49808 Lingen', phone:'+49 591 8805-0', description:'Baustellenlogistik, Transporte und Materialversorgung.', status:'Inaktiv' },
 };
 
 function companyRows() {

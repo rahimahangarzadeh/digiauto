@@ -8,6 +8,7 @@ const COMPANY_DETAIL_AREAS = [
   ['organization', 'Organigramm', 'users'], ['certification', 'Zertifizierungsübersicht', 'doc'],
   ['norms', 'Normenmatrix', 'matrix'], ['forms', 'Formulare', 'doc'],
   ['calendar', 'Schulungskalender', 'cal'], ['authorized', 'Befähigte Personen', 'shield'],
+  ['documents', 'Dokumente', 'doc'], ['drive', 'Meine Ablage', 'building'],
 ];
 
 const COMPANY_META = {
@@ -123,6 +124,8 @@ function CompanyDetail({ company, onBack }) {
   if (area === 'forms') return <CompanyFormsPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'calendar') return <CompanyCalendarPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'authorized') return <CompanyAuthorizedPeoplePage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'documents') return <CompanyDocumentsPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'drive') return <CompanyDrivePage company={company} onBack={() => setArea('overview')} />;
   return <div className="company-detail"><header className="company-detail__top"><div className="company-detail__intro"><button className="emp-round-back" onClick={onBack} title="ZurÃ¼ck"><Icon name="chevL" size={18} stroke={2} /></button><div><h1>Firma-Detail</h1><p>Alle firmenspezifischen Daten im Ãœberblick</p></div></div><section className="company-detail__profile"><img src={company.logo} alt={company.short} /><div><h2>{company.name}</h2><dl><div><dt>GeschÃ¤ftsfÃ¼hrer</dt><dd>{company.manager}</dd></div><div><dt>Mitarbeiter</dt><dd>{company.employees}</dd></div><div><dt>Telefon</dt><dd>{company.phone}</dd></div></dl></div></section></header><div className="company-detail__body"><nav className="emp-section-nav">{COMPANY_DETAIL_AREAS.map(([id, label, icon]) => <button key={id} className={area === id ? 'is-active' : ''} onClick={() => setArea(id)}><Icon name={icon} size={16} /><span>{label}</span><Icon name="chevR" size={13} /></button>)}</nav><main className="company-detail__content">{area === 'overview' ? <DashboardView activeCompany={company.id} setNav={() => {}} hideSummary /> : <CompanyAreaPlaceholder company={company} area={area} />}</main></div></div>;
 }
 
@@ -331,6 +334,20 @@ function CompanyAuthorizedPeoplePage({ company, onBack }) {
         ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
         : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}
     />
+  </div>;
+}
+
+function CompanyDocumentsPage({ company, onBack }) {
+  return <div className="emp-full company-documents-page">
+    <CompanyPageTitle title={`Dokumente (${company.name})`} onBack={onBack} />
+    <DocumentsView mode="home" />
+  </div>;
+}
+
+function CompanyDrivePage({ company, onBack }) {
+  return <div className="emp-full company-drive-page">
+    <CompanyPageTitle title={`Meine Ablage (${company.name})`} onBack={onBack} />
+    <DocumentsView mode="drive" />
   </div>;
 }
 

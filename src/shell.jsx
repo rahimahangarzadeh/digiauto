@@ -44,10 +44,6 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
         { id: 'bauleiterbesprechung', label: 'Bauleiterbesprechung', icon: 'users' },
         { id: 'message_center', label: 'Nachrichtenzentrale', icon: 'mail', badge: 2 },
       ]},
-      { label: 'Dokumente', items: [
-        { id: 'doc_home', label: 'Startseite', icon: 'dashboard' },
-        { id: 'doc_drive', label: 'Meine Ablage', icon: 'building' },
-      ]},
     ];
   } else {
     // Admin and Superadmin: show all sections
@@ -61,10 +57,6 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
         { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'bauleiterbesprechung', label: 'Bauleiterbesprechung', icon: 'users' },
         { id: 'message_center', label: 'Nachrichtenzentrale', icon: 'mail', badge: 2 },
-      ]},
-      { label: 'Dokumente', items: [
-        { id: 'doc_home', label: 'Startseite', icon: 'dashboard' },
-        { id: 'doc_drive', label: 'Meine Ablage', icon: 'building' },
       ]},
     ];
   }

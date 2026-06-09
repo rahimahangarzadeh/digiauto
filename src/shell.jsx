@@ -43,8 +43,6 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
         { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'bauleiterbesprechung', label: 'Bauleiterbesprechung', icon: 'users' },
         { id: 'message_center', label: 'Nachrichtenzentrale', icon: 'mail', badge: 2 },
-        { id: 'providers', label: 'Akademien & Anbieter', icon: 'building' },
-        { id: 'trainings', label: 'Schulungen', icon: 'cap' },
       ]},
       { label: 'Dokumente', items: [
         { id: 'doc_home', label: 'Startseite', icon: 'dashboard' },
@@ -63,8 +61,6 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
         { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'bauleiterbesprechung', label: 'Bauleiterbesprechung', icon: 'users' },
         { id: 'message_center', label: 'Nachrichtenzentrale', icon: 'mail', badge: 2 },
-        { id: 'providers', label: 'Akademien & Anbieter', icon: 'building' },
-        { id: 'trainings', label: 'Schulungen', icon: 'cap' },
       ]},
       { label: 'Dokumente', items: [
         { id: 'doc_home', label: 'Startseite', icon: 'dashboard' },

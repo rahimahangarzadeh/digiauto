@@ -297,13 +297,26 @@ function CompanyFormsPage({ company, onBack }) {
 
 function CompanyCalendarPage({ company, onBack }) {
   const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  const [calendarSubView, setCalendarSubView] = React.useState('calendar');
+  if (calendarSubView === 'trainings') return <div className="emp-full company-calendar-page">
+    <CompanyPageTitle title="Schulungen & Qualifikationen" onBack={() => setCalendarSubView('calendar')} />
+    <TrainingsView />
+  </div>;
+  if (calendarSubView === 'providers') return <div className="emp-full company-calendar-page">
+    <CompanyPageTitle title="Akademien & Anbieter" onBack={() => setCalendarSubView('calendar')} />
+    <ProvidersView />
+  </div>;
   return <div className="emp-full company-calendar-page">
     <CompanyPageTitle title={`Schulungskalender (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} />
     <CalendarView
       activeCompany={showAllCompanies ? 'all' : company.id}
-      extraAction={showAllCompanies
-        ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
-        : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}
+      extraAction={<React.Fragment>
+        <button className="btn btn--ghost" onClick={() => setCalendarSubView('trainings')}><Icon name="cap" size={14} />Schulungen</button>
+        <button className="btn btn--ghost" onClick={() => setCalendarSubView('providers')}><Icon name="building" size={14} />Akademien & Anbieter</button>
+        {showAllCompanies
+          ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
+          : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}
+      </React.Fragment>}
     />
   </div>;
 }

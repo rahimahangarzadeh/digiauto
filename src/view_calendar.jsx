@@ -1,6 +1,6 @@
 /* Calendar view - month + list */
 
-function CalendarView({ activeCompany, selectedTraining, selectedInstruction, selectedDate, onTrainingSelected }) {
+function CalendarView({ activeCompany, selectedTraining, selectedInstruction, selectedDate, onTrainingSelected, extraAction = null }) {
   const [mode, setMode] = React.useState('month');
   const [monthCursor, setMonthCursor] = React.useState(new Date('2026-04-21'));
   const [showNewEvent, setShowNewEvent] = React.useState(false);
@@ -61,6 +61,7 @@ function CalendarView({ activeCompany, selectedTraining, selectedInstruction, se
           <div className="view__subtitle">Termine, Orte und Teilnehmerzahlen - Monat, Woche, Liste.</div>
         </div>
         <div className="view__actions">
+          {extraAction}
           <div style={{ display: 'flex', gap: 4, background: 'var(--color-ivory)', border: '1px solid var(--border-1)', borderRadius: 8, padding: 3 }}>
             {['month', 'week', 'list'].map(m => (
               <button

@@ -3,7 +3,7 @@
 const COMPANY_DETAIL_AREAS = [
   ['overview', 'Übersicht', 'dashboard'], ['master', 'Stammdaten', 'building'],
   ['matrix', 'Qualifikationsmatrix', 'matrix'], ['evaluation', 'Firmen-Auswertung', 'shield'],
-  ['sites', 'Baustellen', 'building'], ['bgbau', 'Baustellenaushang', 'doc'],
+  ['sites', 'Baustellen', 'building'], ['meetings', 'Bauleiterbesprechung', 'users'], ['bgbau', 'Baustellenaushang', 'doc'],
   ['supervisors', 'Fachaufsichten', 'shield'], ['accidents', 'Unfallstatistik', 'matrix'],
   ['organization', 'Organigramm', 'users'], ['certification', 'Zertifizierungsübersicht', 'doc'],
   ['norms', 'Normenmatrix', 'matrix'], ['forms', 'Formulare', 'doc'],
@@ -115,6 +115,7 @@ function CompanyDetail({ company, onBack }) {
   if (area === 'matrix') return <CompanyMatrixPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'evaluation') return <CompanyEvaluationPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'sites') return <CompanySitesPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'meetings') return <CompanyMeetingsPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'bgbau') return <CompanyBGBauPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'supervisors') return <CompanySupervisorsPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'accidents') return <CompanyAccidentsPage company={company} onBack={() => setArea('overview')} />;
@@ -149,6 +150,14 @@ function CompanySitesPage({ company, onBack }) {
   if (selectedSite) return <CompanySiteDetailPage site={selectedSite} onBack={() => setSelectedSite(null)} />;
   if (showAllCompanies) return <div className="emp-full company-sites-page"><CompanyPageTitle title="Baustellen (Alle Firmen)" onBack={() => setShowAllCompanies(false)} /><BaustellenView activeCompany="all" onOpenSite={setSelectedSite} /></div>;
   return <div className="emp-full company-sites-page"><CompanyPageTitle title={`Baustellen (${company.name})`} onBack={onBack} /><BaustellenView activeCompany={company.id} onOpenSite={setSelectedSite} extraAction={<button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>} /></div>;
+}
+
+function CompanyMeetingsPage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  return <div className="emp-full company-meetings-page">
+    <CompanyPageTitle title={`Bauleiterbesprechung (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
+    <BauleiterbesprechungView activeCompany={showAllCompanies ? 'all' : company.id} />
+  </div>;
 }
 
 function companySupervisorRows() {

@@ -40,7 +40,6 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
       { label: 'Organisation', items: [
         { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'employees', label: 'Mitarbeiter', icon: 'users' },
-        { id: 'bauleiterbesprechung', label: 'Bauleiterbesprechung', icon: 'users' },
       ]},
       { label: 'Kommunikation', items: [
         { id: 'message_center', label: 'Nachrichtenzentrale', icon: 'mail', badge: 2 },
@@ -55,7 +54,6 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
       { label: 'Organisation', items: [
         { id: 'company_hub', label: 'Firma', icon: 'building' },
         { id: 'employees', label: 'Mitarbeiter', icon: 'users' },
-        { id: 'bauleiterbesprechung', label: 'Bauleiterbesprechung', icon: 'users' },
       ]},
       { label: 'Kommunikation', items: [
         { id: 'message_center', label: 'Nachrichtenzentrale', icon: 'mail', badge: 2 },

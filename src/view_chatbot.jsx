@@ -1,5 +1,5 @@
 function ChatbotView({ activeCompany }) {
-  const firstName = 'Rahim';
+  const firstName = 'Michael';
   const [query, setQuery] = React.useState('');
 
   const prompts = [
@@ -25,7 +25,7 @@ function ChatbotView({ activeCompany }) {
       <section className="chatbot-home">
         <header className="chatbot-home__hero">
           <img src="assets/janning-logo-sechseck.png" alt="Janning Group" />
-          <h1>Tag, {firstName}</h1>
+          <h2>Hallo, {firstName}</h2>
         </header>
 
         <div className="chatbot-home__composer">

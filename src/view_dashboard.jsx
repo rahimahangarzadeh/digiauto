@@ -116,6 +116,7 @@ function DashboardView({ activeCompany, setActiveCompany, setNav: setCurrentNav,
   // ── local state ──────────────────────────────────────────
   const [showAllBars, setShowAllBars] = React.useState(false);
   const [hoveredBar, setHoveredBar] = React.useState(null);
+  const [selectedTrainingDetail, setSelectedTrainingDetail] = React.useState(null);
   const [expiryFilter, setExpiryFilter] = React.useState('all'); // all | warn | expired
   const [companyMenuOpen, setCompanyMenuOpen] = React.useState(false);
 
@@ -130,7 +131,20 @@ function DashboardView({ activeCompany, setActiveCompany, setNav: setCurrentNav,
   const barColor = (pct) => pct >= 80 ? '#4a8c5c' : pct >= 60 ? '#c89b3f' : '#b84040';
   const barBg    = (pct) => pct >= 80 ? '#e8f5eb' : pct >= 60 ? '#fdf3e0' : '#fbeaea';
   const openTraining = (trainingId) => {
+    const training = window.SEED.trainings.find(t => t.id === trainingId);
+    if (hideSummary && training && window.TrainingDetailPanel) {
+      setSelectedTrainingDetail(training);
+      return;
+    }
     window.dispatchEvent(new CustomEvent('navigate-to-training', { detail: { trainingId } }));
+  };
+  const getTrainingDetailStats = (trainingId) => {
+    const stats = { valid:0, warn:0, expired:0, missing:0 };
+    activeEmps.forEach(emp => {
+      const status = window.SEED.certs[emp.id]?.[trainingId]?.status || 'missing';
+      stats[status === 'valid' ? 'valid' : status === 'warn' ? 'warn' : status === 'expired' ? 'expired' : 'missing']++;
+    });
+    return stats;
   };
   const openMatrixEmployee = (emp) => {
     window.dispatchEvent(new CustomEvent('navigate-to-matrix-employee', {
@@ -607,6 +621,14 @@ function DashboardView({ activeCompany, setActiveCompany, setNav: setCurrentNav,
         </div>
 
       </div>
+      {selectedTrainingDetail && window.TrainingDetailPanel && (
+        <TrainingDetailPanel
+          training={selectedTrainingDetail}
+          onClose={() => setSelectedTrainingDetail(null)}
+          stats={getTrainingDetailStats(selectedTrainingDetail.id)}
+          employees={activeEmps}
+        />
+      )}
     </div>
   );
 }

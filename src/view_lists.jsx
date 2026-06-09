@@ -1494,15 +1494,16 @@ function TrainingsView() {
   );
 }
 
-function TrainingDetailPanel({ training, onClose, stats }) {
+function TrainingDetailPanel({ training, onClose, stats, employees }) {
   const p = window.provider(training.provider);
   const total = stats.valid + stats.warn + stats.expired + stats.missing;
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [selectedEnrollId, setSelectedEnrollId] = React.useState(null);
   const [enrollNotice, setEnrollNotice] = React.useState('');
+  const panelEmployees = employees || window.SEED.employees;
 
   // Get employees with this training
-  const empList = window.SEED.employees.map(emp => ({
+  const empList = panelEmployees.map(emp => ({
     emp,
     cert: window.SEED.certs[emp.id]?.[training.id],
     status: window.SEED.certs[emp.id]?.[training.id]?.status || 'missing'
@@ -1548,11 +1549,11 @@ function TrainingDetailPanel({ training, onClose, stats }) {
     setEnrollNotice(`${selectedEnroll.emp.name} wurde fuer ${training.short} zur Anmeldung vorgemerkt.`);
   };
 
-  return (
+  const panel = (
     <>
-      <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:3000, background:'rgba(20,20,19,0.35)', backdropFilter:'blur(1px)' }} />
+      <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:4200, background:'rgba(20,20,19,0.35)', backdropFilter:'blur(1px)' }} />
       <div style={{
-        position:'fixed', top:0, right:0, bottom:0, zIndex:3100,
+        position:'fixed', top:0, right:0, bottom:0, zIndex:4210,
         width: 500, background:'var(--color-ivory)',
         boxShadow:'-8px 0 40px rgba(0,0,0,0.16)',
         display:'flex', flexDirection:'column',
@@ -1611,7 +1612,7 @@ function TrainingDetailPanel({ training, onClose, stats }) {
 
           {/* Status Übersicht */}
           <div style={{ marginBottom:24 }}>
-            <div style={{ fontSize:11, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color:'var(--color-accent)', marginBottom:12, paddingBottom:6, borderBottom:'1px solid var(--border-1)' }}>Status ({window.SEED.employees.length} Mitarbeiter)</div>
+            <div style={{ fontSize:11, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color:'var(--color-accent)', marginBottom:12, paddingBottom:6, borderBottom:'1px solid var(--border-1)' }}>Status ({panelEmployees.length} Mitarbeiter)</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
               <button type="button" onClick={() => selectTrainingStatus('valid')} style={{ textAlign:'left', padding:'12px 14px', borderRadius:10, background:'#eff5ed', border:'1px solid #cde1cf', boxShadow: statusFilter === 'valid' ? 'inset 0 0 0 2px #3f7a4a' : 'none', cursor:'pointer', font:'inherit' }}>
                 <div style={{ fontSize:10, fontWeight:600, color:'#3f7a4a', textTransform:'uppercase', marginBottom:4 }}>Gültig</div>
@@ -1695,6 +1696,10 @@ function TrainingDetailPanel({ training, onClose, stats }) {
       </div>
     </>
   );
+  if (window.ReactDOM && ReactDOM.createPortal && document.body) {
+    return ReactDOM.createPortal(panel, document.body);
+  }
+  return panel;
 }
 
 function ProvidersViewOld() {

@@ -285,15 +285,17 @@ function CompanyCertificationPage({ company, onBack }) {
 }
 
 function CompanyNormsPage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   return <div className="emp-full company-norms-page">
-    <CompanyPageTitle title={`Normenmatrix (${company.name})`} onBack={onBack} />
+    <CompanyPageTitle title={`Normenmatrix (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
     <NormenmatrixView />
   </div>;
 }
 
 function CompanyFormsPage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   return <div className="emp-full company-forms-page">
-    <CompanyPageTitle title={`Formulare (${company.name})`} onBack={onBack} />
+    <CompanyPageTitle title={`Formulare (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
     <FormulareView />
   </div>;
 }
@@ -327,28 +329,33 @@ function CompanyCalendarPage({ company, onBack }) {
 function CompanyAuthorizedPeoplePage({ company, onBack }) {
   const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   return <div className="emp-full company-authorized-page">
-    <CompanyPageTitle title={`Befähigte Personen (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} />
+    <CompanyPageTitle title={`Befähigte Personen (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
     <BefaehigtePersonenView
       activeCompany={showAllCompanies ? 'all' : company.id}
-      extraAction={showAllCompanies
-        ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
-        : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}
     />
   </div>;
 }
 
 function CompanyDocumentsPage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   return <div className="emp-full company-documents-page">
-    <CompanyPageTitle title={`Dokumente (${company.name})`} onBack={onBack} />
+    <CompanyPageTitle title={`Dokumente (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
     <DocumentsView mode="home" />
   </div>;
 }
 
 function CompanyDrivePage({ company, onBack }) {
+  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   return <div className="emp-full company-drive-page">
-    <CompanyPageTitle title={`Meine Ablage (${company.name})`} onBack={onBack} />
+    <CompanyPageTitle title={`Meine Ablage (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
     <DocumentsView mode="drive" />
   </div>;
+}
+
+function CompanyAllFirmsButton({ showAllCompanies, setShowAllCompanies, company }) {
+  return showAllCompanies
+    ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
+    : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>;
 }
 
 function CompanySupervisorDetail({ row, onBack }) {

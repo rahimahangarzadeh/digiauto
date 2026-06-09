@@ -3,6 +3,7 @@
 function MessageCenterView() {
   const [activeChat, setActiveChat] = React.useState('angestellte');
   const [targetGroup, setTargetGroup] = React.useState('angestellte');
+  const [licenseFlowOpen, setLicenseFlowOpen] = React.useState(false);
   const chats = [
     { id:'angestellte', name:'Angestellte', preview:'Neue Arbeitskleidung ab naechster Woche...', time:'09:24', unread:8, members:23, tone:'blue', sent:'Guten Morgen zusammen, ab naechster Woche gibt es neue Arbeitskleidung. Weitere Infos folgen.', replyName:'Julia Meier', replyInitial:'JM', reply:'Wann bekommen wir die genau?', reply2Name:'Markus Weber', reply2Initial:'MW', reply2:'Alles klar, danke.', answer:'Die Ausgabe ist am Montag um 08:00 Uhr im Lager.' },
     { id:'gewerbliche', name:'Gewerbliche Mitarbeiter', preview:'Baustelle Nordhorn: Uhrzeiten wurden angepasst...', time:'08:18', unread:3, members:38, tone:'green', sent:'Kurze Info: Die Startzeit auf der Baustelle Nordhorn ist morgen 07:00 Uhr.', replyName:'Dirk Juergens', replyInitial:'DJ', reply:'Ist die Verkehrssicherung dann schon vor Ort?', reply2Name:'Tobias Nowak', reply2Initial:'TN', reply2:'Ich gebe das an mein Team weiter.', answer:'Ja, Verkehrssicherung ist ab 06:30 Uhr eingeplant.' },
@@ -100,7 +101,7 @@ function MessageCenterView() {
         <aside className="message-center__right">
           <section className="message-panel message-upload">
             <header><div><h2>Dokumente hochladen</h2><p>Wählen Sie die passende Kategorie aus.</p></div><span><Icon name="upload" size={18} /></span></header>
-            <div>{uploads.map(([icon,title,sub]) => <button key={title}><Icon name={icon} size={19} /><span><strong>{title}</strong><small>{sub}</small></span><Icon name="chevR" size={16} /></button>)}</div>
+            <div>{uploads.map(([icon,title,sub]) => <button key={title} onClick={() => title === 'Mein Führerschein' ? setLicenseFlowOpen(true) : null}><Icon name={icon} size={19} /><span><strong>{title}</strong><small>{sub}</small></span><Icon name="chevR" size={16} /></button>)}</div>
           </section>
 
           <section className="message-panel message-help">
@@ -125,8 +126,87 @@ function MessageCenterView() {
         </div>
         <footer><button className="btn btn--primary">Nachricht erstellen</button><button className="btn btn--ghost"><Icon name="chevR" size={15} /></button></footer>
       </section>
+      {licenseFlowOpen && <LicenseUploadFlow onClose={() => setLicenseFlowOpen(false)} />}
     </div>
   );
+}
+
+function LicenseUploadFlow({ onClose }) {
+  const [accepted, setAccepted] = React.useState(false);
+  const code = '569584';
+  const uploadItems = [
+    ['Führerschein Vorderseite', 'Foto oder PDF hochladen'],
+    ['Führerschein Rückseite', 'Foto oder PDF hochladen'],
+  ];
+  const modal = (
+    <div className="license-flow-backdrop" style={{ position:'fixed', inset:0, zIndex:3200, display:'grid', placeItems:'center', background:'rgba(26,24,22,.36)', padding:24 }} onClick={onClose}>
+      <section className="license-flow" style={{ width:'min(1080px,96vw)', maxHeight:'94vh', display:'grid', gridTemplateRows:'auto minmax(0,1fr) auto', overflow:'hidden' }} onClick={event => event.stopPropagation()}>
+        <header>
+          <div>
+            <span>SGU_007 · Führerscheinkontrolle</span>
+            <h2>Elektronische Fahrerbestätigung</h2>
+            <p>Bitte lesen Sie die Hinweise, bestätigen Sie die Erklärung und laden Sie anschließend die Nachweise hoch.</p>
+          </div>
+          <button onClick={onClose} title="Schließen">x</button>
+        </header>
+
+        <div className="license-flow__body">
+          <section className="license-flow-card license-flow-card--notice">
+            <h3>Bestätigung des Fahrers</h3>
+            <p>Der Fahrer bestätigt hiermit,</p>
+            <ul className="license-flow-list">
+              <li>dass er die in der Fahrerlaubnis vermerkten Auflagen und Beschränkungen beachten wird;</li>
+              <li>dass er über die umseitig vermerkten Regelungen aus StVG, StVO und StVZO informiert wurde;</li>
+              <li>dass er einen etwaigen Verlust des Führerscheins oder einen Entzug der Fahrerlaubnis unverzüglich beim Fuhrparkverantwortlichen anzeigt.</li>
+            </ul>
+            <h4>Nachweisdokument für Fahrzeughalter und Fuhrparkverantwortliche</h4>
+            <h4>Hinweise zur Halterhaftung und zur Führerscheinkontrolle</h4>
+            <p>Die Haftung beim Fahren ohne Fahrerlaubnis bzw. Führerschein liegt beim Fahrzeughalter. Damit ergibt sich seinerseits die Verpflichtung, sicherzustellen, dass der Fahrer einen Führerschein bzw. eine Fahrerlaubnis für das überlassene Fahrzeug besitzt. Nach einem Urteil des BGH (BGH VRS 34, 354) muss diesbezüglich eine halbjährliche Überprüfung stattfinden.</p>
+            <p>Legt ein Fahrer trotz mehrmaliger Aufforderung seinen Führerschein nicht zur Kontrolle vor, muss der Halter – in der Regel das Unternehmen vertreten durch die Geschäftsleitung oder den Fuhrparkverantwortlichen – unmittelbar reagieren. Dies kann unter Umständen sogar den Entzug des Dienstwagens zur Folge haben.</p>
+            <div className="license-flow-law">
+              <strong>Maßgebliche rechtliche Bestimmungen (Auszüge)</strong>
+              <span><b>Fahrerlaubnis und Führerschein:</b> Wer auf öffentlichen Straßen ein Kraftfahrzeug führt, bedarf der Erlaubnis der zuständigen Behörde. Die Fahrerlaubnis wird in bestimmten Klassen erteilt und ist durch eine amtliche Bescheinigung nachzuweisen.</span>
+              <span><b>§21 StVG - Fahren ohne Fahrerlaubnis:</b> Mit Freiheitsstrafe bis zu einem Jahr oder mit Geldstrafe wird bestraft, wer ein Kraftfahrzeug führt, obwohl er die erforderliche Fahrerlaubnis nicht hat, oder als Halter zulässt, dass jemand ohne erforderliche Fahrerlaubnis fährt.</span>
+              <span><b>§11 StVZO - Verantwortung für den Betrieb der Fahrzeuge:</b> Der Halter darf die Inbetriebnahme nicht anordnen oder zulassen, wenn ihm bekannt ist oder bekannt sein muss, dass der Führer nicht zur selbstständigen Leitung geeignet oder das Fahrzeug nicht vorschriftsmäßig ist.</span>
+              <span><b>§23 StVO - Sonstige Pflichten von Fahrzeugführenden:</b> Wer ein Fahrzeug führt, ist dafür verantwortlich, dass Sicht, Gehör, Fahrzeug, Ladung und Besetzung vorschriftsmäßig sind und die Verkehrssicherheit nicht leidet. Mobil- oder Autotelefone dürfen während der Fahrt nicht benutzt werden, wenn sie aufgenommen oder gehalten werden müssen.</span>
+            </div>
+          </section>
+
+          <aside className="license-flow-side">
+            <section className="license-flow-card">
+              <h3>1. Erklärung bestätigen</h3>
+              <label className="license-confirm">
+                <input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} />
+                <span>Ich habe die Hinweise gelesen und bestätige die Fahrer-Erklärung.</span>
+              </label>
+            </section>
+
+            <section className={'license-flow-code ' + (accepted ? 'is-active' : '')}>
+              <span>2. Prüfcode</span>
+              <strong>{accepted ? code : '------'}</strong>
+              <p>Schreiben Sie diesen Code auf ein Blatt Papier und unterschreiben Sie direkt daneben. Legen Sie dieses Papier neben Ihren Führerschein, damit beides gemeinsam im Foto sichtbar ist.</p>
+            </section>
+
+            <section className="license-flow-card">
+              <h3>3. Nachweise hochladen</h3>
+              <div className="license-upload-list">
+                {uploadItems.map(([title, sub]) => <button key={title} disabled={!accepted}><Icon name="upload" size={16} /><span><strong>{title}</strong><small>{sub}</small></span></button>)}
+              </div>
+            </section>
+          </aside>
+        </div>
+
+        <footer>
+          <button className="btn btn--ghost" onClick={onClose}>Abbrechen</button>
+          <button className="btn btn--primary" disabled={!accepted}>Als Nachricht an Admin senden</button>
+        </footer>
+      </section>
+    </div>
+  );
+  if (window.ReactDOM && ReactDOM.createPortal && document.body) {
+    return ReactDOM.createPortal(modal, document.body);
+  }
+  return modal;
 }
 
 window.MessageCenterView = MessageCenterView;

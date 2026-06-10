@@ -111,6 +111,7 @@ function CompanyHubView() {
 
 function CompanyDetail({ company, onBack }) {
   const [area, setArea] = React.useState('overview');
+  const [calendarTrainingId, setCalendarTrainingId] = React.useState(null);
   if (area === 'master') return <CompanyMasterRecord company={company} record={companyMasterRecord(company)} onBack={() => setArea('overview')} />;
   if (area === 'matrix') return <CompanyMatrixPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'evaluation') return <CompanyEvaluationPage company={company} onBack={() => setArea('overview')} />;
@@ -125,13 +126,16 @@ function CompanyDetail({ company, onBack }) {
   if (area === 'norms') return <CompanyNormsPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'infoMatrix') return <CompanyInformationMatrixPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'forms') return <CompanyFormsPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'calendar') return <CompanyCalendarPage company={company} onBack={() => setArea('overview')} />;
+  if (area === 'calendar') return <CompanyCalendarPage company={company} onBack={() => { setCalendarTrainingId(null); setArea('overview'); }} initialTrainingId={calendarTrainingId} />;
   if (area === 'authorized') return <CompanyAuthorizedPeoplePage company={company} onBack={() => setArea('overview')} />;
   if (area === 'documents') return <CompanyDocumentsPage company={company} onBack={() => setArea('overview')} />;
   if (area === 'drive') return <CompanyDrivePage company={company} onBack={() => setArea('overview')} />;
-  const openCompanyAreaFromDashboard = (nav) => {
+  const openCompanyAreaFromDashboard = (nav, detail = {}) => {
     if (nav === 'matrix') setArea('matrix');
-    if (nav === 'calendar') setArea('calendar');
+    if (nav === 'calendar') {
+      setCalendarTrainingId(detail.trainingId || null);
+      setArea('calendar');
+    }
   };
   return <div className="company-detail"><header className="company-detail__top"><div className="company-detail__intro"><button className="emp-round-back" onClick={onBack} title="Zurück"><Icon name="chevL" size={18} stroke={2} /></button><div><h1>Firma-Detail</h1><p>Alle firmenspezifischen Daten im Überblick</p></div></div><section className="company-detail__profile"><img src={company.logo} alt={company.short} /><div><h2>{company.name}</h2><dl><div><dt>Geschäftsführer</dt><dd>{company.manager}</dd></div><div><dt>Mitarbeiter</dt><dd>{company.employees}</dd></div><div><dt>Telefon</dt><dd>{company.phone}</dd></div></dl></div></section></header><div className="company-detail__body"><nav className="emp-section-nav">{COMPANY_DETAIL_AREAS.map(([id, label, icon]) => <button key={id} className={area === id ? 'is-active' : ''} onClick={() => setArea(id)}><Icon name={icon} size={16} /><span>{label}</span><Icon name="chevR" size={13} /></button>)}</nav><main className="company-detail__content">{area === 'overview' ? <DashboardView activeCompany={company.id} setNav={openCompanyAreaFromDashboard} hideSummary /> : <CompanyAreaPlaceholder company={company} area={area} />}</main></div></div>;
 }
@@ -503,12 +507,12 @@ function CompanyFormsPage({ company, onBack }) {
   </div>;
 }
 
-function CompanyCalendarPage({ company, onBack }) {
+function CompanyCalendarPage({ company, onBack, initialTrainingId = null }) {
   const [showAllCompanies, setShowAllCompanies] = React.useState(false);
-  const [calendarSubView, setCalendarSubView] = React.useState('calendar');
+  const [calendarSubView, setCalendarSubView] = React.useState(initialTrainingId ? 'trainings' : 'calendar');
   if (calendarSubView === 'trainings') return <div className="emp-full company-calendar-page">
     <CompanyPageTitle title="Schulungen & Qualifikationen" onBack={() => setCalendarSubView('calendar')} />
-    <TrainingsView />
+    <TrainingsView initialTrainingId={initialTrainingId} />
   </div>;
   if (calendarSubView === 'providers') return <div className="emp-full company-calendar-page">
     <CompanyPageTitle title="Akademien & Anbieter" onBack={() => setCalendarSubView('calendar')} />

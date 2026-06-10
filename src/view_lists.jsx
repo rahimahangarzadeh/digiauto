@@ -1294,12 +1294,21 @@ function NewEmployeeModal({ onClose }) {
   );
 }
 
-function TrainingsView() {
+function TrainingsView({ initialTrainingId = null } = {}) {
   const [selectedTraining, setSelectedTraining] = React.useState(null);
   const [categoryFilter, setCategoryFilter] = React.useState('Alle');
   const [statusFilter, setStatusFilter] = React.useState('alle'); // alle, fehlt, warnt, abgelaufen
   const [mandatoryFilter, setMandatoryFilter] = React.useState('alle'); // alle, pflicht, optional
   const [bulkSelectedEmps, setBulkSelectedEmps] = React.useState(new Set());
+
+  React.useEffect(() => {
+    if (initialTrainingId) {
+      const initialTraining = window.SEED.trainings.find(t => t.id === initialTrainingId);
+      if (initialTraining) {
+        setSelectedTraining(initialTraining);
+      }
+    }
+  }, [initialTrainingId]);
 
   React.useEffect(() => {
     if (window.__pendingTrainingId) {

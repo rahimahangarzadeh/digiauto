@@ -132,8 +132,8 @@ function DashboardView({ activeCompany, setActiveCompany, setNav: setCurrentNav,
   const barBg    = (pct) => pct >= 80 ? '#e8f5eb' : pct >= 60 ? '#fdf3e0' : '#fbeaea';
   const openTraining = (trainingId) => {
     const training = window.SEED.trainings.find(t => t.id === trainingId);
-    if (hideSummary && training && window.TrainingDetailPanel) {
-      setSelectedTrainingDetail(training);
+    if (hideSummary && training && setCurrentNav) {
+      setCurrentNav('calendar', { trainingId });
       return;
     }
     window.dispatchEvent(new CustomEvent('navigate-to-training', { detail: { trainingId } }));

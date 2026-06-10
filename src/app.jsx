@@ -5,7 +5,7 @@ const { useState, useEffect } = React;
 function App() {
   const [loggedIn, setLoggedIn] = useState(() => localStorage.getItem('jq_loggedin') === '1');
   const [role, setRole] = useState(() => localStorage.getItem('jq_role') || 'admin');
-  const [nav, setNav] = useState(() => localStorage.getItem('jq_nav') || 'dashboard');
+  const [nav, setNav] = useState(() => localStorage.getItem('jq_nav') || 'chatbot');
   const [activeCompany, setActiveCompany] = useState(() => localStorage.getItem('jq_company') || 'all');
   const [tweaks, setTweaks] = useState(() => ({ role: localStorage.getItem('jq_role') || 'admin', density: 'comfortable', cellStyle: 'dot-date' }));
   const [searchState, setSearchState] = useState({ query: '', areas: [], status: [], dateFrom: '', dateTo: '' });
@@ -48,13 +48,13 @@ function App() {
       if (!['portal', 'message_center'].includes(nav)) setNav('portal');
       return;
     }
-    if (nav === 'messages') setNav('dashboard');
+    if (nav === 'messages') setNav('chatbot');
     if (nav && nav.indexOf('zert') === 0 && nav !== 'zertuebersicht') { setNav('zertuebersicht'); return; }
     if (['doc_bgbau', 'doc_audits', 'doc_references', 'doc_accidents', 'doc_risk'].includes(nav)) setNav('doc_drive');
     if (tweaks.role === 'admin') {
       if (nav === 'bgbau') return;
       const allowed = ['company_hub', 'dashboard', 'chatbot', 'matrix', 'auswertung', 'baustellen', 'bauleiterbesprechung', 'bgbau', 'normenmatrix', 'formulare', 'trainings', 'befaehigte_personen', 'fachaufsichten', 'unfallstatistik', 'organigramm', 'zertuebersicht', 'doc_home', 'doc_drive'];
-      if (!allowed.includes(nav)) setNav('dashboard');
+      if (!allowed.includes(nav)) setNav('chatbot');
     }
   }, [tweaks.role, nav]);
 
@@ -124,7 +124,7 @@ function App() {
   window.__logout = () => { setLoggedIn(false); };
 
   if (!loggedIn) {
-    return <Login onLogin={(r) => { setRole(r); setTweaks({...tweaks, role: r}); setLoggedIn(true); setNav(r === 'employee' ? 'portal' : 'dashboard'); }} />;
+    return <Login onLogin={(r) => { setRole(r); setTweaks({...tweaks, role: r}); setLoggedIn(true); setNav(r === 'employee' ? 'portal' : 'chatbot'); }} />;
   }
 
   // Notifications count for nav
@@ -197,7 +197,7 @@ function App() {
   switch (nav) {
     case 'company_hub': view = <CompanyHubView />; break;
     case 'dashboard': view = <DashboardView activeCompany={activeCompany} setActiveCompany={setActiveCompany} setNav={setNav} />; break;
-    case 'chatbot': view = <ChatbotView activeCompany={activeCompany} />; break;
+    case 'chatbot': view = <ChatbotView activeCompany={activeCompany} role={role} />; break;
     case 'matrix':    view = <MatrixView activeCompany={activeCompany} />; break;
     case 'employees': view = <EmployeesView activeCompany={activeCompany} />; break;
     case 'message_center': view = <MessageCenterView />; break;
@@ -245,14 +245,14 @@ function App() {
     case 'fachaufsichten': view = <FachaufsichtenView activeCompany={activeCompany} />; break;
     case 'unfallstatistik': view = <UnfallstatistikView activeCompany={activeCompany} />; break;
     case 'wartungsliste': view = <WartungslisteView />; break;
-    default:          view = <DashboardView activeCompany={activeCompany} />;
+    default:          view = <ChatbotView activeCompany={activeCompany} role={role} />;
   }
 
   return (
     <div className="app-shell">
       <Sidebar nav={nav} setNav={setNav} role={role} activeCompany={activeCompany} setActiveCompany={setActiveCompany} notifications={notifications} mobileOpen={mobileNavOpen} setMobileOpen={setMobileNavOpen} />
       <main className="main">
-        <Topbar title={titles[nav]} breadcrumbs={breadcrumbs} actions={null} searchState={searchState} setSearchState={setSearchState} onMobileMenuOpen={() => setMobileNavOpen(true)} />
+        <Topbar title={titles[nav]} breadcrumbs={breadcrumbs} actions={null} searchState={searchState} setSearchState={setSearchState} onMobileMenuOpen={() => setMobileNavOpen(true)} role={role} />
         <div className="view">{view}</div>
       </main>
       <TweaksPanel open={tweaksOpen} tweaks={tweaks} setTweaks={setTweaks} />

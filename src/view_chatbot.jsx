@@ -1,5 +1,5 @@
-function ChatbotView({ activeCompany }) {
-  const firstName = 'Michael';
+function ChatbotView({ activeCompany, role }) {
+  const firstName = window.demoIdentityForRole ? window.demoIdentityForRole(role).firstName : 'Rahim';
   const [query, setQuery] = React.useState('');
 
   const prompts = [

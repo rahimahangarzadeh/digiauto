@@ -1,5 +1,15 @@
 /* Sidebar + Topbar + overall layout */
 
+function demoIdentityForRole(role) {
+  if (role === 'employee') {
+    return { initials:'DB', name:'Daniel Bert', firstName:'Daniel', lastName:'Bert', position:'Mitarbeiter', roleLabel:'Mitarbeiter - Galabau', company:'galabau', email:'daniel.bert@janning-gruppe.de', phone:'+49 2562 8804-12' };
+  }
+  if (role === 'superadmin') {
+    return { initials:'RA', name:'Rahim Ahangarzadeh', firstName:'Rahim', lastName:'Ahangarzadeh', position:'Admin', roleLabel:'Admin', company:'all', email:'rahim.ahangarzadeh@janning-gruppe.de', phone:'+49 5921 8800-0' };
+  }
+  return { initials:'CJ', name:'Christian Janning', firstName:'Christian', lastName:'Janning', position:'Geschäftsführer', roleLabel:'Geschäftsführer', company:'tiefbau', email:'christian.janning@janning-gruppe.de', phone:'+49 5921 8801-0' };
+}
+
 function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notifications, mobileOpen, setMobileOpen }) {
   const [collapsed, setCollapsed] = React.useState(false);
   const [hoveredNav, setHoveredNav] = React.useState(null);
@@ -63,6 +73,7 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
 
   const allCompanies = { id: 'all', short: 'Alle Firmen', logo: null, name: 'Gesamtgruppe' };
   const active = activeCompany === 'all' ? allCompanies : window.company(activeCompany);
+  const sidebarUser = demoIdentityForRole(role);
   const toggleSection = (label) => {
     setCollapsedGroups(prev => ({ ...prev, [label]: !prev[label] }));
   };
@@ -203,16 +214,16 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
           onMouseEnter={() => setHoveredNav('user')}
           onMouseLeave={() => setHoveredNav(null)}>
           <div className={'avatar ' + (role === 'employee' ? 'avatar--2' : '')} style={{ flexShrink: 0 }}>
-            {role === 'employee' ? 'MB' : role === 'superadmin' ? 'MJ' : 'SJ'}
+            {sidebarUser.initials}
           </div>
           {!collapsed && (
             <>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="sidebar__user-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {role === 'employee' ? 'Markus Brinker' : role === 'superadmin' ? 'Michael Janning' : 'Sabine Janning'}
+                  {sidebarUser.name}
                 </div>
                 <div className="sidebar__user-role" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {role === 'employee' ? 'Polier - Tiefbau' : role === 'superadmin' ? 'Superadmin' : 'Firmenverantwortliche'}
+                  {sidebarUser.roleLabel}
                 </div>
               </div>
               <button className="icon-btn" title="Abmelden" onClick={() => window.__logout && window.__logout()} style={{ flexShrink: 0 }}>
@@ -237,7 +248,7 @@ function Sidebar({ nav, setNav, role, activeCompany, setActiveCompany, notificat
               pointerEvents: 'none',
               boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
             }}>
-              {role === 'employee' ? 'Markus Brinker' : role === 'superadmin' ? 'Michael Janning' : 'Sabine Janning'}
+              {sidebarUser.name}
             </div>
           )}
         </div>
@@ -402,9 +413,11 @@ function NotificationsPanel({ onClose }) {
   );
 }
 
-function ProfileModal({ onClose }) {
-  const me = window.employee('e-me');
-  const company = window.company(me.company);
+function ProfileModal({ onClose, role }) {
+  const demoMe = demoIdentityForRole(role);
+  const storedMe = role === 'employee' ? window.employee('e-me') : null;
+  const me = storedMe ? { ...storedMe, ...demoMe } : demoMe;
+  const company = me.company === 'all' ? { name:'Janning Gruppe', short:'Alle Firmen' } : window.company(me.company);
 
   const [adresse, setAdresse] = React.useState('Mühlenstraße 12, 48531 Nordhorn');
   const [telefon, setTelefon] = React.useState(me.phone || '+49 5921 1004');
@@ -543,7 +556,7 @@ function ProfileModal({ onClose }) {
   );
 }
 
-function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMobileMenuOpen }) {
+function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMobileMenuOpen, role }) {
   const [showProfile, setShowProfile] = React.useState(false);
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [showFilter, setShowFilter] = React.useState(false);
@@ -789,9 +802,9 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
         </div>
       </div>
       {showNotifications && <NotificationsPanel onClose={() => setShowNotifications(false)} />}
-      {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
+      {showProfile && <ProfileModal role={role} onClose={() => setShowProfile(false)} />}
     </>
   );
 }
 
-Object.assign(window, { Sidebar, Topbar });
+Object.assign(window, { Sidebar, Topbar, demoIdentityForRole });

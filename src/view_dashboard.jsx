@@ -147,6 +147,10 @@ function DashboardView({ activeCompany, setActiveCompany, setNav: setCurrentNav,
     return stats;
   };
   const openMatrixEmployee = (emp) => {
+    if (hideSummary && setCurrentNav) {
+      setCurrentNav('matrix');
+      return;
+    }
     window.dispatchEvent(new CustomEvent('navigate-to-matrix-employee', {
       detail: { empId: emp.id, companyId: emp.company },
     }));

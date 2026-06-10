@@ -560,9 +560,10 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
   const [showProfile, setShowProfile] = React.useState(false);
   const [showNotifications, setShowNotifications] = React.useState(false);
   const [showFilter, setShowFilter] = React.useState(false);
+  const [areaDropdownOpen, setAreaDropdownOpen] = React.useState(false);
   const filterRef = React.useRef(null);
 
-  const ss = searchState || { query: '', areas: [], status: [], dateFrom: '', dateTo: '', datePreset: 'all' };
+  const ss = searchState || { query: '', company: 'all', employee: '', areas: [], documentType: 'all', status: [], dateFrom: '', dateTo: '', datePreset: 'all', onlyDocuments: false, onlyOpen: false };
   const set = setSearchState || (() => {});
 
   // Close on outside click
@@ -574,21 +575,37 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
   }, [showFilter]);
 
   const AREAS = [
-    { id: 'certificates', label: 'Zertifikate',           icon: 'doc' },
-    { id: 'instructions', label: 'Unterweisungen',        icon: 'flag' },
-    { id: 'health',       label: 'Untersuchungsvorsorge', icon: 'shield' },
-    { id: 'jobdesc',      label: 'Stellenbeschreibung',   icon: 'doc' },
-    { id: 'license',      label: 'F\u00fchrerschein',          icon: 'cap' },
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'company_hub', label: 'Firma' },
+    { id: 'employees', label: 'Mitarbeiter' },
+    { id: 'matrix', label: 'Qualifikationsmatrix' },
+    { id: 'calendar', label: 'Schulungskalender' },
+    { id: 'trainings', label: 'Schulungen' },
+    { id: 'certificates', label: 'Zertifikate' },
+    { id: 'instructions', label: 'Unterweisungen' },
+    { id: 'health', label: 'Untersuchungsvorsorge' },
+    { id: 'license', label: 'Führerschein' },
+    { id: 'documents', label: 'Dokumente' },
+  ];
+  const DOCUMENT_TYPES = [
+    ['all', 'Alle Dokumenttypen'],
+    ['pdf', 'PDF'],
+    ['certificate', 'Zertifikat'],
+    ['instruction', 'Unterweisung'],
+    ['form', 'Formular'],
+    ['image', 'Bild / Scan'],
   ];
   const STATUSES = [
-    { id: 'valid',   label: 'G\u00fcltig',         color: '#3f7a4a', bg: '#eff5ed' },
-    { id: 'warn',    label: 'L\u00e4uft bald ab',  color: '#8a6a1f', bg: '#faf3de' },
-    { id: 'expired', label: 'Abgelaufen',     color: '#a13232', bg: '#fbecea' },
+    { id: 'valid', label: 'Gültig' },
+    { id: 'warn', label: 'Läuft bald ab' },
+    { id: 'expired', label: 'Abgelaufen' },
+    { id: 'open', label: 'Offen' },
+    { id: 'released', label: 'Freigegeben' },
   ];
 
-  const toggleArea   = (id) => set(s => ({ ...s, areas:  s.areas.includes(id)  ? s.areas.filter(x=>x!==id)  : [...s.areas, id] }));
-  const toggleStatus = (id) => set(s => ({ ...s, status: s.status.includes(id) ? s.status.filter(x=>x!==id) : [...s.status, id] }));
-  const reset = () => set({ query: '', areas: [], status: [], dateFrom: '', dateTo: '', datePreset: 'all' });
+  const toggleArea   = (id) => set(s => { const areas = s.areas || []; return { ...s, areas: areas.includes(id) ? areas.filter(x=>x!==id) : [...areas, id] }; });
+  const toggleStatus = (id) => set(s => { const status = s.status || []; return { ...s, status: status.includes(id) ? status.filter(x=>x!==id) : [...status, id] }; });
+  const reset = () => set({ query: '', company: 'all', employee: '', areas: [], documentType: 'all', status: [], dateFrom: '', dateTo: '', datePreset: 'all', onlyDocuments: false, onlyOpen: false });
 
   const setDatePreset = (preset) => {
     if (preset === 'custom') {
@@ -613,7 +630,10 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
     }
   };
 
-  const activeFilterCount = ss.areas.length + ss.status.length + (ss.dateFrom ? 1 : 0) + (ss.dateTo ? 1 : 0);
+  const selectedAreas = ss.areas || [];
+  const selectedStatuses = ss.status || [];
+  const selectedAreaLabel = selectedAreas.length ? `${selectedAreas.length} Bereiche / Kategorien` : 'Alle Bereiche / Kategorien';
+  const activeFilterCount = selectedAreas.length + selectedStatuses.length + (ss.company && ss.company !== 'all' ? 1 : 0) + (ss.employee ? 1 : 0) + (ss.documentType && ss.documentType !== 'all' ? 1 : 0) + (ss.datePreset && ss.datePreset !== 'all' ? 1 : 0) + (ss.dateTo ? 1 : 0) + (ss.onlyDocuments ? 1 : 0) + (ss.onlyOpen ? 1 : 0);
 
 
 
@@ -635,19 +655,18 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
         </div>
 
         {/* Enhanced search field */}
-        <div ref={filterRef} style={{ position: 'relative', flex: 1, maxWidth: 480, zIndex: 2500 }}>
-          <div className="topbar__search" style={{ gap: 6 }}>
+        <div ref={filterRef} className="topbar-filter-anchor">
+          <div className="topbar__search topbar__search--filter">
             <Icon name="search" size={14} />
             <input
               placeholder="Schulung, Zertifikat, Dokument suchen..."
               value={ss.query}
               onChange={e => set(s => ({ ...s, query: e.target.value }))}
               onFocus={() => setShowFilter(true)}
-              style={{ flex: 1, background: 'none', border: 'none', outline: 'none', fontSize: 13, fontFamily: 'inherit', color: 'var(--fg-1)' }}
             />
             {/* Active filter count badge */}
             {activeFilterCount > 0 && (
-              <span style={{ background: 'var(--color-accent)', color: '#fff', borderRadius: 20, padding: '1px 7px', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>
+              <span className="topbar-filter-count">
                 {activeFilterCount}
               </span>
             )}
@@ -655,23 +674,16 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
             <button
               onClick={() => setShowFilter(f => !f)}
               title="Erweiterte Filter"
-              style={{
-                background: showFilter || activeFilterCount > 0 ? 'var(--color-parchment)' : 'none',
-                border: '1px solid ' + (showFilter || activeFilterCount > 0 ? 'var(--color-accent)' : 'var(--border-1)'),
-                borderRadius: 6, padding: '3px 7px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
-                color: showFilter || activeFilterCount > 0 ? 'var(--color-accent)' : 'var(--fg-3)',
-                fontSize: 11, fontWeight: 600, flexShrink: 0, transition: 'all 120ms',
-              }}>
+              className={'topbar-filter-button' + (showFilter || activeFilterCount > 0 ? ' is-active' : '')}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
               </svg>
               Filter
             </button>
-            {!showFilter && !activeFilterCount && <span className="muted small" style={{fontSize:11, flexShrink:0}}>?K</span>}
           </div>
 
-          {/* Filter dropdown panel */}
-          {showFilter && (
+          {/* Legacy filter dropdown panel (disabled) */}
+          {false && showFilter && (
             <div style={{
               position: 'absolute', top: 'calc(100% + 8px)', left: 0, right: 0,
               background: 'var(--color-white)', border: '1px solid var(--border-1)',
@@ -777,6 +789,154 @@ function Topbar({ title, breadcrumbs, actions, searchState, setSearchState, onMo
                 <button onClick={() => setShowFilter(false)} className="btn btn--primary" style={{ fontSize: 12, padding: '6px 24px' }}>
                   Anwenden
                 </button>
+              </div>
+            </div>
+          )}
+
+          {showFilter && (
+            <div className="filter-dialog-backdrop" onMouseDown={() => setShowFilter(false)}>
+              <div className="filter-dialog" onMouseDown={(event) => event.stopPropagation()}>
+                <div className="filter-dialog__row">
+                  <label>Suchbegriff</label>
+                  <input
+                    value={ss.query}
+                    onChange={e => set(s => ({ ...s, query: e.target.value }))}
+                    placeholder="Suchbegriff eingeben..."
+                  />
+                </div>
+
+                <div className="filter-dialog__row">
+                  <label>Firma</label>
+                  <select value={ss.company || 'all'} onChange={e => set(s => ({ ...s, company: e.target.value }))}>
+                    <option value="all">Alle Firmen</option>
+                    <option value="tiefbau">Janning Tiefbau GmbH</option>
+                    <option value="bohrtechnik">Janning Bohrtechnik GmbH</option>
+                    <option value="rohrbau">Janning Rohrbau GmbH</option>
+                    <option value="galabau">Janning Galabau GmbH</option>
+                    <option value="transporte">Janning Transporte GmbH</option>
+                  </select>
+                </div>
+
+                <div className="filter-dialog__row">
+                  <label>Mitarbeiter</label>
+                  <input
+                    value={ss.employee || ''}
+                    onChange={e => set(s => ({ ...s, employee: e.target.value }))}
+                    placeholder="Mitarbeitername eingeben..."
+                  />
+                </div>
+
+                <div className="filter-dialog__row">
+                  <label>Bereich / Kategorie</label>
+                  <div className="filter-dialog-select-wrap">
+                    <button
+                      type="button"
+                      className="filter-dialog-select"
+                      onClick={() => setAreaDropdownOpen(open => !open)}>
+                      <span>{selectedAreaLabel}</span>
+                      <span className="filter-dialog-select__chevron">⌄</span>
+                    </button>
+                    {areaDropdownOpen && (
+                      <div className="filter-dialog-menu">
+                        <button
+                          type="button"
+                          className={!ss.areas?.length ? 'is-active' : ''}
+                          onClick={() => {
+                            set(s => ({ ...s, areas: [] }));
+                            setAreaDropdownOpen(false);
+                          }}>
+                          Alle Bereiche / Kategorien
+                        </button>
+                        {AREAS.map(area => (
+                          <button
+                            type="button"
+                            key={area.id}
+                            className={selectedAreas.includes(area.id) ? 'is-active' : ''}
+                            onClick={() => toggleArea(area.id)}>
+                            {area.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="filter-dialog__row">
+                  <label>Dokumenttyp</label>
+                  <select value={ss.documentType || 'all'} onChange={e => set(s => ({ ...s, documentType: e.target.value }))}>
+                    {DOCUMENT_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                </div>
+
+                <div className="filter-dialog__row filter-dialog__row--status">
+                  <label>Status</label>
+                  <div className="filter-status-chips">
+                    {STATUSES.map(status => {
+                      const active = selectedStatuses.includes(status.id);
+                      return (
+                        <button
+                          type="button"
+                          key={status.id}
+                          className={active ? 'is-active' : ''}
+                          onClick={() => toggleStatus(status.id)}>
+                          <span />
+                          {status.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="filter-dialog__row">
+                  <label>Zeitraum</label>
+                  <select value={ss.datePreset || 'all'} onChange={e => setDatePreset(e.target.value)}>
+                    <option value="all">Alle Zeiten</option>
+                    <option value="1d">1 Tag</option>
+                    <option value="3d">3 Tage</option>
+                    <option value="1w">1 Woche</option>
+                    <option value="2w">2 Wochen</option>
+                    <option value="1m">1 Monat</option>
+                    <option value="2m">2 Monate</option>
+                    <option value="6m">6 Monate</option>
+                    <option value="1y">1 Jahr</option>
+                  </select>
+                </div>
+
+                <div className="filter-dialog__row">
+                  <label>Fällig bis</label>
+                  <input
+                    type="date"
+                    value={ss.dateTo || ''}
+                    onChange={e => set(s => ({ ...s, dateTo: e.target.value, datePreset: e.target.value ? 'custom' : s.datePreset }))}
+                  />
+                </div>
+
+                <div className="filter-dialog__checks">
+                  <span />
+                  <div>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={!!ss.onlyDocuments}
+                        onChange={e => set(s => ({ ...s, onlyDocuments: e.target.checked }))}
+                      />
+                      Nur mit Dokumenten
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={!!ss.onlyOpen}
+                        onChange={e => set(s => ({ ...s, onlyOpen: e.target.checked }))}
+                      />
+                      Nur offene Einträge
+                    </label>
+                  </div>
+                </div>
+
+                <div className="filter-dialog__footer">
+                  <button type="button" className="filter-dialog-reset" onClick={reset}>Zurücksetzen</button>
+                  <button type="button" className="filter-dialog-apply" onClick={() => setShowFilter(false)}>Anwenden</button>
+                </div>
               </div>
             </div>
           )}

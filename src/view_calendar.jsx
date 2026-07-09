@@ -1,9 +1,16 @@
-/* Calendar view - month + list */
+/* Calendar view - calendar + list */
 
 function CalendarView({ activeCompany, selectedTraining, selectedInstruction, selectedDate, onTrainingSelected, extraAction = null }) {
   const [mode, setMode] = React.useState('month');
   const [monthCursor, setMonthCursor] = React.useState(new Date('2026-04-21'));
   const [showNewEvent, setShowNewEvent] = React.useState(false);
+  const [calendarSort, setCalendarSort] = React.useState({ key:'date', dir:'asc' });
+  const [calendarColumnMenu, setCalendarColumnMenu] = React.useState(null);
+  const [calendarColumnFilters, setCalendarColumnFilters] = React.useState({});
+  const [calendarFilterPanel, setCalendarFilterPanel] = React.useState(null);
+  const [calendarFilterSearch, setCalendarFilterSearch] = React.useState('');
+  const [calendarGroupBy, setCalendarGroupBy] = React.useState('');
+  const [selectedCalendarRows, setSelectedCalendarRows] = React.useState(new Set());
 
   React.useEffect(() => {
     if (selectedTraining || selectedInstruction || selectedDate) {
@@ -52,25 +59,67 @@ function CalendarView({ activeCompany, selectedTraining, selectedInstruction, se
   const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const events = window.SEED.events || [];
   const today = new Date('2026-04-21');
+  const calendarColumns = [
+    { key:'date', label:'Datum' },
+    { key:'time', label:'Uhrzeit' },
+    { key:'title', label:'Termin' },
+    { key:'location', label:'Ort' },
+    { key:'provider', label:'Anbieter' },
+    { key:'participants', label:'TN' },
+    { key:'status', label:'Status' },
+  ];
+  const calendarValue = (event, key) => {
+    if (key === 'date') return window.fmtDE(event.date);
+    if (key === 'provider') return window.provider(event.provider)?.name || '-';
+    return event[key] ?? '';
+  };
+  const calendarSortValue = (event, key) => key === 'date' ? event.date : calendarValue(event, key);
+  const toggleCalendarFilter = (key, value) => setCalendarColumnFilters(current => {
+    const values = current[key] || [];
+    return { ...current, [key]: values.includes(value) ? values.filter(item => item !== value) : [...values, value] };
+  });
+  const openCalendarFilter = key => { setCalendarFilterPanel(key); setCalendarFilterSearch(''); setCalendarColumnMenu(null); };
+  const clearCalendarFilter = key => setCalendarColumnFilters(current => ({ ...current, [key]:[] }));
+  const visibleCalendarRows = [...events]
+    .filter(event => Object.entries(calendarColumnFilters).every(([key, values]) => !values?.length || values.includes(String(calendarValue(event, key)))))
+    .sort((a, b) => String(calendarSortValue(a, calendarSort.key)).localeCompare(String(calendarSortValue(b, calendarSort.key)), 'de', { numeric:true }) * (calendarSort.dir === 'asc' ? 1 : -1));
+  const calendarFilterValues = key => Array.from(new Set(events.map(event => String(calendarValue(event, key))))).sort((a, b) => a.localeCompare(b, 'de', { numeric:true }));
+  const visibleCalendarFilterValues = calendarFilterPanel
+    ? calendarFilterValues(calendarFilterPanel).filter(value => value.toLowerCase().includes(calendarFilterSearch.toLowerCase()))
+    : [];
+  const calendarGroups = calendarGroupBy
+    ? Array.from(visibleCalendarRows.reduce((map, row) => {
+      const label = String(calendarValue(row, calendarGroupBy));
+      map.set(label, [...(map.get(label) || []), row]);
+      return map;
+    }, new Map()).entries()).map(([label, rows]) => ({ label, rows }))
+    : [{ label:null, rows:visibleCalendarRows }];
+  const allVisibleCalendarSelected = visibleCalendarRows.length > 0 && visibleCalendarRows.every(row => selectedCalendarRows.has(row.id));
+  const toggleCalendarRow = id => setSelectedCalendarRows(current => {
+    const next = new Set(current);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  const toggleAllCalendarRows = () => setSelectedCalendarRows(allVisibleCalendarSelected ? new Set() : new Set(visibleCalendarRows.map(row => row.id)));
 
   return (
     <div>
       <div className="view__header">
         <div>
           <h1 className="view__title">Schulungskalender</h1>
-          <div className="view__subtitle">Termine, Orte und Teilnehmerzahlen - Monat, Woche, Liste.</div>
+          <div className="view__subtitle">Termine, Orte und Teilnehmerzahlen - Kalender und Liste.</div>
         </div>
         <div className="view__actions">
           {extraAction}
           <div style={{ display: 'flex', gap: 4, background: 'var(--color-ivory)', border: '1px solid var(--border-1)', borderRadius: 8, padding: 3 }}>
-            {['month', 'week', 'list'].map(m => (
+            {['month', 'list'].map(m => (
               <button
                 key={m}
                 className={'chip' + (mode === m ? ' chip--active' : '')}
                 onClick={() => setMode(m)}
                 style={{ border: 0, background: mode === m ? 'var(--color-near-black)' : 'transparent', color: mode === m ? 'var(--color-ivory)' : 'var(--fg-2)' }}
               >
-                {m === 'month' ? 'Monat' : m === 'week' ? 'Woche' : 'Liste'}
+                {m === 'month' ? 'Kalender' : 'Liste'}
               </button>
             ))}
           </div>
@@ -111,41 +160,62 @@ function CalendarView({ activeCompany, selectedTraining, selectedInstruction, se
       )}
 
       {mode === 'list' && (
-        <div className="tbl-wrap">
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th>Datum</th>
-                <th>Uhrzeit</th>
-                <th>Termin</th>
-                <th>Ort</th>
-                <th>Anbieter</th>
-                <th>TN</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {[...events].sort((a, b) => a.date.localeCompare(b.date)).map(ev => (
-                <tr key={ev.id}>
-                  <td className="num">{window.fmtDE(ev.date)}</td>
-                  <td className="small muted">{ev.time}</td>
-                  <td><div style={{ fontWeight: 500 }}>{ev.title}</div></td>
-                  <td className="small">{ev.location}</td>
-                  <td className="small muted">{window.provider(ev.provider)?.name || '-'}</td>
-                  <td className="num">{ev.participants}</td>
-                  <td><span className="badge badge--planned">{ev.status}</span></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <React.Fragment>
+          {selectedCalendarRows.size > 0 && <div className="training-bulk-bar">
+            <strong>{selectedCalendarRows.size} ausgewählt</strong>
+            <button type="button"><Icon name="download" size={14} />Export</button>
+            <button type="button"><Icon name="edit" size={14} />Status ändern</button>
+            <button type="button" className="is-danger"><Icon name="trash" size={14} />Löschen</button>
+            <button type="button" className="is-clear" onClick={() => setSelectedCalendarRows(new Set())}><Icon name="x" size={14} /></button>
+          </div>}
+          <div className="training-list-table card">
+            <table>
+              <thead><tr>
+                <th className="training-list-check"><input type="checkbox" checked={allVisibleCalendarSelected} onChange={toggleAllCalendarRows} /></th>
+                {calendarColumns.map(column => <th key={column.key}>
+                  <button type="button" className="training-th-button" onClick={() => setCalendarColumnMenu(calendarColumnMenu === column.key ? null : column.key)}>
+                    {column.label}<span>{calendarSort.key === column.key ? (calendarSort.dir === 'asc' ? '↑' : '↓') : '⌄'}</span>
+                  </button>
+                  {calendarColumnMenu === column.key && <div className="training-column-menu">
+                    <button type="button" onClick={() => { setCalendarSort({ key:column.key, dir:'asc' }); setCalendarColumnMenu(null); }}>A bis Z</button>
+                    <button type="button" onClick={() => { setCalendarSort({ key:column.key, dir:'desc' }); setCalendarColumnMenu(null); }}>Z bis A</button>
+                    <button type="button" className="is-filter" onClick={() => openCalendarFilter(column.key)}>Filtern nach</button>
+                    <button type="button" onClick={() => { setCalendarGroupBy(calendarGroupBy === column.key ? '' : column.key); setCalendarSort({ key:column.key, dir:'asc' }); setCalendarColumnMenu(null); }}>Gruppieren nach "{column.label}"</button>
+                  </div>}
+                </th>)}
+              </tr></thead>
+              <tbody>
+                {calendarGroups.map(group => <React.Fragment key={group.label || 'all'}>
+                  {group.label && <tr className="training-group-row"><td colSpan={calendarColumns.length + 1}>{calendarColumns.find(column => column.key === calendarGroupBy)?.label}: {group.label} <span>{group.rows.length}</span></td></tr>}
+                  {group.rows.map(ev => <tr key={ev.id} className={selectedCalendarRows.has(ev.id) ? 'is-selected' : ''}>
+                    <td className="training-list-check" onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedCalendarRows.has(ev.id)} onChange={() => toggleCalendarRow(ev.id)} /></td>
+                    {calendarColumns.map(column => <td key={column.key}>{column.key === 'title' ? <strong>{calendarValue(ev, column.key)}</strong> : column.key === 'status' ? <span className="badge badge--planned">{calendarValue(ev, column.key)}</span> : calendarValue(ev, column.key)}</td>)}
+                  </tr>)}
+                </React.Fragment>)}
+              </tbody>
+            </table>
+          </div>
+        </React.Fragment>
       )}
 
-      {mode === 'week' && (
-        <div className="card card--pad">
-          <Empty title="Wochenansicht" sub="In diesem Prototyp als Platzhalter - Monats- und Listenansicht sind ausgebaut." />
-        </div>
-      )}
+      {calendarFilterPanel && <div className="training-filter-backdrop" onClick={() => setCalendarFilterPanel(null)}>
+        <aside className="training-filter-panel" onClick={event => event.stopPropagation()}>
+          <header>
+            <h2>Filtern nach "{calendarColumns.find(column => column.key === calendarFilterPanel)?.label}"</h2>
+            <button type="button" className="btn btn--ghost" onClick={() => setCalendarFilterPanel(null)}><Icon name="x" size={18} /></button>
+          </header>
+          <main>
+            <input value={calendarFilterSearch} onChange={event => setCalendarFilterSearch(event.target.value)} placeholder="Text eingeben, um Filter zu finden" />
+            <div>
+              {visibleCalendarFilterValues.map(value => <label key={value}><input type="checkbox" checked={(calendarColumnFilters[calendarFilterPanel] || []).includes(value)} onChange={() => toggleCalendarFilter(calendarFilterPanel, value)} /><span>{value}</span></label>)}
+            </div>
+          </main>
+          <footer>
+            <button type="button" className="btn btn--primary" onClick={() => setCalendarFilterPanel(null)} disabled={!(calendarColumnFilters[calendarFilterPanel] || []).length}>Anwenden</button>
+            <button type="button" className="btn btn--ghost" onClick={() => clearCalendarFilter(calendarFilterPanel)}>Auswahl aufheben</button>
+          </footer>
+        </aside>
+      </div>}
 
       {showNewEvent && (
         <NewEventModal
@@ -161,11 +231,13 @@ function CalendarView({ activeCompany, selectedTraining, selectedInstruction, se
 
 function NewEventModal({ onClose, selectedTraining, selectedInstruction, selectedDate }) {
   const trainings = window.SEED.trainings || [];
+  const providers = window.SEED.providers || [];
   const employees = (window.SEED.employees || []).filter(e => e.status === 'aktiv');
   const initialType = selectedInstruction ? 'unterweisung' : selectedTraining ? 'schulung' : 'schulung';
   const [form, setForm] = React.useState({
     type: initialType,
     training: selectedTraining || '',
+    provider: '',
     customTitle: selectedInstruction?.title || '',
     location: selectedInstruction?.location || '',
     startDate: selectedDate || '',
@@ -188,6 +260,7 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const selectedTrainingObj = trainings.find(t => t.id === form.training);
+  const selectedProviderId = form.provider || selectedTrainingObj?.provider || '';
   const typeLabels = {
     schulung: 'Schulung',
     fuehrerschein: 'Fuehrerscheinkontrolle',
@@ -259,7 +332,7 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
       date: form.startDate,
       time: `${form.startTime || '08:00'}-${form.endTime || '16:00'}`,
       location: form.location,
-      provider: selectedTrainingObj?.provider,
+      provider: selectedProviderId,
       participants: form.participants.length,
       status: form.status,
       freigabeFuerMitarbeiter: form.participantRelease,
@@ -409,6 +482,19 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
               )}
             </div>
 
+            {form.type === 'schulung' && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div style={{ marginBottom: 16 }} />
+                <div style={{ marginBottom: 16 }}>
+                  {fieldLabel('Anbieter aus Liste')}
+                  <select value={selectedProviderId} onChange={e => set('provider', e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
+                    <option value="">-- Anbieter auswaehlen --</option>
+                    {providers.map(provider => <option key={provider.id} value={provider.id}>{provider.name}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
               <div>
                 {fieldLabel('Beginn Datum', true)}
@@ -529,11 +615,7 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
               ))}
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-              <div>
-                {fieldLabel('Name')}
-                <input value={form.contactName} onChange={e => set('contactName', e.target.value)} placeholder="Akademie, Ansprechpartner, Hotel oder Rechnung" style={inp} />
-              </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginBottom: 16 }}>
               <div>
                 {fieldLabel('Notiz')}
                 <input value={form.notes} onChange={e => set('notes', e.target.value)} placeholder="Zusatzinfo..." style={inp} />

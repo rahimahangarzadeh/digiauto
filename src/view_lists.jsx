@@ -1859,6 +1859,7 @@ function ProvidersView() {
   const [providerGroupBy, setProviderGroupBy] = React.useState('');
   const [selectedProviderRows, setSelectedProviderRows] = React.useState(new Set());
   const [providerCreateOpen, setProviderCreateOpen] = React.useState(false);
+  const [providerPlanTarget, setProviderPlanTarget] = React.useState(null);
 
   const usageFor = (providerId) => {
     const trainings = window.SEED.trainings.filter(t => t.provider === providerId);
@@ -1872,23 +1873,7 @@ function ProvidersView() {
   };
 
   const planProvider = (provider) => {
-    const firstTraining = window.SEED.trainings.find(t => t.provider === provider.id);
-    if (!firstTraining) return;
-    window.dispatchEvent(new CustomEvent('navigate-to-calendar', {
-      detail: {
-        trainingId: firstTraining.id,
-        instruction: {
-          id: provider.id,
-          title: firstTraining.name,
-          number: provider.name,
-          group: provider.address,
-          participantName: provider.contact,
-          contextLabel: 'Anbieter vorausgewaehlt',
-          kind: 'Terminplanung',
-          location: provider.address,
-        },
-      },
-    }));
+    setProviderPlanTarget(provider);
   };
 
   const toggleFavorite = (id) => {
@@ -1953,6 +1938,7 @@ function ProvidersView() {
   ] : [];
   const starFilled = String.fromCharCode(9733);
   const starEmpty = String.fromCharCode(9734);
+  const CalendarEventModal = window.NewEventModal;
 
   return (
     <div>
@@ -2145,6 +2131,12 @@ function ProvidersView() {
         </aside>
       </div>}
       {providerCreateOpen && <ProviderCreateModal onClose={() => setProviderCreateOpen(false)} />}
+      {providerPlanTarget && CalendarEventModal && (
+        <CalendarEventModal
+          onClose={() => setProviderPlanTarget(null)}
+          selectedProvider={providerPlanTarget}
+        />
+      )}
     </div>
   );
 }

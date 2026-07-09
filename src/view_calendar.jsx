@@ -229,7 +229,7 @@ function CalendarView({ activeCompany, selectedTraining, selectedInstruction, se
   );
 }
 
-function NewEventModal({ onClose, selectedTraining, selectedInstruction, selectedDate }) {
+function NewEventModal({ onClose, selectedTraining, selectedInstruction, selectedDate, selectedProvider }) {
   const trainings = window.SEED.trainings || [];
   const providers = window.SEED.providers || [];
   const employees = (window.SEED.employees || []).filter(e => e.status === 'aktiv');
@@ -237,7 +237,7 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
   const [form, setForm] = React.useState({
     type: initialType,
     training: selectedTraining || '',
-    provider: '',
+    provider: selectedProvider?.id || '',
     customTitle: selectedInstruction?.title || '',
     location: selectedInstruction?.location || '',
     startDate: selectedDate || '',

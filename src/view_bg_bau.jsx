@@ -323,7 +323,7 @@ function BGBauAushangView({ activeCompany, activeProject = '', extraAction = nul
             <option value="">Status aendern</option>
             {Object.entries(statusCfg).map(([key,cfg]) => <option key={key} value={key}>{cfg.label}</option>)}
           </select>
-          <button className="btn btn--ghost" onClick={deleteSelected}><Icon name="trash" size={14} />Loeschen</button>
+          <button className="btn btn--danger-fill" onClick={deleteSelected}><Icon name="trash" size={14} />Löschen</button>
           <button className="btn btn--ghost" onClick={() => setSelectedIds(new Set())}>Auswahl aufheben</button>
         </div>
       )}
@@ -401,7 +401,7 @@ function BGBauAushangView({ activeCompany, activeProject = '', extraAction = nul
 
       <div style={{ display:'flex', gap:8, justifyContent:'flex-end', marginTop:12 }}>
         <button className="btn btn--ghost" disabled={!previewRow} onClick={() => previewRow && setEditRow(previewRow)}><Icon name="edit" size={14} />Bearbeiten</button>
-        <button className="btn btn--ghost" disabled={!previewRow} onClick={() => previewRow && deleteRow(previewRow.id)}><Icon name="trash" size={14} />Löschen</button>
+        <button className="btn btn--danger-fill" disabled={!previewRow} onClick={() => previewRow && deleteRow(previewRow.id)}><Icon name="trash" size={14} />Löschen</button>
         <button className="btn btn--ghost" disabled={!previewRow} onClick={() => previewRow && setPreviewRow(previewRow)}><Icon name="doc" size={14} />PDF-Vorschau</button>
       </div>
 

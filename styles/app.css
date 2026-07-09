@@ -8495,6 +8495,9 @@ a.subtle:hover { text-decoration: underline; }
 .company-site-titleline p{margin:0 0 0 10px;color:var(--fg-2);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .company-site-topline .btn.is-danger{background:var(--color-accent)!important;border-color:var(--color-accent)!important;color:#fff!important}
 .company-site-topline .btn.is-danger svg{color:inherit}
+.btn.btn--danger-fill{background:var(--color-accent)!important;border-color:var(--color-accent)!important;color:#fff!important}
+.btn.btn--danger-fill svg{color:inherit}
+.btn.btn--danger-fill:disabled{opacity:.55;background:var(--color-accent)!important;border-color:var(--color-accent)!important;color:#fff!important}
 .company-site-hero{background:var(--color-near-black);color:white;padding:22px 26px;margin-bottom:0}
 .company-site-hero h2{margin:0;font-family:var(--font-serif);font-size:24px;font-weight:500}
 .company-site-hero p{margin:8px 0 14px;color:rgba(255,255,255,.68);font-size:14px}

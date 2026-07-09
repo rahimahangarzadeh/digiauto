@@ -8738,17 +8738,51 @@ a.subtle:hover { text-decoration: underline; }
 .training-create-form textarea{min-height:118px;resize:vertical;line-height:1.45}
 .training-create-form input:focus,.training-create-form select:focus,.training-create-form textarea:focus{border-color:#c96442;box-shadow:0 0 0 3px rgba(201,100,66,.12)}
 .training-create-modal footer{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px 22px;border-top:1px solid var(--border-1)}
+.training-control-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 16px;padding:10px 0 14px;border-bottom:1px solid var(--border-1)}
+.training-control-row label{display:inline-flex;align-items:center;gap:8px;height:38px;border:1px solid var(--border-1);border-radius:8px;background:rgba(255,255,255,.76);padding:0 10px;color:var(--fg-2);font-size:12px;font-weight:750}
+.training-control-row label span{color:var(--fg-3);font-size:10px;font-weight:850;letter-spacing:.5px;text-transform:uppercase}
+.training-control-row select{border:0;background:transparent;color:var(--fg-1);font:inherit;font-weight:750;outline:none;cursor:pointer}
+.training-control-row__spacer{flex:1}
 .training-view-toggle{display:inline-flex;align-items:center;border:1px solid var(--border-1);border-radius:8px;background:rgba(255,255,255,.72);overflow:hidden;box-shadow:0 2px 5px rgba(0,0,0,.04)}
 .training-view-toggle button{min-height:36px;display:inline-flex;align-items:center;gap:7px;border:0;border-left:1px solid var(--border-1);background:transparent;padding:0 13px;color:var(--fg-2);font:inherit;font-size:12px;font-weight:750;cursor:pointer}
 .training-view-toggle button:first-child{border-left:0}
 .training-view-toggle button.is-active{background:#fff;color:var(--fg-1);box-shadow:inset 0 0 0 1px #111923}
+.training-bulk-bar{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:10px 12px;border:1px solid rgba(201,100,66,.24);border-radius:8px;background:rgba(201,100,66,.06)}
+.training-bulk-bar strong{margin-right:auto;color:var(--fg-1);font-size:13px}
+.training-bulk-bar button{min-height:32px;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border-1);border-radius:7px;background:#fff;padding:0 11px;color:var(--fg-1);font:inherit;font-size:12px;font-weight:750;cursor:pointer}
+.training-bulk-bar button.is-danger{color:#a13232;border-color:#efcbc5;background:#fff7f6}
+.training-bulk-bar button.is-clear{padding:0 9px;color:var(--fg-3)}
 .training-list-table{padding:0;overflow:hidden}
 .training-list-table table{width:100%;border-collapse:collapse}
-.training-list-table th{height:44px;background:var(--color-ivory);color:var(--fg-3);font-size:10px;font-weight:850;letter-spacing:.55px;text-align:left;text-transform:uppercase;padding:0 16px;border-bottom:1px solid var(--border-1)}
+.training-list-table th{position:relative;height:44px;background:var(--color-ivory);color:var(--fg-3);font-size:10px;font-weight:850;letter-spacing:.55px;text-align:left;text-transform:uppercase;padding:0 16px;border-bottom:1px solid var(--border-1)}
 .training-list-table td{padding:15px 16px;border-bottom:1px solid var(--border-1);color:var(--fg-2);font-size:13px;vertical-align:top}
 .training-list-table tr{cursor:pointer}
 .training-list-table tbody tr:hover{background:rgba(201,100,66,.045)}
+.training-list-table tbody tr.is-selected{background:rgba(201,100,66,.09)}
 .training-list-table td strong{color:var(--fg-1);font-size:14px}
+.training-list-check{width:38px;text-align:center;padding:0 10px!important}
+.training-th-button{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;cursor:pointer}
+.training-th-button span{color:var(--color-accent);font-size:12px}
+.training-column-menu{position:absolute;z-index:80;top:38px;left:10px;width:230px;border:1px solid var(--border-1);border-radius:8px;background:#fff;box-shadow:0 12px 30px rgba(27,23,18,.14);padding:8px;text-transform:none;letter-spacing:0}
+.training-column-menu button{width:100%;display:block;border:0;border-radius:0;background:#fff;padding:11px 10px;color:var(--fg-1);font:inherit;font-size:12px;text-align:left;cursor:pointer}
+.training-column-menu button:hover{background:var(--color-parchment)}
+.training-column-menu button.is-filter{margin-top:4px;border-top:1px solid var(--border-1);background:#f3f2f1}
+.training-column-menu__filters{display:grid;gap:6px;margin-top:6px;padding-top:8px;border-top:1px solid var(--border-1)}
+.training-column-menu__filters span{color:var(--fg-3);font-size:10px;font-weight:850;letter-spacing:.45px;text-transform:uppercase}
+.training-column-menu__filters label{display:flex;align-items:center;gap:7px;color:var(--fg-2);font-size:12px;font-weight:650}
+.training-group-row td{background:#f7f2ea;color:var(--fg-1);font-size:11px;font-weight:850;letter-spacing:.5px;text-transform:uppercase}
+.training-group-row span{margin-left:8px;color:var(--fg-3);font-weight:700}
+.training-filter-backdrop{position:fixed;inset:0;z-index:1300;display:flex;justify-content:flex-end;background:rgba(0,0,0,.18)}
+.training-filter-panel{width:420px;max-width:96vw;height:100%;display:flex;flex-direction:column;background:#fff;box-shadow:-12px 0 30px rgba(0,0,0,.18)}
+.training-filter-panel header{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:24px 24px 16px;border-bottom:1px solid var(--border-1)}
+.training-filter-panel h2{margin:0;color:var(--fg-1);font-size:24px;font-weight:700}
+.training-filter-panel header button{width:42px;height:42px;padding:0}
+.training-filter-panel main{flex:1;overflow-y:auto;padding:24px}
+.training-filter-panel main>input{width:100%;margin-bottom:18px;border:1px solid var(--border-2);padding:12px 14px;color:var(--fg-1);font:inherit;outline:none}
+.training-filter-panel main>div{display:grid;gap:12px}
+.training-filter-panel label{display:flex;align-items:center;gap:12px;color:var(--fg-1);font-size:18px;cursor:pointer}
+.training-filter-panel label input{width:20px;height:20px}
+.training-filter-panel footer{display:flex;justify-content:flex-end;gap:12px;padding:16px;border-top:1px solid var(--border-1)}
 @media(max-width:720px){.training-create-form{grid-template-columns:1fr}.training-create-backdrop{padding:14px}}
 
 /* Message center screenshot layout */

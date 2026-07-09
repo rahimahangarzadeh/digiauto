@@ -1302,6 +1302,13 @@ function TrainingsView({ initialTrainingId = null } = {}) {
   const [bulkSelectedEmps, setBulkSelectedEmps] = React.useState(new Set());
   const [trainingCreateOpen, setTrainingCreateOpen] = React.useState(false);
   const [trainingViewMode, setTrainingViewMode] = React.useState('cards');
+  const [trainingSort, setTrainingSort] = React.useState({ key:'name', dir:'asc' });
+  const [trainingColumnMenu, setTrainingColumnMenu] = React.useState(null);
+  const [trainingColumnFilters, setTrainingColumnFilters] = React.useState({});
+  const [trainingFilterPanel, setTrainingFilterPanel] = React.useState(null);
+  const [trainingFilterSearch, setTrainingFilterSearch] = React.useState('');
+  const [trainingGroupBy, setTrainingGroupBy] = React.useState('');
+  const [selectedTrainingRows, setSelectedTrainingRows] = React.useState(new Set());
 
   React.useEffect(() => {
     if (initialTrainingId) {
@@ -1350,63 +1357,61 @@ function TrainingsView({ initialTrainingId = null } = {}) {
   } else if (mandatoryFilter === 'optional') {
     filtered = filtered.filter(t => !t.mandatory);
   }
+  const trainingColumns = [
+    { key:'name', label:'Schulung' },
+    { key:'cat', label:'Kategorie' },
+    { key:'repeat', label:'Wiederholung' },
+    { key:'status', label:'Status' },
+    { key:'provider', label:'Anbieter' },
+    { key:'desc', label:'Beschreibung' },
+  ];
+  const trainingValue = (training, key) => {
+    const provider = window.provider(training.provider);
+    if (key === 'repeat') return training.months ? (training.months === 12 ? 'Jährlich' : `alle ${Math.round(training.months / 12)} Jahre`) : '-';
+    if (key === 'status') return training.mandatory ? 'Pflicht' : 'Optional';
+    if (key === 'provider') return provider?.short || '-';
+    return training[key] || '';
+  };
+  const toggleTrainingFilter = (key, value) => setTrainingColumnFilters(current => {
+    const values = current[key] || [];
+    return { ...current, [key]: values.includes(value) ? values.filter(item => item !== value) : [...values, value] };
+  });
+  const openTrainingFilter = key => { setTrainingFilterPanel(key); setTrainingFilterSearch(''); setTrainingColumnMenu(null); };
+  const clearTrainingFilter = key => setTrainingColumnFilters(current => ({ ...current, [key]:[] }));
+  const visibleTrainingRows = [...filtered]
+    .filter(training => Object.entries(trainingColumnFilters).every(([key, values]) => !values?.length || values.includes(String(trainingValue(training, key)))))
+    .sort((a, b) => String(trainingValue(a, trainingSort.key)).localeCompare(String(trainingValue(b, trainingSort.key)), 'de', { numeric:true }) * (trainingSort.dir === 'asc' ? 1 : -1));
+  const trainingFilterValues = key => Array.from(new Set(filtered.map(training => String(trainingValue(training, key))))).sort((a, b) => a.localeCompare(b, 'de', { numeric:true }));
+  const visibleTrainingFilterValues = trainingFilterPanel
+    ? trainingFilterValues(trainingFilterPanel).filter(value => value.toLowerCase().includes(trainingFilterSearch.toLowerCase()))
+    : [];
+  const trainingGroups = trainingGroupBy
+    ? Array.from(visibleTrainingRows.reduce((map, row) => {
+      const label = String(trainingValue(row, trainingGroupBy));
+      map.set(label, [...(map.get(label) || []), row]);
+      return map;
+    }, new Map()).entries()).map(([label, rows]) => ({ label, rows }))
+    : [{ label:null, rows:visibleTrainingRows }];
+  const allVisibleTrainingSelected = visibleTrainingRows.length > 0 && visibleTrainingRows.every(row => selectedTrainingRows.has(row.id));
+  const toggleTrainingRow = id => setSelectedTrainingRows(current => {
+    const next = new Set(current);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  const toggleAllTrainingRows = () => setSelectedTrainingRows(allVisibleTrainingSelected ? new Set() : new Set(visibleTrainingRows.map(row => row.id)));
 
   return (
     <div>
-      <div className="view__header">
-        <div />
-        <div className="view__actions">
-          <button className="btn btn--primary" onClick={() => setTrainingCreateOpen(true)}><Icon name="plus" size={14} />Schulung</button>
-        </div>
-      </div>
-
-      {/* Filter Bar */}
-      <div style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', marginBottom:16, flexWrap:'wrap', borderBottom:'1px solid var(--border-1)', paddingBottom:12 }}>
-        {/* Kategorie Tabs */}
-        <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setCategoryFilter(cat)}
-              style={{
-                padding:'12px 18px',
-                fontSize:14,
-                fontWeight:600,
-                letterSpacing:0.3,
-                borderRadius:10,
-                border: '1px solid var(--border-1)',
-                background: categoryFilter === cat ? 'var(--color-white)' : 'var(--color-ivory)',
-                color: categoryFilter === cat ? 'var(--color-accent)' : 'var(--fg-2)',
-                cursor:'pointer',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.048)',
-                transition:'all 150ms ease',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'var(--color-white)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = categoryFilter === cat ? 'var(--color-white)' : 'var(--color-ivory)';
-                e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.048)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >{cat}</button>
-          ))}
-        </div>
-
-        {/* Pflicht Filter */}
-        <div className="select" style={{ marginLeft:'auto' }}>
-          <select value={mandatoryFilter} onChange={e => setMandatoryFilter(e.target.value)} style={{ border:0, background:'transparent', font:'inherit', outline:'none', cursor:'pointer', fontSize:12 }}>
-            <option value="alle">Alle Schulungen</option>
-            <option value="pflicht">Nur Pflicht</option>
-            <option value="optional">Nur Optional</option>
-          </select>
-        </div>
+      <div className="training-control-row">
+        <label><span>Kategorie</span><select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>{categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}</select></label>
+        <label><span>Status</span><select value={mandatoryFilter} onChange={e => setMandatoryFilter(e.target.value)}><option value="alle">Alle</option><option value="pflicht">Pflicht</option><option value="optional">Optional</option></select></label>
+        <label><span>Gruppieren</span><select value={trainingGroupBy} onChange={e => setTrainingGroupBy(e.target.value)}><option value="">Keine Gruppierung</option>{trainingColumns.map(column => <option key={column.key} value={column.key}>{column.label}</option>)}</select></label>
+        <div className="training-control-row__spacer" />
         <div className="training-view-toggle" aria-label="Ansicht wechseln">
           <button type="button" className={trainingViewMode === 'cards' ? 'is-active' : ''} onClick={() => setTrainingViewMode('cards')}><Icon name="dashboard" size={15} />Kacheln</button>
           <button type="button" className={trainingViewMode === 'list' ? 'is-active' : ''} onClick={() => setTrainingViewMode('list')}><Icon name="matrix" size={15} />Liste</button>
         </div>
+        <button className="btn btn--primary" onClick={() => setTrainingCreateOpen(true)}><Icon name="plus" size={14} />Schulung</button>
       </div>
 
       {/* Cards Grid */}
@@ -1492,24 +1497,42 @@ function TrainingsView({ initialTrainingId = null } = {}) {
             </div>
           );
         })}
-      </div> : <div className="training-list-table card">
-        <table>
-          <thead><tr><th>Schulung</th><th>Kategorie</th><th>Wiederholung</th><th>Status</th><th>Anbieter</th><th>Beschreibung</th></tr></thead>
-          <tbody>
-            {filtered.map(t => {
-              const p = window.provider(t.provider);
-              return <tr key={t.id} onClick={() => setSelectedTraining(t)}>
-                <td><strong>{t.name}</strong></td>
-                <td>{t.cat}</td>
-                <td>{t.months ? (t.months === 12 ? 'Jährlich' : `alle ${Math.round(t.months / 12)} Jahre`) : '-'}</td>
-                <td>{t.mandatory ? <span className="badge badge--accent">Pflicht</span> : <span className="badge">Optional</span>}</td>
-                <td>{p?.short || '-'}</td>
-                <td>{t.desc}</td>
-              </tr>;
-            })}
-          </tbody>
-        </table>
-      </div>}
+      </div> : <React.Fragment>
+        {selectedTrainingRows.size > 0 && <div className="training-bulk-bar">
+          <strong>{selectedTrainingRows.size} ausgewählt</strong>
+          <button type="button"><Icon name="download" size={14} />Export</button>
+          <button type="button"><Icon name="edit" size={14} />Status ändern</button>
+          <button type="button" className="is-danger"><Icon name="trash" size={14} />Löschen</button>
+          <button type="button" className="is-clear" onClick={() => setSelectedTrainingRows(new Set())}><Icon name="x" size={14} /></button>
+        </div>}
+        <div className="training-list-table card">
+          <table>
+            <thead><tr>
+              <th className="training-list-check"><input type="checkbox" checked={allVisibleTrainingSelected} onChange={toggleAllTrainingRows} /></th>
+              {trainingColumns.map(column => <th key={column.key}>
+                <button type="button" className="training-th-button" onClick={() => setTrainingColumnMenu(trainingColumnMenu === column.key ? null : column.key)}>
+                  {column.label}<span>{trainingSort.key === column.key ? (trainingSort.dir === 'asc' ? '↑' : '↓') : '⌄'}</span>
+                </button>
+                {trainingColumnMenu === column.key && <div className="training-column-menu">
+                  <button type="button" onClick={() => { setTrainingSort({ key:column.key, dir:'asc' }); setTrainingColumnMenu(null); }}>A bis Z</button>
+                  <button type="button" onClick={() => { setTrainingSort({ key:column.key, dir:'desc' }); setTrainingColumnMenu(null); }}>Z bis A</button>
+                  <button type="button" className="is-filter" onClick={() => openTrainingFilter(column.key)}>Filtern nach</button>
+                  <button type="button" onClick={() => { setTrainingGroupBy(trainingGroupBy === column.key ? '' : column.key); setTrainingSort({ key:column.key, dir:'asc' }); setTrainingColumnMenu(null); }}>Gruppieren nach "{column.label}"</button>
+                </div>}
+              </th>)}
+            </tr></thead>
+            <tbody>
+              {trainingGroups.map(group => <React.Fragment key={group.label || 'all'}>
+                {group.label && <tr className="training-group-row"><td colSpan={trainingColumns.length + 1}>{trainingColumns.find(column => column.key === trainingGroupBy)?.label}: {group.label} <span>{group.rows.length}</span></td></tr>}
+                {group.rows.map(t => <tr key={t.id} className={selectedTrainingRows.has(t.id) ? 'is-selected' : ''} onClick={() => setSelectedTraining(t)}>
+                  <td className="training-list-check" onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedTrainingRows.has(t.id)} onChange={() => toggleTrainingRow(t.id)} /></td>
+                  {trainingColumns.map(column => <td key={column.key}>{column.key === 'name' ? <strong>{trainingValue(t, column.key)}</strong> : column.key === 'status' ? (t.mandatory ? <span className="badge badge--accent">Pflicht</span> : <span className="badge">Optional</span>) : trainingValue(t, column.key)}</td>)}
+                </tr>)}
+              </React.Fragment>)}
+            </tbody>
+          </table>
+        </div>
+      </React.Fragment>}
 
       {/* Detail Panel */}
       {selectedTraining && (
@@ -1519,6 +1542,24 @@ function TrainingsView({ initialTrainingId = null } = {}) {
           stats={getTrainingStats(selectedTraining.id)}
         />
       )}
+      {trainingFilterPanel && <div className="training-filter-backdrop" onClick={() => setTrainingFilterPanel(null)}>
+        <aside className="training-filter-panel" onClick={event => event.stopPropagation()}>
+          <header>
+            <h2>Filtern nach "{trainingColumns.find(column => column.key === trainingFilterPanel)?.label}"</h2>
+            <button type="button" className="btn btn--ghost" onClick={() => setTrainingFilterPanel(null)}><Icon name="x" size={18} /></button>
+          </header>
+          <main>
+            <input value={trainingFilterSearch} onChange={event => setTrainingFilterSearch(event.target.value)} placeholder="Text eingeben, um Filter zu finden" />
+            <div>
+              {visibleTrainingFilterValues.map(value => <label key={value}><input type="checkbox" checked={(trainingColumnFilters[trainingFilterPanel] || []).includes(value)} onChange={() => toggleTrainingFilter(trainingFilterPanel, value)} /><span>{value}</span></label>)}
+            </div>
+          </main>
+          <footer>
+            <button type="button" className="btn btn--primary" onClick={() => setTrainingFilterPanel(null)} disabled={!(trainingColumnFilters[trainingFilterPanel] || []).length}>Anwenden</button>
+            <button type="button" className="btn btn--ghost" onClick={() => clearTrainingFilter(trainingFilterPanel)}>Auswahl aufheben</button>
+          </footer>
+        </aside>
+      </div>}
       {trainingCreateOpen && <TrainingCreateModal onClose={() => setTrainingCreateOpen(false)} />}
     </div>
   );
@@ -1526,6 +1567,7 @@ function TrainingsView({ initialTrainingId = null } = {}) {
 
 function TrainingCreateModal({ onClose }) {
   const categories = ['Sicherheit', 'SCC', 'DVGW', 'Fahrerlaubnis', 'Unterweisung', 'Sicherheit / Verkehr'];
+  const providers = window.SEED.providers || [];
   return <div className="training-create-backdrop" onClick={onClose}>
     <section className="training-create-modal" onClick={event => event.stopPropagation()}>
       <header>
@@ -1540,11 +1582,7 @@ function TrainingCreateModal({ onClose }) {
         <label><span>Kategorie</span><select defaultValue="Sicherheit">{categories.map(category => <option key={category} value={category}>{category}</option>)}</select></label>
         <label><span>Status</span><select defaultValue="pflicht"><option value="pflicht">Pflicht</option><option value="optional">Optional</option></select></label>
         <label><span>Wiederholung</span><select defaultValue="1">{Array.from({ length:10 }, (_, index) => index + 1).map(year => <option key={year} value={year}>{year === 1 ? 'Jährlich' : `alle ${year} Jahre`}</option>)}</select></label>
-        <label><span>Name Anbieter</span><input placeholder="z.B. BiW Bildungszentrum" /></label>
-        <label><span>Adresse</span><input placeholder="Adresse des Anbieters" /></label>
-        <label><span>Kontakt</span><input placeholder="Ansprechpartner" /></label>
-        <label><span>Telefon</span><input placeholder="+49 ..." /></label>
-        <label><span>E-Mail</span><input placeholder="mail@anbieter.de" /></label>
+        <label><span>Anbieter</span><select defaultValue=""><option value="">Anbieter auswählen</option>{providers.map(provider => <option key={provider.id} value={provider.id}>{provider.name}</option>)}</select></label>
         <label className="is-wide"><span>Beschreibung</span><textarea placeholder="Kurze Beschreibung der Schulung..." /></label>
       </div>
       <footer>

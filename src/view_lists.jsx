@@ -1294,7 +1294,7 @@ function NewEmployeeModal({ onClose }) {
   );
 }
 
-function TrainingsView({ initialTrainingId = null } = {}) {
+function TrainingsView({ initialTrainingId = null, onDetailChange = null } = {}) {
   const [selectedTraining, setSelectedTraining] = React.useState(null);
   const [categoryFilter, setCategoryFilter] = React.useState('Alle');
   const [statusFilter, setStatusFilter] = React.useState('alle'); // alle, fehlt, warnt, abgelaufen
@@ -1332,6 +1332,10 @@ function TrainingsView({ initialTrainingId = null } = {}) {
     window.addEventListener('navigate-to-training', handler);
     return () => window.removeEventListener('navigate-to-training', handler);
   }, []);
+
+  React.useEffect(() => {
+    if (onDetailChange) onDetailChange(!!selectedTraining);
+  }, [selectedTraining, onDetailChange]);
 
   // Get all unique categories
   const categories = ['Alle', ...new Set(window.SEED.trainings.map(t => t.cat))];
@@ -1668,32 +1672,23 @@ function TrainingDetailPage({ training, onBack, stats, employees }) {
         </div>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(5, minmax(0, 1fr))', gap:10, marginBottom:14 }}>
         <FieldCard icon="cap" label="Zertifikat / Schulung" value={training.name} />
         <FieldCard icon="cal" label="Gültigkeit" value={`${training.months} Monate`} />
         <FieldCard icon="history" label="Wiederholung" value={repeatText} />
         <FieldCard icon="shield" label="Status" value={training.mandatory ? 'Pflicht' : 'Optional'} />
+        <FieldCard icon="doc" label="Beschreibung" value={training.desc} />
       </div>
-
-      <section className="card" style={{ padding:18, marginBottom:14 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
-          <Icon name="doc" size={18} />
-          <h2 style={{ margin:0, fontFamily:'var(--font-serif)', fontSize:18 }}>Beschreibung</h2>
-        </div>
-        <p style={{ margin:0, color:'var(--fg-2)', lineHeight:1.55, fontSize:14 }}>{training.desc}</p>
-      </section>
 
       <section className="card" style={{ padding:18, marginBottom:14 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
           <Icon name="building" size={18} />
           <h2 style={{ margin:0, fontFamily:'var(--font-serif)', fontSize:18 }}>Anbieter</h2>
         </div>
-        <div style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr 1fr', gap:10 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5, minmax(0, 1fr))', gap:10 }}>
           <FieldCard icon="building" label="Name Anbieter" value={p?.name || '-'} />
           <FieldCard icon="users" label="Kontakt" value={p?.contact || '-'} />
           <FieldCard icon="phone" label="Telefon" value={p?.phone || '-'} />
-        </div>
-        <div style={{ marginTop:10, display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
           <FieldCard icon="mail" label="E-Mail" value={p?.email || '-'} />
           <FieldCard icon="pin" label="Adresse" value={p?.address || '-'} />
         </div>

@@ -144,10 +144,11 @@ function CompanyMatrixPage({ company, onBack }) {
   const [selectedEmployee, setSelectedEmployee] = React.useState(null);
   const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   const [matrixSubView, setMatrixSubView] = React.useState('matrix');
+  const [trainingDetailOpen, setTrainingDetailOpen] = React.useState(false);
   if (selectedEmployee && window.EmployeeAdminDetail) return <EmployeeAdminDetail emp={selectedEmployee} onBack={() => setSelectedEmployee(null)} />;
   if (matrixSubView === 'trainings') return <div className="emp-full company-matrix-page">
-    <CompanyPageTitle title="Schulungen & Qualifikationen" onBack={() => setMatrixSubView('matrix')} />
-    <TrainingsView />
+    {!trainingDetailOpen && <CompanyPageTitle title="Schulungen & Qualifikationen" onBack={() => setMatrixSubView('matrix')} />}
+    <TrainingsView onDetailChange={setTrainingDetailOpen} />
   </div>;
   if (matrixSubView === 'calendar') return <div className="emp-full company-matrix-page">
     <CompanyPageTitle title={`Schulungskalender (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={() => setMatrixSubView('matrix')} />
@@ -531,9 +532,10 @@ function CompanyFormsPage({ company, onBack }) {
 function CompanyCalendarPage({ company, onBack, initialTrainingId = null }) {
   const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   const [calendarSubView, setCalendarSubView] = React.useState(initialTrainingId ? 'trainings' : 'calendar');
+  const [trainingDetailOpen, setTrainingDetailOpen] = React.useState(false);
   if (calendarSubView === 'trainings') return <div className="emp-full company-calendar-page">
-    <CompanyPageTitle title="Schulungen & Qualifikationen" onBack={() => setCalendarSubView('calendar')} />
-    <TrainingsView initialTrainingId={initialTrainingId} />
+    {!trainingDetailOpen && <CompanyPageTitle title="Schulungen & Qualifikationen" onBack={() => setCalendarSubView('calendar')} />}
+    <TrainingsView initialTrainingId={initialTrainingId} onDetailChange={setTrainingDetailOpen} />
   </div>;
   if (calendarSubView === 'providers') return <div className="emp-full company-calendar-page">
     <CompanyPageTitle title="Akademien & Anbieter" onBack={() => setCalendarSubView('calendar')} />

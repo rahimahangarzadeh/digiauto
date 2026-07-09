@@ -1309,6 +1309,7 @@ function TrainingsView({ initialTrainingId = null, onDetailChange = null } = {})
   const [trainingFilterSearch, setTrainingFilterSearch] = React.useState('');
   const [trainingGroupBy, setTrainingGroupBy] = React.useState('');
   const [selectedTrainingRows, setSelectedTrainingRows] = React.useState(new Set());
+  const [trainingPlanTarget, setTrainingPlanTarget] = React.useState(null);
 
   React.useEffect(() => {
     if (initialTrainingId) {
@@ -1403,6 +1404,7 @@ function TrainingsView({ initialTrainingId = null, onDetailChange = null } = {})
     return next;
   });
   const toggleAllTrainingRows = () => setSelectedTrainingRows(allVisibleTrainingSelected ? new Set() : new Set(visibleTrainingRows.map(row => row.id)));
+  const CalendarEventModal = window.NewEventModal;
 
   if (selectedTraining) {
     return (
@@ -1501,11 +1503,12 @@ function TrainingsView({ initialTrainingId = null, onDetailChange = null } = {})
 
               {/* Action Buttons */}
               <div style={{ display:'flex', gap:6, marginTop:6 }}>
-                <button className="btn btn--ghost" style={{ flex:1, fontSize:11, padding:'6px 8px' }}>
-                  Teilnehmer
-                </button>
-                <button className="btn btn--ghost" style={{ flex:1, fontSize:11, padding:'6px 8px' }}>
-                  Anmelden
+                <button
+                  className="btn btn--primary"
+                  onClick={(event) => { event.stopPropagation(); setTrainingPlanTarget(t); }}
+                  style={{ flex:1, fontSize:12, padding:'8px 10px', justifyContent:'center' }}
+                >
+                  <Icon name="cal" size={13} />Termin planen
                 </button>
               </div>
             </div>
@@ -1566,6 +1569,12 @@ function TrainingsView({ initialTrainingId = null, onDetailChange = null } = {})
           </footer>
         </aside>
       </div>}
+      {trainingPlanTarget && CalendarEventModal && (
+        <CalendarEventModal
+          onClose={() => setTrainingPlanTarget(null)}
+          selectedTraining={trainingPlanTarget.id}
+        />
+      )}
       {trainingCreateOpen && <TrainingCreateModal onClose={() => setTrainingCreateOpen(false)} />}
     </div>
   );

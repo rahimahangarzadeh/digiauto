@@ -378,10 +378,7 @@ function MatrixView({ activeCompany, onEmployeeOpen, extraAction = null }) {
     <div>
       {/* ── Header ── */}
       <div className="view__header">
-        <div>
-          <h1 className="view__title">Qualifikationsmatrix</h1>
-          <div className="view__subtitle">Mitarbeiter gegen Schulungen — grün ist gültig, gelb läuft bald ab, rot verlangt Handlung.</div>
-        </div>
+        <div />
         <div className="view__actions">
           <button className="btn btn--ghost"><Icon name="filter" size={14} /> Ansicht</button>
           <button className="btn btn--ghost"><Icon name="download" size={14} /> Excel</button>

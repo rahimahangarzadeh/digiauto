@@ -243,7 +243,7 @@ function CompanySubcontractorDetail({ row, onBack }) {
   const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
   const Field = ({ label, keyName, icon = 'doc', wide }) => <CompanyMasterField label={label} icon={icon} value={Array.isArray(form[keyName]) ? form[keyName].join(', ') : form[keyName]} editing={editing}>{wide ? <textarea value={form[keyName]} onChange={event => set(keyName, event.target.value)} /> : <input value={form[keyName]} onChange={event => set(keyName, event.target.value)} />}</CompanyMasterField>;
   return <div className="emp-full emp-master-detail company-subcontractor-detail">
-    <CompanyPageTitle title={`Nachunternehmer (${form.firma})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Loeschen</button></div>} />
+    <CompanyPageTitle title={`Nachunternehmer (${form.firma})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Löschen</button></div>} />
     <section className="emp-master-hero"><span className="emp-avatar">NU</span><div><div className="emp-master-hero__name"><h2>{form.firma}</h2><span className={'emp-active ' + (!form.hse ? 'is-warn' : '')}><i />{form.hse ? 'HSE vorhanden' : 'HSE fehlt'}</span></div><dl><div><dt>Firma</dt><dd>{form.companyName}</dd></div><div><dt>Gewerk</dt><dd>{form.trade}</dd></div><div><dt>Status</dt><dd>{form.status}</dd></div></dl></div><button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button></section>
     <div className="emp-master-layout"><main className="emp-master-main">
       <CompanyMasterDataCard title="Nachunternehmer" icon="building"><div className="emp-master-field-grid">
@@ -347,7 +347,7 @@ function CompanyAccidentDetail({ row, onBack }) {
   const setYear = (jahr, key, value) => setForm(current => ({ ...current, jahreData: current.jahreData.map(item => item.jahr === jahr ? { ...item, [key]: value } : item) }));
   const current = form.jahreData[form.jahreData.length - 1];
   return <div className="emp-full emp-master-detail company-accident-detail">
-    <CompanyPageTitle title={`Unfallstatistik bearbeiten (${form.firma})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Loeschen</button></div>} />
+    <CompanyPageTitle title={`Unfallstatistik bearbeiten (${form.firma})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Löschen</button></div>} />
     <section className="emp-master-hero"><span className="emp-avatar">UH</span><div><div className="emp-master-hero__name"><h2>{form.firma}</h2><span className="emp-active"><i />{form.intern}</span></div><dl><div><dt>UH-Quote 2025</dt><dd>{current.uh.toFixed(1)}</dd></div><div><dt>Unfaelle 2025</dt><dd>{current.unfaelle}</dd></div><div><dt>Arbeitsstunden</dt><dd>{current.stunden.toLocaleString('de-DE')}</dd></div></dl></div><button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button></section>
     <div className="emp-master-layout"><main className="emp-master-main">
       <CompanyMasterDataCard title="Firmendaten" icon="building"><div className="emp-master-field-grid">
@@ -382,7 +382,7 @@ function CompanyOrganizationDetail({ row, onBack }) {
   const [form, setForm] = React.useState(row);
   const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
   return <div className="emp-full emp-master-detail company-organization-detail">
-    <CompanyPageTitle title={`Organigramm bearbeiten (${form.company})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Loeschen</button></div>} />
+    <CompanyPageTitle title={`Organigramm bearbeiten (${form.company})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Löschen</button></div>} />
     <section className="emp-master-hero"><span className="emp-avatar">OR</span><div><div className="emp-master-hero__name"><h2>{form.name}</h2><span className="emp-active"><i />{form.status}</span></div><dl><div><dt>Firma</dt><dd>{form.company}</dd></div><div><dt>Dokument</dt><dd>{form.documentNo}</dd></div><div><dt>Version</dt><dd>{form.version}</dd></div></dl></div><button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button></section>
     <div className="emp-master-layout"><main className="emp-master-main">
       <CompanyMasterDataCard title="Organigramm-Daten" icon="users"><div className="emp-master-field-grid">
@@ -594,7 +594,7 @@ function CompanySupervisorDetail({ row, onBack }) {
   const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
   const Field = ({ label, value, children }) => <div className="emp-master-field"><Icon name="doc" size={15} /><div><span>{label}</span>{editing ? children : <strong>{value}</strong>}</div></div>;
   return <div className="emp-full emp-master-detail company-supervisor-detail">
-    <CompanyPageTitle title={`Fachaufsicht bearbeiten (${form.name})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Loeschen</button></div>} />
+    <CompanyPageTitle title={`Fachaufsicht bearbeiten (${form.name})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Löschen</button></div>} />
     <section className="emp-master-hero"><span className="emp-avatar">FA</span><div><div className="emp-master-hero__name"><h2>{form.name}</h2><span className="emp-active"><i />{form.status}</span></div><dl><div><dt>Firma</dt><dd>{form.companyName}</dd></div><div><dt>Verantwortlich</dt><dd>{form.responsible}</dd></div></dl></div><button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button></section>
     <div className="emp-master-layout"><main className="emp-master-main">
       <CompanyMasterDataCard title="Fachaufsicht" icon="shield"><div className="emp-master-field-grid">
@@ -616,16 +616,28 @@ function CompanySupervisorDetail({ row, onBack }) {
 }
 
 function CompanySiteDetailPage({ site, onBack }) {
-  const tabs = ['Stammdaten', 'Personal', 'Personal-Pruefung', 'Fehlende Schulungen', 'Gefaehrdungsbeurteilung', 'Alarmplan', 'Dokumente'];
+  const tabs = ['Stammdaten', 'Personal', 'Personalprüfung', 'Fehlende Schulungen', 'Gefährdungsbeurteilung', 'Alarmplan', 'Dokumente'];
   const [tab, setTab] = React.useState('Stammdaten');
   const [alarmMode, setAlarmMode] = React.useState('empty');
   const [alarmPreviewOpen, setAlarmPreviewOpen] = React.useState(false);
+  const siteCompanyId = (window.SEED?.companies || []).find(company => company.name === site.company)?.id || ((site.company || '').toLowerCase().includes('rohrbau') ? 'rohrbau' : 'tiefbau');
+  const [siteEmployeeIds, setSiteEmployeeIds] = React.useState(site.employeeIds || []);
+  const [teamEditOpen, setTeamEditOpen] = React.useState(false);
+  const [teamDraftIds, setTeamDraftIds] = React.useState(site.employeeIds || []);
+  const [teamCompanyFilter, setTeamCompanyFilter] = React.useState(siteCompanyId || 'all');
+  const [teamSearch, setTeamSearch] = React.useState('');
   const missing = typeof site.demoMissing === 'number' ? site.demoMissing : 0;
   const fulfilledCount = typeof site.demoFulfilled === 'number' ? site.demoFulfilled : (missing ? 4 : 6);
   const fulfilled = fulfilledCount + '/6';
   const ready = missing === 0;
-  const siteEmployees = (window.SEED?.employees || []).filter(employee => (site.employeeIds || []).includes(employee.id));
-  const siteCompanyId = (window.SEED?.companies || []).find(company => company.name === site.company)?.id || ((site.company || '').toLowerCase().includes('rohrbau') ? 'rohrbau' : 'tiefbau');
+  const allEmployees = (window.SEED?.employees || []).filter(employee => employee.status === 'aktiv');
+  const siteEmployees = allEmployees.filter(employee => siteEmployeeIds.includes(employee.id));
+  const teamCandidates = allEmployees
+    .filter(employee => teamCompanyFilter === 'all' || employee.company === teamCompanyFilter)
+    .filter(employee => {
+      const haystack = `${employee.name} ${employee.firstName || ''} ${employee.lastName || ''} ${employee.position || ''} ${employee.department || ''}`.toLowerCase();
+      return !teamSearch || haystack.includes(teamSearch.toLowerCase());
+    });
   const siteSubcontractors = companySubcontractorRows()
     .filter(row => row.company === siteCompanyId)
     .slice(0, site.id === 'bs-2' ? 1 : 2);
@@ -664,6 +676,70 @@ function CompanySiteDetailPage({ site, onBack }) {
     krankenhaus:'',
     telefonKrankenhaus:'',
   };
+  const openTeamEditor = () => {
+    setTeamDraftIds(siteEmployeeIds);
+    setTeamCompanyFilter(siteCompanyId || 'all');
+    setTeamSearch('');
+    setTeamEditOpen(true);
+  };
+  const toggleTeamDraft = (employeeId) => {
+    setTeamDraftIds(current => current.includes(employeeId)
+      ? current.filter(id => id !== employeeId)
+      : [...current, employeeId]
+    );
+  };
+  const saveTeamEditor = () => {
+    setSiteEmployeeIds(teamDraftIds);
+    setTeamEditOpen(false);
+  };
+  const renderTeamEditModal = () => (
+    <div className="company-site-team-modal" onClick={() => setTeamEditOpen(false)}>
+      <section className="company-site-team-modal__box" onClick={event => event.stopPropagation()}>
+        <header>
+          <div>
+            <strong>Personal auswählen</strong>
+            <small>{teamDraftIds.length} Mitarbeiter für diese Baustelle ausgewählt</small>
+          </div>
+          <button className="icon-btn" type="button" onClick={() => setTeamEditOpen(false)}><Icon name="x" size={16} /></button>
+        </header>
+        <div className="company-site-team-filters">
+          <label>
+            <span>Firma</span>
+            <select value={teamCompanyFilter} onChange={event => setTeamCompanyFilter(event.target.value)}>
+              <option value="all">Alle Firmen</option>
+              {(window.SEED?.companies || []).map(company => <option key={company.id} value={company.id}>{company.name}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>Mitarbeiter suchen</span>
+            <input value={teamSearch} onChange={event => setTeamSearch(event.target.value)} placeholder="Name, Position oder Abteilung..." />
+          </label>
+        </div>
+        <div className="company-site-team-list">
+          <table>
+            <thead><tr><th>Auswahl</th><th>Name Mitarbeiter</th><th>Firma</th><th>Position</th><th>Abteilung</th></tr></thead>
+            <tbody>
+              {teamCandidates.map(employee => {
+                const checked = teamDraftIds.includes(employee.id);
+                return <tr key={employee.id} className={checked ? 'is-selected' : ''} onClick={() => toggleTeamDraft(employee.id)}>
+                  <td><input type="checkbox" checked={checked} readOnly /></td>
+                  <td><strong>{employee.name}</strong><small>PN {employee.personalNr}</small></td>
+                  <td>{window.company(employee.company)?.name || employee.company}</td>
+                  <td>{employee.position}</td>
+                  <td>{employee.department}</td>
+                </tr>;
+              })}
+              {teamCandidates.length === 0 && <tr><td colSpan="5" className="company-site-team-empty">Keine Mitarbeiter gefunden.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <footer>
+          <button className="btn btn--ghost" type="button" onClick={() => setTeamEditOpen(false)}>Abbrechen</button>
+          <button className="btn btn--primary" type="button" onClick={saveTeamEditor}>Übernehmen</button>
+        </footer>
+      </section>
+    </div>
+  );
   const renderTab = () => {
     if (tab === 'Stammdaten') return <section className="card card--pad company-site-card">
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, marginBottom:18 }}>
@@ -682,7 +758,7 @@ function CompanySiteDetailPage({ site, onBack }) {
       </div>
     </section>;
     if (tab === 'Personal') return <section className="card card--pad company-site-card company-site-personal-card">
-      <div className="company-site-card-head"><div><div className="card__title">Mitarbeiter der Baustelle</div><div className="card__sub">{siteEmployees.length} Mitarbeiter im Projekt</div></div><button className="btn btn--ghost"><Icon name="edit" size={14} />Liste bearbeiten</button></div>
+      <div className="company-site-card-head"><div><div className="card__title">Mitarbeiter der Baustelle</div><div className="card__sub">{siteEmployees.length} Mitarbeiter im Projekt</div></div><button className="btn btn--ghost" onClick={openTeamEditor}><Icon name="edit" size={14} />Liste bearbeiten</button></div>
       <div className="company-site-personal-wrap">
         <table className="company-site-personal-table">
           <thead><tr><th>Mitarbeiter</th><th>SCC 016</th><th>SCC 017 / 018</th><th>Erste Hilfe</th><th>MVAS 99</th><th>GW 129</th><th>Geraetefuehrer</th><th>Freigabe Portal</th></tr></thead>
@@ -705,25 +781,25 @@ function CompanySiteDetailPage({ site, onBack }) {
         </table>
       </div>
     </section>;
-    if (tab === 'Personal-Pruefung') return <section className="card card--pad company-site-card">
-      <div className="card__title">Personal-Pruefung</div>
+    if (tab === 'Personalprüfung') return <section className="card card--pad company-site-card">
+      <div className="card__title">Personalprüfung</div>
       <div className="company-site-check-grid">{checkRows.map(row => <div key={row.label} className={row.value === 'erfuellt' ? 'is-ok' : 'is-open'}><strong>{row.label}</strong><small>{row.rule}</small><span>{row.value}</span></div>)}</div>
     </section>;
     if (tab === 'Fehlende Schulungen') return <section className="card card--pad company-site-card">
       <div className="company-site-card-head"><div><div className="card__title">Fehlende Schulungen</div><div className="card__sub">{missingRows.length ? 'Personal muss nachgeplant werden.' : 'Keine fehlenden Schulungen.'}</div></div>{missingRows.length > 0 && <button className="btn btn--primary"><Icon name="plus" size={14} />Schulung planen</button>}</div>
       <div className="company-site-missing">{missingRows.length ? missingRows.map(row => <div key={row.label}><div><strong>{row.label}</strong><small>{row.rule}</small></div><span className="badge badge--warn"><span className="badge__dot" />offen</span></div>) : <div className="company-site-empty">Alle Pflichtpunkte sind erfuellt.</div>}</div>
     </section>;
-    if (tab === 'Gefaehrdungsbeurteilung') {
+    if (tab === 'Gefährdungsbeurteilung') {
       const riskRows = [
         { nr:1, name:'Baustellenanmeldung BG BAU', notRequired:false, done:true, date:'18.05.2026', description:'Baustellenanmeldung fuer ' + site.projectName + ' vorbereitet.', document:'BG-BAU-Anmeldung.pdf' },
-        { nr:2, name:'Betriebs-Gefaehrdungsbeurteilung', notRequired:false, done:true, date:'19.05.2026', description:'Betriebliche Grundgefaehrdungen fuer Tiefbauarbeiten geprueft.', document:'Betriebs-Gefaehrdungsbeurteilung.pdf' },
-        { nr:3, name:'Ergaenzende Gefaehrdungsbeurteilung Baustelle', notRequired:false, done:ready, date:'22.05.2026', description:ready ? 'Ergaenzung fuer Verkehrsbereich dokumentiert.' : 'Ergaenzung fuer Verkehrsbereich noch offen.', document:'Ergaenzende-GBU-Baustelle.pdf' },
+        { nr:2, name:'Betriebs-Gefährdungsbeurteilung', notRequired:false, done:true, date:'19.05.2026', description:'Betriebliche Grundgefährdungen für Tiefbauarbeiten geprüft.', document:'Betriebs-Gefährdungsbeurteilung.pdf' },
+        { nr:3, name:'Ergänzende Gefährdungsbeurteilung Baustelle', notRequired:false, done:ready, date:'22.05.2026', description:ready ? 'Ergänzung für Verkehrsbereich dokumentiert.' : 'Ergänzung für Verkehrsbereich noch offen.', document:'Ergänzende-GBU-Baustelle.pdf' },
         { nr:4, name:'Projektbezogene Unterweisung', notRequired:false, done:true, date:'20.05.2026', description:'Projektbezogene Unterweisung mit dem Baustellenteam dokumentiert.', document:'Projektbezogene-Unterweisung.pdf' },
         { nr:5, name:'Erstunterweisung Baustellen', notRequired:false, done:true, date:'20.05.2026', description:'Erstunterweisung fuer neue Baustellenbesetzung abgeschlossen.', document:'Erstunterweisung-Baustelle.pdf' },
       ];
       return <section className="card card--pad company-site-card company-site-risk-card">
         <div className="company-site-card-head">
-          <div><div className="card__title">Gefaehrdungsbeurteilung</div><div className="card__sub">{site.name} - {site.projectName}</div></div>
+          <div><div className="card__title">Gefährdungsbeurteilung</div><div className="card__sub">{site.name} - {site.projectName}</div></div>
           <div style={{ display:'flex', alignItems:'center', gap:8 }}><span className="badge badge--accent"><span className="badge__dot" />Beispiel ausgefuellt</span><button className="btn btn--ghost"><Icon name="edit" size={14} />Bearbeiten</button></div>
         </div>
         <div className="company-site-risk-wrap">
@@ -832,16 +908,17 @@ function CompanySiteDetailPage({ site, onBack }) {
         <span className={'badge ' + (ready ? 'badge--valid' : 'badge--warn')}><span className="badge__dot" />{ready ? 'Personal reicht' : missing + ' fehlen'}</span>
         <p>{site.company} - {site.adresse} - Bauleiter: {site.bauleiter}</p>
       </div>
-      <button className="btn btn--primary is-danger"><Icon name="trash" size={14} />Loeschen</button>
+      <button className="btn btn--primary is-danger"><Icon name="trash" size={14} />Löschen</button>
     </header>
     <nav className="company-site-tabs">{tabs.map(item => <button key={item} className={tab === item ? 'is-active' : ''} onClick={() => setTab(item)}>{item}</button>)}</nav>
     <div className="company-site-kpis">
-      <div className="company-site-kpi"><span>Mitarbeiter</span><strong>{site.employeeIds?.length || 0}</strong><small>ausgewaehlt</small></div>
+      <div className="company-site-kpi"><span>Mitarbeiter</span><strong>{siteEmployeeIds.length || 0}</strong><small>ausgewaehlt</small></div>
       <div className="company-site-kpi"><span>Pflichtpunkte</span><strong style={{ color:ready ? '#3f7a4a' : '#8a6a1f' }}>{fulfilled}</strong><small>erfuellt</small></div>
       <div className="company-site-kpi"><span>Fehlende Schulungen</span><strong style={{ color:missing ? '#a13232' : '#3f7a4a' }}>{missing}</strong><small>nachplanen</small></div>
       <div className="company-site-kpi"><span>Status</span><strong style={{ color:ready ? '#3f7a4a' : '#a13232' }}>{ready ? 'OK' : 'Offen'}</strong><small>einsatzbereit</small></div>
     </div>
     {renderTab()}
+    {teamEditOpen && renderTeamEditModal()}
     {alarmPreviewOpen && <div className="company-site-alarm-modal" onClick={() => setAlarmPreviewOpen(false)}>
       <div className="company-site-alarm-modal__box" onClick={event => event.stopPropagation()}>
         <header><div><strong>Alarmplan Vorschau</strong><small>{site.projectNr} - A4</small></div><div><button className="btn btn--primary">PDF anzeigen / Drucken</button><button className="company-site-modal-close" onClick={() => setAlarmPreviewOpen(false)}>x</button></div></header>

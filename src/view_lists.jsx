@@ -1400,6 +1400,16 @@ function TrainingsView({ initialTrainingId = null } = {}) {
   });
   const toggleAllTrainingRows = () => setSelectedTrainingRows(allVisibleTrainingSelected ? new Set() : new Set(visibleTrainingRows.map(row => row.id)));
 
+  if (selectedTraining) {
+    return (
+      <TrainingDetailPage
+        training={selectedTraining}
+        onBack={() => setSelectedTraining(null)}
+        stats={getTrainingStats(selectedTraining.id)}
+      />
+    );
+  }
+
   return (
     <div>
       <div className="training-control-row">
@@ -1534,14 +1544,6 @@ function TrainingsView({ initialTrainingId = null } = {}) {
         </div>
       </React.Fragment>}
 
-      {/* Detail Panel */}
-      {selectedTraining && (
-        <TrainingDetailPanel
-          training={selectedTraining}
-          onClose={() => setSelectedTraining(null)}
-          stats={getTrainingStats(selectedTraining.id)}
-        />
-      )}
       {trainingFilterPanel && <div className="training-filter-backdrop" onClick={() => setTrainingFilterPanel(null)}>
         <aside className="training-filter-panel" onClick={event => event.stopPropagation()}>
           <header>
@@ -1591,6 +1593,185 @@ function TrainingCreateModal({ onClose }) {
       </footer>
     </section>
   </div>;
+}
+
+function TrainingDetailPage({ training, onBack, stats, employees }) {
+  const p = window.provider(training.provider);
+  const [statusFilter, setStatusFilter] = React.useState('all');
+  const [selectedEnrollId, setSelectedEnrollId] = React.useState(null);
+  const [enrollNotice, setEnrollNotice] = React.useState('');
+  const panelEmployees = employees || window.SEED.employees;
+
+  const statusCfg = {
+    valid:   { color:'#3f7a4a', bg:'#eff5ed', border:'#cde1cf', label:'Gültig' },
+    warn:    { color:'#8a6a1f', bg:'#faf3de', border:'#ece0bc', label:'Läuft ab' },
+    expired: { color:'#a13232', bg:'#fbecea', border:'#eac8c2', label:'Abgelaufen' },
+    missing: { color:'#6b6256', bg:'#f4f4f2', border:'#ddd', label:'Fehlt' },
+  };
+
+  const empList = panelEmployees.map(emp => ({
+    emp,
+    cert: window.SEED.certs[emp.id]?.[training.id],
+    status: window.SEED.certs[emp.id]?.[training.id]?.status || 'missing'
+  })).sort((a, b) => {
+    const order = { valid: 0, warn: 1, expired: 2, missing: 3 };
+    return (order[a.status] ?? 3) - (order[b.status] ?? 3);
+  });
+
+  const filteredEmpList = statusFilter === 'all' ? empList : empList.filter(item => item.status === statusFilter);
+  const selectedEnroll = filteredEmpList.find(item => item.emp.id === selectedEnrollId);
+  const canEnrollSelected = selectedEnroll && ['warn', 'expired', 'missing'].includes(selectedEnroll.status);
+  const repeatText = training.months ? (training.months === 12 ? 'jährlich' : `alle ${Math.round(training.months / 12)} Jahre`) : '-';
+
+  const selectTrainingStatus = (status) => {
+    setStatusFilter(statusFilter === status ? 'all' : status);
+    setSelectedEnrollId(null);
+    setEnrollNotice('');
+  };
+
+  const chooseParticipant = (item) => {
+    if (!['warn', 'expired', 'missing'].includes(item.status)) return;
+    setSelectedEnrollId(item.emp.id);
+    setEnrollNotice('');
+  };
+
+  const enrollSelected = () => {
+    if (!canEnrollSelected) return;
+    setEnrollNotice(`${selectedEnroll.emp.name} wurde fuer ${training.short} zur Anmeldung vorgemerkt.`);
+  };
+
+  const StatusBadge = ({ status }) => {
+    const s = statusCfg[status] || statusCfg.missing;
+    return <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'2px 8px', borderRadius:999, fontSize:10.5, fontWeight:700, background:s.bg, border:'1px solid '+s.border, color:s.color }}>
+      <span style={{ width:5, height:5, borderRadius:'50%', background:s.color }} />{s.label}
+    </span>;
+  };
+
+  const FieldCard = ({ icon, label, value }) => (
+    <div style={{ display:'flex', alignItems:'center', gap:11, padding:'13px 16px', border:'1px solid var(--border-1)', borderRadius:8, background:'var(--color-white)' }}>
+      <Icon name={icon} size={18} />
+      <div>
+        <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.35, textTransform:'uppercase', color:'var(--fg-3)', marginBottom:4 }}>{label}</div>
+        <strong style={{ fontSize:14.5 }}>{value}</strong>
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <div style={{ display:'flex', alignItems:'center', gap:12, padding:'0 0 14px', marginBottom:16, borderBottom:'1px solid var(--border-1)' }}>
+        <button onClick={onBack} title="Zurueck" style={{ width:34, height:34, borderRadius:999, border:'1px solid var(--border-1)', background:'var(--color-white)', display:'grid', placeItems:'center', cursor:'pointer', color:'var(--fg-1)' }}><Icon name="chevL" size={16} /></button>
+        <h1 style={{ margin:0, fontFamily:'var(--font-serif)', fontSize:24, fontWeight:500, lineHeight:1.15 }}>{training.name}</h1>
+        <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
+          <button className="btn btn--ghost" style={{ padding:'7px 10px', fontSize:12 }}><Icon name="edit" size={13} />Alle bearbeiten</button>
+          <button className="btn btn--ghost is-danger" style={{ padding:'7px 10px', fontSize:12 }}><Icon name="trash" size={13} />Löschen</button>
+        </div>
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:14 }}>
+        <FieldCard icon="cap" label="Zertifikat / Schulung" value={training.name} />
+        <FieldCard icon="cal" label="Gültigkeit" value={`${training.months} Monate`} />
+        <FieldCard icon="history" label="Wiederholung" value={repeatText} />
+        <FieldCard icon="shield" label="Status" value={training.mandatory ? 'Pflicht' : 'Optional'} />
+      </div>
+
+      <section className="card" style={{ padding:18, marginBottom:14 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+          <Icon name="doc" size={18} />
+          <h2 style={{ margin:0, fontFamily:'var(--font-serif)', fontSize:18 }}>Beschreibung</h2>
+        </div>
+        <p style={{ margin:0, color:'var(--fg-2)', lineHeight:1.55, fontSize:14 }}>{training.desc}</p>
+      </section>
+
+      <section className="card" style={{ padding:18, marginBottom:14 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+          <Icon name="building" size={18} />
+          <h2 style={{ margin:0, fontFamily:'var(--font-serif)', fontSize:18 }}>Anbieter</h2>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1.2fr 1fr 1fr', gap:10 }}>
+          <FieldCard icon="building" label="Name Anbieter" value={p?.name || '-'} />
+          <FieldCard icon="users" label="Kontakt" value={p?.contact || '-'} />
+          <FieldCard icon="phone" label="Telefon" value={p?.phone || '-'} />
+        </div>
+        <div style={{ marginTop:10, display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+          <FieldCard icon="mail" label="E-Mail" value={p?.email || '-'} />
+          <FieldCard icon="pin" label="Adresse" value={p?.address || '-'} />
+        </div>
+      </section>
+
+      <section className="card" style={{ padding:18, marginBottom:14 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, marginBottom:12 }}>
+          <div>
+            <h2 style={{ margin:'0 0 3px', fontFamily:'var(--font-serif)', fontSize:18 }}>Status ({panelEmployees.length} Mitarbeiter)</h2>
+            <p className="muted small" style={{ margin:0 }}>Klicken zum Filtern nach Status.</p>
+          </div>
+          {statusFilter !== 'all' && <button type="button" className="btn btn--ghost" onClick={() => selectTrainingStatus(statusFilter)}>Alle anzeigen</button>}
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(0, 1fr))', gap:10 }}>
+          {[
+            ['valid', 'Gültig', stats.valid],
+            ['warn', 'Läuft ab', stats.warn],
+            ['expired', 'Abgelaufen', stats.expired],
+            ['missing', 'Fehlt', stats.missing],
+          ].map(([key, label, value]) => {
+            const cfg = statusCfg[key];
+            return <button key={key} type="button" onClick={() => selectTrainingStatus(key)} style={{ textAlign:'left', padding:'12px 14px', borderRadius:9, background:cfg.bg, border:'1px solid '+cfg.border, boxShadow: statusFilter === key ? 'inset 0 0 0 2px '+cfg.color : 'none', cursor:'pointer', font:'inherit' }}>
+              <div style={{ fontSize:10, fontWeight:700, color:cfg.color, textTransform:'uppercase', marginBottom:6 }}>{label}</div>
+              <strong style={{ fontFamily:'var(--font-serif)', fontSize:24, color:cfg.color }}>{value}</strong>
+            </button>;
+          })}
+        </div>
+      </section>
+
+      <section className="card" style={{ padding:18 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, marginBottom:12 }}>
+          <div>
+            <h2 style={{ margin:'0 0 3px', fontFamily:'var(--font-serif)', fontSize:18 }}>Teilnehmer</h2>
+            <p className="muted small" style={{ margin:0 }}>{filteredEmpList.length} Einträge</p>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button className="btn btn--primary" disabled={!canEnrollSelected} onClick={enrollSelected} style={{ opacity:canEnrollSelected ? 1 : 0.45, padding:'7px 10px', fontSize:12 }}>
+              {canEnrollSelected ? `${selectedEnroll.emp.firstName} anmelden` : 'Teilnehmer wählen'}
+            </button>
+            <button className="btn btn--ghost" style={{ padding:'7px 10px', fontSize:12 }}>Bearbeiten</button>
+          </div>
+        </div>
+        <div className="training-list-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Mitarbeiter</th>
+                <th>Firma</th>
+                <th>Position</th>
+                <th>PN</th>
+                <th>Status</th>
+                <th>Dokument</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEmpList.map(item => {
+                const canEnroll = ['warn', 'expired', 'missing'].includes(item.status);
+                const selected = selectedEnrollId === item.emp.id;
+                return <tr key={item.emp.id} onClick={() => chooseParticipant(item)} style={{ cursor:canEnroll ? 'pointer' : 'default', background:selected ? 'var(--color-parchment)' : undefined }}>
+                  <td><strong>{item.emp.name}</strong><div className="small muted">{item.emp.email}</div></td>
+                  <td>{window.company(item.emp.company)?.short || item.emp.company}</td>
+                  <td>{item.emp.position}</td>
+                  <td>PN {item.emp.personalNr}</td>
+                  <td><StatusBadge status={item.status} /></td>
+                  <td>{item.cert?.file || '-'}</td>
+                </tr>;
+              })}
+            </tbody>
+          </table>
+        </div>
+        {enrollNotice && (
+          <div style={{ marginTop:12, padding:'10px 12px', borderRadius:8, background:'#eff5ed', border:'1px solid #cde1cf', color:'#3f7a4a', fontWeight:700 }}>
+            {enrollNotice}
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }
 
 function TrainingDetailPanel({ training, onClose, stats, employees }) {

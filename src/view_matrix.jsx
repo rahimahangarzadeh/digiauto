@@ -497,14 +497,11 @@ function MatrixView({ activeCompany, onEmployeeOpen, extraAction = null }) {
             {selectedRows.size} Zeile{selectedRows.size !== 1 ? 'n' : ''} ausgewählt
           </div>
           <div style={{ flex:1 }}></div>
-          <button className="btn btn--ghost" style={{ fontSize:12, padding:'6px 12px' }} title="Alle Zertifikate der ausgewählten Mitarbeiter als PDF exportieren">
-            <Icon name="download" size={13} /> PDF Export
+          <button className="btn btn--ghost" style={{ fontSize:12, padding:'6px 12px' }} title="Ausgewählte Einträge exportieren">
+            <Icon name="download" size={13} /> Export
           </button>
           <button className="btn btn--ghost" style={{ fontSize:12, padding:'6px 12px' }} title="Versenden (z.B. E-Mail)">
             <Icon name="mail" size={13} /> Versenden
-          </button>
-          <button className="btn btn--ghost" style={{ fontSize:12, padding:'6px 12px' }} title="Status ändern">
-            <Icon name="edit" size={13} /> Status ändern
           </button>
           <button
             className="btn btn--ghost"

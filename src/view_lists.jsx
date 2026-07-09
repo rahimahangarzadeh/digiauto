@@ -1300,6 +1300,8 @@ function TrainingsView({ initialTrainingId = null } = {}) {
   const [statusFilter, setStatusFilter] = React.useState('alle'); // alle, fehlt, warnt, abgelaufen
   const [mandatoryFilter, setMandatoryFilter] = React.useState('alle'); // alle, pflicht, optional
   const [bulkSelectedEmps, setBulkSelectedEmps] = React.useState(new Set());
+  const [trainingCreateOpen, setTrainingCreateOpen] = React.useState(false);
+  const [trainingViewMode, setTrainingViewMode] = React.useState('cards');
 
   React.useEffect(() => {
     if (initialTrainingId) {
@@ -1352,12 +1354,9 @@ function TrainingsView({ initialTrainingId = null } = {}) {
   return (
     <div>
       <div className="view__header">
-        <div>
-          <h1 className="view__title">Schulungen &amp; Qualifikationen</h1>
-          <div className="view__subtitle">Steuerzentrale für Schulungs-Planung, Kontrolle und Massenverwaltung.</div>
-        </div>
+        <div />
         <div className="view__actions">
-          <button className="btn btn--primary"><Icon name="plus" size={14} />Schulung</button>
+          <button className="btn btn--primary" onClick={() => setTrainingCreateOpen(true)}><Icon name="plus" size={14} />Schulung</button>
         </div>
       </div>
 
@@ -1404,10 +1403,14 @@ function TrainingsView({ initialTrainingId = null } = {}) {
             <option value="optional">Nur Optional</option>
           </select>
         </div>
+        <div className="training-view-toggle" aria-label="Ansicht wechseln">
+          <button type="button" className={trainingViewMode === 'cards' ? 'is-active' : ''} onClick={() => setTrainingViewMode('cards')}><Icon name="dashboard" size={15} />Kacheln</button>
+          <button type="button" className={trainingViewMode === 'list' ? 'is-active' : ''} onClick={() => setTrainingViewMode('list')}><Icon name="matrix" size={15} />Liste</button>
+        </div>
       </div>
 
       {/* Cards Grid */}
-      <div className="grid-2" style={{gap:16}}>
+      {trainingViewMode === 'cards' ? <div className="grid-2" style={{gap:16}}>
         {filtered.map(t => {
           const stats = getTrainingStats(t.id);
           const total = stats.valid + stats.warn + stats.expired + stats.missing;
@@ -1489,7 +1492,24 @@ function TrainingsView({ initialTrainingId = null } = {}) {
             </div>
           );
         })}
-      </div>
+      </div> : <div className="training-list-table card">
+        <table>
+          <thead><tr><th>Schulung</th><th>Kategorie</th><th>Wiederholung</th><th>Status</th><th>Anbieter</th><th>Beschreibung</th></tr></thead>
+          <tbody>
+            {filtered.map(t => {
+              const p = window.provider(t.provider);
+              return <tr key={t.id} onClick={() => setSelectedTraining(t)}>
+                <td><strong>{t.name}</strong></td>
+                <td>{t.cat}</td>
+                <td>{t.months ? (t.months === 12 ? 'Jährlich' : `alle ${Math.round(t.months / 12)} Jahre`) : '-'}</td>
+                <td>{t.mandatory ? <span className="badge badge--accent">Pflicht</span> : <span className="badge">Optional</span>}</td>
+                <td>{p?.short || '-'}</td>
+                <td>{t.desc}</td>
+              </tr>;
+            })}
+          </tbody>
+        </table>
+      </div>}
 
       {/* Detail Panel */}
       {selectedTraining && (
@@ -1499,8 +1519,40 @@ function TrainingsView({ initialTrainingId = null } = {}) {
           stats={getTrainingStats(selectedTraining.id)}
         />
       )}
+      {trainingCreateOpen && <TrainingCreateModal onClose={() => setTrainingCreateOpen(false)} />}
     </div>
   );
+}
+
+function TrainingCreateModal({ onClose }) {
+  const categories = ['Sicherheit', 'SCC', 'DVGW', 'Fahrerlaubnis', 'Unterweisung', 'Sicherheit / Verkehr'];
+  return <div className="training-create-backdrop" onClick={onClose}>
+    <section className="training-create-modal" onClick={event => event.stopPropagation()}>
+      <header>
+        <div>
+          <span>Neue Schulung</span>
+          <h2>Schulung anlegen</h2>
+        </div>
+        <button type="button" onClick={onClose} title="Schliessen"><Icon name="x" size={16} /></button>
+      </header>
+      <div className="training-create-form">
+        <label><span>Name Schulung</span><input placeholder="z.B. Erste Hilfe Auffrischung" /></label>
+        <label><span>Kategorie</span><select defaultValue="Sicherheit">{categories.map(category => <option key={category} value={category}>{category}</option>)}</select></label>
+        <label><span>Status</span><select defaultValue="pflicht"><option value="pflicht">Pflicht</option><option value="optional">Optional</option></select></label>
+        <label><span>Wiederholung</span><select defaultValue="1">{Array.from({ length:10 }, (_, index) => index + 1).map(year => <option key={year} value={year}>{year === 1 ? 'Jährlich' : `alle ${year} Jahre`}</option>)}</select></label>
+        <label><span>Name Anbieter</span><input placeholder="z.B. BiW Bildungszentrum" /></label>
+        <label><span>Adresse</span><input placeholder="Adresse des Anbieters" /></label>
+        <label><span>Kontakt</span><input placeholder="Ansprechpartner" /></label>
+        <label><span>Telefon</span><input placeholder="+49 ..." /></label>
+        <label><span>E-Mail</span><input placeholder="mail@anbieter.de" /></label>
+        <label className="is-wide"><span>Beschreibung</span><textarea placeholder="Kurze Beschreibung der Schulung..." /></label>
+      </div>
+      <footer>
+        <button className="btn btn--ghost" type="button" onClick={onClose}>Abbrechen</button>
+        <button className="btn btn--primary" type="button" onClick={onClose}>Speichern</button>
+      </footer>
+    </section>
+  </div>;
 }
 
 function TrainingDetailPanel({ training, onClose, stats, employees }) {

@@ -22,6 +22,7 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
       vorarbeiter: 'Markus Brinker',
       auftraggeber: 'Stadt Nordhorn',
       adresse: 'Lingener Strasse 42, 48529 Nordhorn',
+      subcontractor: 'Nordhorn Verkehrssicherung GmbH',
       employeeIds: tiefbauIds,
       releasedEmployeeIds: ['e-me'],
       demoFulfilled: 6,
@@ -38,6 +39,7 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
       vorarbeiter: 'Dirk Juergens',
       auftraggeber: 'Stadt Nordhorn',
       adresse: 'Nordring 12, 48529 Nordhorn',
+      subcontractor: 'Emsland Kabelbau GmbH',
       employeeIds: tiefbauShortIds,
       releasedEmployeeIds: [],
       demoFulfilled: 4,
@@ -54,6 +56,7 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
       vorarbeiter: 'Thomas Wegener',
       auftraggeber: 'Wasserverband Nordhorn',
       adresse: 'Suedring 18, 48527 Nordhorn',
+      subcontractor: 'Rohrservice Nord GmbH',
       employeeIds: rohrbauIds,
       releasedEmployeeIds: [],
       demoFulfilled: 6,
@@ -232,6 +235,7 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
       vorarbeiter: 'Vorarbeiter',
       auftraggeber: 'Auftraggeber',
       adresse: 'Adresse',
+      subcontractor: '-',
       employeeIds: activeEmployees.slice(0, 6).map(e => e.id),
       releasedEmployeeIds: [],
     };
@@ -539,6 +543,7 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
     { key:'nr', label:'Nr.' },
     { key:'name', label:'Baustelle / Projektname' },
     { key:'company', label:'Firma' },
+    { key:'subcontractor', label:'Nachunternehmer' },
     { key:'projectNr', label:'Projekt-Nr.' },
     { key:'bauleiter', label:'Bauleiter' },
     { key:'vorarbeiter', label:'Vorarbeiter' },
@@ -575,6 +580,7 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
     if (key === 'nr') return String(index + 1);
     if (key === 'name') return site.name;
     if (key === 'company') return site.company;
+    if (key === 'subcontractor') return site.subcontractor || '-';
     if (key === 'projectNr') return site.projectNr;
     if (key === 'bauleiter') return site.bauleiter;
     if (key === 'vorarbeiter') return site.vorarbeiter;
@@ -688,7 +694,7 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
       )}
 
       <section className="tbl-wrap baustellen-table-wrap">
-        <table className="tbl job-table baustellen-table" style={{ minWidth:1380, width:'100%' }}>
+        <table className="tbl job-table baustellen-table" style={{ minWidth:1520, width:'100%' }}>
           <thead>
             <tr>
               {siteColumns.map(col => <SiteColumnHeader key={col.key} col={col} />)}
@@ -706,6 +712,7 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
                   <td>{index + 1}</td>
                   <td><strong>{site.name}</strong><div className="small muted">{site.projectName}</div></td>
                   <td>{site.company}</td>
+                  <td>{site.subcontractor || '-'}</td>
                   <td>{site.projectNr}</td>
                   <td>{site.bauleiter}</td>
                   <td>{site.vorarbeiter}</td>

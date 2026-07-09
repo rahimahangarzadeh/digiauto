@@ -1,4 +1,4 @@
-function BGBauAushangView({ activeCompany, extraAction = null, title = 'Baustellenaushang BG BAU' }) {
+function BGBauAushangView({ activeCompany, activeProject = '', extraAction = null, title = 'Baustellenaushang BG BAU', compact = false }) {
   const statusCfg = {
     geplant: { label: 'Geplant', color: '#2d6fa3', bg: '#e8f1fb', border: '#bcd3ee' },
     aktiv: { label: 'Aktiv', color: '#3f7a4a', bg: '#eff5ed', border: '#cde1cf' },
@@ -9,6 +9,7 @@ function BGBauAushangView({ activeCompany, extraAction = null, title = 'Baustell
   const baseEmployees = window.SEED.employees.filter(e => e.status === 'aktiv');
   const initialRows = [
     { id:'bgbau-1', nr:'BG-2026-001', company:'tiefbau', project:'Kanalsanierung Nordhorn', address:'Lingener Strasse 42, 48529 Nordhorn', start:'2026-04-15', end:'2026-06-28', status:'aktiv', responsible:'e-me', employeeIds: baseEmployees.slice(0, 12).map(e => e.id), doc:'BGBAU_Kanalsanierung_Nordhorn.pdf' },
+    { id:'bgbau-7', nr:'BG-2026-007', company:'tiefbau', project:'Hausanschluss Nordring', address:'Nordring 12, 48529 Nordhorn', start:'2026-05-18', end:'2026-06-20', status:'geplant', responsible: baseEmployees[2]?.id || 'e-me', employeeIds: baseEmployees.slice(0, 3).map(e => e.id), doc:'BGBAU_Hausanschluss_Nordring.pdf' },
     { id:'bgbau-2', nr:'BG-2026-002', company:'rohrbau', project:'Hausanschluesse Suedring', address:'Suedring 18, 48527 Nordhorn', start:'2026-05-20', end:'2026-07-10', status:'geplant', responsible: baseEmployees[6]?.id || 'e-me', employeeIds: baseEmployees.slice(5, 14).map(e => e.id), doc:'BGBAU_Suedring.pdf' },
     { id:'bgbau-3', nr:'BG-2026-003', company:'bohrtechnik', project:'Horizontalbohrung Gewerbepark', address:'Industriestrasse 7, 48455 Bad Bentheim', start:'2026-02-03', end:'2026-04-30', status:'fertig', responsible: baseEmployees[12]?.id || 'e-me', employeeIds: baseEmployees.slice(10, 18).map(e => e.id), doc:'BGBAU_Gewerbepark.pdf' },
     { id:'bgbau-4', nr:'BG-2026-004', company:'galabau', project:'Aussenanlagen Kita Mitte', address:'Schulstrasse 9, 48529 Nordhorn', start:'2026-05-05', end:'2026-05-30', status:'aktiv', responsible: baseEmployees[18]?.id || 'e-me', employeeIds: baseEmployees.slice(16, 23).map(e => e.id), doc:'BGBAU_Kita_Mitte.pdf' },
@@ -86,6 +87,7 @@ function BGBauAushangView({ activeCompany, extraAction = null, title = 'Baustell
   const resetFilters = () => { setFilters({}); setGroupBy(''); setMenuCol(null); };
 
   let visible = rows.filter(r => activeCompany === 'all' || r.company === activeCompany);
+  if (activeProject) visible = visible.filter(r => r.project === activeProject);
   visible = visible.filter(r => Object.entries(filters).every(([col, vals]) => vals.includes(columnById(col)?.value(r))));
   visible = [...visible].sort((a,b) => {
     const col = columnById(sort.col);
@@ -135,7 +137,8 @@ function BGBauAushangView({ activeCompany, extraAction = null, title = 'Baustell
     };
   };
 
-  const statusCounts = Object.fromEntries(Object.keys(statusCfg).map(status => [status, rows.filter(r => r.status === status).length]));
+  const scopedRows = rows.filter(r => (activeCompany === 'all' || r.company === activeCompany) && (!activeProject || r.project === activeProject));
+  const statusCounts = Object.fromEntries(Object.keys(statusCfg).map(status => [status, scopedRows.filter(r => r.status === status).length]));
   const toggleRow = id => setSelectedIds(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
@@ -266,7 +269,7 @@ function BGBauAushangView({ activeCompany, extraAction = null, title = 'Baustell
         .column-menu-row:hover { background:var(--color-parchment); }
       `}</style>
 
-      <div className="view__header">
+      {!compact && <div className="view__header">
         <div>
           <h1 className="view__title">{title}</h1>
           <div className="view__subtitle">Aushang-Dokumente je Baustelle mit Status, Verantwortlichen und PDF-Vorschau.</div>
@@ -275,7 +278,7 @@ function BGBauAushangView({ activeCompany, extraAction = null, title = 'Baustell
           {extraAction}
           <button className="btn btn--primary"><Icon name="plus" size={14} />Aushang anlegen</button>
         </div>
-      </div>
+      </div>}
 
       <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:16 }}>
         {[

@@ -616,7 +616,7 @@ function CompanySupervisorDetail({ row, onBack }) {
 }
 
 function CompanySiteDetailPage({ site, onBack }) {
-  const tabs = ['Stammdaten', 'Personal', 'Personalprüfung', 'Fehlende Schulungen', 'Gefährdungsbeurteilung', 'Alarmplan', 'Dokumente'];
+  const tabs = ['Stammdaten', 'Personal', 'Personalprüfung', 'Fehlende Schulungen', 'Gefährdungsbeurteilung', 'Alarmplan', 'Baustellenaushang', 'Dokumente'];
   const [tab, setTab] = React.useState('Stammdaten');
   const [alarmMode, setAlarmMode] = React.useState('empty');
   const [alarmPreviewOpen, setAlarmPreviewOpen] = React.useState(false);
@@ -655,6 +655,9 @@ function CompanySiteDetailPage({ site, onBack }) {
     { name:'Unterweisung-Baustelle.pdf', date:'18.05.2026', status:'in Pruefung' },
     { name:'Verkehrssicherung-Plan.pdf', date:'15.05.2026', status:'freigegeben' },
   ];
+  const siteBgbauAushang = companyBGBauRows().find(row =>
+    row.project === site.projectName || (row.companyName === site.company && row.project === site.projectName)
+  );
   const alarmPlan = {
     nr:'FB 7.2',
     firma:'Janning Group',
@@ -700,7 +703,10 @@ function CompanySiteDetailPage({ site, onBack }) {
             <strong>Personal auswählen</strong>
             <small>{teamDraftIds.length} Mitarbeiter für diese Baustelle ausgewählt</small>
           </div>
-          <button className="icon-btn" type="button" onClick={() => setTeamEditOpen(false)}><Icon name="x" size={16} /></button>
+          <div className="company-site-team-actions">
+            <button className="btn btn--ghost" type="button"><Icon name="upload" size={14} />Importieren</button>
+            <button className="icon-btn" type="button" onClick={() => setTeamEditOpen(false)}><Icon name="x" size={16} /></button>
+          </div>
         </header>
         <div className="company-site-team-filters">
           <label>
@@ -878,6 +884,17 @@ function CompanySiteDetailPage({ site, onBack }) {
         </div>
       </div>
     </section>;
+    if (tab === 'Baustellenaushang') {
+      const BGBauView = window.BGBauAushangView;
+      return <section className="company-site-bgbau-native">
+        <BGBauView
+          activeCompany={siteCompanyId}
+          activeProject={site.projectName}
+          title="Baustellenaushang"
+          compact
+        />
+      </section>;
+    }
     return <section className="card card--pad company-site-card">
       <div className="company-site-card-head"><div><div className="card__title">Dokumente</div><div className="card__sub">Baustellenunterlagen und Freigaben</div></div><button className="btn btn--ghost"><Icon name="plus" size={14} />Dokument hochladen</button></div>
       <div className="company-site-doc-table-wrap">

@@ -8565,6 +8565,7 @@ a.subtle:hover { text-decoration: underline; }
 .company-site-team-modal__box>header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 20px;border-bottom:1px solid var(--border-1);background:var(--color-white)}
 .company-site-team-modal__box>header strong{display:block;color:var(--fg-1);font-family:var(--font-serif);font-size:22px;font-weight:500}
 .company-site-team-modal__box>header small{display:block;margin-top:4px;color:var(--fg-3);font-size:12px}
+.company-site-team-actions{display:flex;align-items:center;gap:8px}
 .company-site-team-filters{display:grid;grid-template-columns:320px 1fr;gap:14px;padding:16px 20px;border-bottom:1px solid var(--border-1);background:var(--color-parchment)}
 .company-site-team-filters label{display:grid;gap:6px}
 .company-site-team-filters span{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:var(--fg-3)}
@@ -8580,7 +8581,7 @@ a.subtle:hover { text-decoration: underline; }
 .company-site-team-list td small{display:block;margin-top:3px;color:var(--fg-3);font-size:11px}
 .company-site-team-empty{text-align:center;color:var(--fg-3);padding:28px!important}
 .company-site-team-modal__box>footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;border-top:1px solid var(--border-1);background:var(--color-white)}
-.company-site-alarm-card{max-width:1120px}
+.company-site-alarm-card{width:100%;max-width:none}
 .company-site-alarm-layout{display:grid;grid-template-columns:360px 1fr;gap:18px;align-items:start}
 .company-site-alarm-preview{border:1px solid var(--border-1);border-radius:10px;background:#f3f2ef;padding:16px}
 .company-site-alarm-sheet{background:white;border:3px solid #2f7d32;min-height:420px;padding:16px;display:grid;gap:12px;box-shadow:0 10px 24px rgba(0,0,0,.08)}
@@ -8650,6 +8651,18 @@ a.subtle:hover { text-decoration: underline; }
 .company-site-alarm-form span{font-size:10px;font-weight:800;text-transform:uppercase;color:var(--fg-3)}
 .company-site-alarm-form input,.company-site-alarm-form textarea{border:1px solid var(--border-1);border-radius:6px;background:white;color:var(--fg-1);font:inherit;font-size:13px;padding:10px 12px}
 .company-site-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;padding-top:14px;border-top:1px solid var(--border-1)}
+.company-site-bgbau-card{width:100%;max-width:none}
+.company-site-bgbau-layout{display:grid;grid-template-columns:320px minmax(0,1fr);gap:18px;align-items:start}
+.company-site-bgbau-preview{min-height:300px;border:1px solid var(--border-1);border-radius:10px;background:#fff;padding:20px;display:grid;align-content:start;gap:10px;box-shadow:0 6px 18px rgba(0,0,0,.045)}
+.company-site-bgbau-preview strong{color:var(--color-accent);font-size:20px;letter-spacing:3px}
+.company-site-bgbau-preview>span{width:max-content;border:1px solid var(--border-1);border-radius:999px;background:var(--color-parchment);padding:4px 8px;color:var(--fg-3);font-size:10px;font-weight:800}
+.company-site-bgbau-preview h3{margin:8px 0 0;color:var(--fg-1);font-family:var(--font-serif);font-size:22px;font-weight:500}
+.company-site-bgbau-preview p{margin:0;color:var(--fg-2);font-size:13px}
+.company-site-bgbau-preview dl{display:grid;gap:10px;margin:12px 0 0}
+.company-site-bgbau-preview dt{font-size:10px;font-weight:800;text-transform:uppercase;color:var(--fg-3);letter-spacing:.35px}
+.company-site-bgbau-preview dd{margin:3px 0 0;color:var(--fg-1);font-size:13px;font-weight:700}
+.company-site-bgbau-info{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.company-site-bgbau-info .emp-master-field:last-child{grid-column:1 / -1}
 .company-site-alarm-modal{position:fixed;inset:0;z-index:2800;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;padding:24px}
 .company-site-alarm-modal__box{width:min(920px,96vw);max-height:94vh;background:var(--color-ivory);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.36)}
 .company-site-alarm-modal__box>header{background:var(--color-near-black);color:white;padding:16px 18px;display:flex;justify-content:space-between;align-items:center;gap:12px}

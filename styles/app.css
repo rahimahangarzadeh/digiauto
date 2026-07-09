@@ -8546,7 +8546,7 @@ a.subtle:hover { text-decoration: underline; }
 .company-site-risk-table td strong{color:var(--fg-1);font-weight:800;line-height:1.35}
 .company-site-risk-table input[type="checkbox"]{width:16px;height:16px;accent-color:var(--color-accent);cursor:default}
 .company-site-doc-chip{max-width:190px;min-height:34px;padding:0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.company-site-personal-card{max-width:1120px}
+.company-site-personal-card{width:100%;max-width:none}
 .company-site-personal-wrap{overflow:auto;border:1px solid var(--border-1);border-radius:8px;background:var(--color-ivory)}
 .company-site-personal-table{min-width:980px;width:100%;border-collapse:collapse}
 .company-site-personal-table th,.company-site-personal-table td{border-bottom:1px solid var(--border-1);padding:12px 14px;text-align:left;vertical-align:middle;font-size:12px;color:var(--fg-2)}
@@ -8555,7 +8555,7 @@ a.subtle:hover { text-decoration: underline; }
 .company-site-personal-table th:first-child,.company-site-personal-table td:first-child{width:230px;text-align:left}
 .company-site-personal-table td strong{display:block;color:var(--fg-1);font-weight:800;font-size:13px}
 .company-site-personal-table td small{display:block;margin-top:4px;color:var(--fg-3);font-size:11px}
-.company-site-check{width:17px;height:17px;display:inline-grid;place-items:center;border-radius:3px;background:#55c887;color:white;font-size:12px;font-weight:900;line-height:1}
+.company-site-check{width:16px;height:16px;accent-color:#1a73e8;cursor:default}
 .company-site-dash{display:inline-block;color:var(--fg-3);font-weight:800}
 .company-site-release{display:inline-flex;align-items:center;gap:9px;white-space:nowrap}
 .company-site-release input{width:14px;height:14px;accent-color:#2f75d6}

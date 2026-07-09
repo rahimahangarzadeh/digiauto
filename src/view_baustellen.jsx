@@ -237,8 +237,12 @@ function BaustellenView({ activeCompany = 'all', extraAction = null, onOpenSite 
     };
     setSites(items => [next, ...items]);
     setSelectedSiteId(next.id);
-    setDetailOpen(true);
     setSitePanelTab('stammdaten');
+    if (onOpenSite) {
+      onOpenSite(next);
+      return;
+    }
+    setDetailOpen(true);
   };
 
   const countWith = (trainingIds) => selectedEmployees.filter(emp => trainingIds.some(id => hasTraining(emp, id))).length;

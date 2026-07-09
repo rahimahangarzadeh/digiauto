@@ -689,7 +689,7 @@ function CompanySiteDetailPage({ site, onBack }) {
           <tbody>{siteEmployees.map((employee, index) => {
             const allOk = ready || index < Math.max(2, siteEmployees.length - 1);
             const deviceTypes = ['Bagger', 'Minibagger', 'Teleskopstapler', 'Personenkraftwagen'];
-            const Check = ({ ok }) => ok ? <span className="company-site-check">âœ“</span> : <span className="company-site-dash">-</span>;
+            const Check = ({ ok }) => ok ? <input className="company-site-check" type="checkbox" checked readOnly /> : <span className="company-site-dash">-</span>;
             const released = index === 0;
             return <tr key={employee.id}>
               <td><strong>{employee.name}</strong><small>{window.company(employee.company)?.short || employee.company} - {employee.position}</small></td>

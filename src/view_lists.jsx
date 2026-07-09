@@ -1850,6 +1850,15 @@ function ProvidersView() {
   const [providerFilter, setProviderFilter] = React.useState('all');
   const [favorites, setFavorites] = React.useState(() => new Set(['dekra', 'intern']));
   const [ratings, setRatings] = React.useState({ biw: 4, dekra: 5, dvgw: 4, tuv: 3, 'bg-bau': 4, intern: 5 });
+  const [providerViewMode, setProviderViewMode] = React.useState('cards');
+  const [providerSort, setProviderSort] = React.useState({ key:'name', dir:'asc' });
+  const [providerColumnMenu, setProviderColumnMenu] = React.useState(null);
+  const [providerColumnFilters, setProviderColumnFilters] = React.useState({});
+  const [providerFilterPanel, setProviderFilterPanel] = React.useState(null);
+  const [providerFilterSearch, setProviderFilterSearch] = React.useState('');
+  const [providerGroupBy, setProviderGroupBy] = React.useState('');
+  const [selectedProviderRows, setSelectedProviderRows] = React.useState(new Set());
+  const [providerCreateOpen, setProviderCreateOpen] = React.useState(false);
 
   const usageFor = (providerId) => {
     const trainings = window.SEED.trainings.filter(t => t.provider === providerId);
@@ -1890,13 +1899,50 @@ function ProvidersView() {
     });
   };
 
-  const locations = [...new Set(window.SEED.providers.map(p => p.address))].sort();
-  const types = [...new Set(window.SEED.trainings.map(t => t.cat))].sort();
-  const filteredProviders = window.SEED.providers
-    .filter(p => locationFilter === 'all' || p.address === locationFilter)
-    .filter(p => providerFilter === 'all' || p.id === providerFilter)
-    .filter(p => typeFilter === 'all' || window.SEED.trainings.some(t => t.provider === p.id && t.cat === typeFilter))
-    .sort((a, b) => Number(favorites.has(b.id)) - Number(favorites.has(a.id)) || (ratings[b.id] || 0) - (ratings[a.id] || 0));
+  const providerColumns = [
+    { key:'name', label:'Anbieter' },
+    { key:'address', label:'Adresse' },
+    { key:'contact', label:'Kontakt' },
+    { key:'phone', label:'Telefon' },
+    { key:'email', label:'E-Mail' },
+    { key:'trainings', label:'Schulungen' },
+    { key:'participants', label:'Teilnehmer' },
+    { key:'rating', label:'Bewertung' },
+  ];
+  const providerValue = (provider, key) => {
+    const usage = usageFor(provider.id);
+    if (key === 'trainings') return usage.trainings.length;
+    if (key === 'participants') return usage.participants;
+    if (key === 'rating') return ratings[provider.id] || 0;
+    return provider[key] || '';
+  };
+  const toggleProviderFilter = (key, value) => setProviderColumnFilters(current => {
+    const values = current[key] || [];
+    return { ...current, [key]: values.includes(value) ? values.filter(item => item !== value) : [...values, value] };
+  });
+  const openProviderFilter = key => { setProviderFilterPanel(key); setProviderFilterSearch(''); setProviderColumnMenu(null); };
+  const clearProviderFilter = key => setProviderColumnFilters(current => ({ ...current, [key]:[] }));
+  const filteredProviders = [...window.SEED.providers]
+    .filter(provider => Object.entries(providerColumnFilters).every(([key, values]) => !values?.length || values.includes(String(providerValue(provider, key)))))
+    .sort((a, b) => String(providerValue(a, providerSort.key)).localeCompare(String(providerValue(b, providerSort.key)), 'de', { numeric:true }) * (providerSort.dir === 'asc' ? 1 : -1));
+  const providerFilterValues = key => Array.from(new Set(window.SEED.providers.map(provider => String(providerValue(provider, key))))).sort((a, b) => a.localeCompare(b, 'de', { numeric:true }));
+  const visibleProviderFilterValues = providerFilterPanel
+    ? providerFilterValues(providerFilterPanel).filter(value => value.toLowerCase().includes(providerFilterSearch.toLowerCase()))
+    : [];
+  const providerGroups = providerGroupBy
+    ? Array.from(filteredProviders.reduce((map, row) => {
+      const label = String(providerValue(row, providerGroupBy));
+      map.set(label, [...(map.get(label) || []), row]);
+      return map;
+    }, new Map()).entries()).map(([label, rows]) => ({ label, rows }))
+    : [{ label:null, rows:filteredProviders }];
+  const allVisibleProvidersSelected = filteredProviders.length > 0 && filteredProviders.every(row => selectedProviderRows.has(row.id));
+  const toggleProviderRow = id => setSelectedProviderRows(current => {
+    const next = new Set(current);
+    next.has(id) ? next.delete(id) : next.add(id);
+    return next;
+  });
+  const toggleAllProviderRows = () => setSelectedProviderRows(allVisibleProvidersSelected ? new Set() : new Set(filteredProviders.map(row => row.id)));
 
   const selected = selectedId ? window.SEED.providers.find(p => p.id === selectedId) : null;
   const selectedUsage = selected ? usageFor(selected.id) : null;
@@ -1910,23 +1956,17 @@ function ProvidersView() {
 
   return (
     <div>
-      <div className="view__header">
-        <div>
-          <h1 className="view__title">Akademien & Anbieter</h1>
-          <div className="view__subtitle">Ansprechpartner, Schulungen, Nutzung und Dokumente je Anbieter.</div>
+      <div className="training-control-row">
+        <label><span>Gruppieren</span><select value={providerGroupBy} onChange={e => setProviderGroupBy(e.target.value)}><option value="">Keine Gruppierung</option>{providerColumns.map(column => <option key={column.key} value={column.key}>{column.label}</option>)}</select></label>
+        <div className="training-control-row__spacer" />
+        <div className="training-view-toggle" aria-label="Ansicht wechseln">
+          <button type="button" className={providerViewMode === 'cards' ? 'is-active' : ''} onClick={() => setProviderViewMode('cards')}><Icon name="dashboard" size={15} />Kacheln</button>
+          <button type="button" className={providerViewMode === 'list' ? 'is-active' : ''} onClick={() => setProviderViewMode('list')}><Icon name="matrix" size={15} />Liste</button>
         </div>
-        <div className="view__actions">
-          <button className="btn btn--primary"><Icon name="plus" size={14} />Anbieter</button>
-        </div>
+        <button className="btn btn--primary" onClick={() => setProviderCreateOpen(true)}><Icon name="plus" size={14} />Anbieter</button>
       </div>
 
-      <div className="provider-filters">
-        <label><span>Ort</span><select value={locationFilter} onChange={e => setLocationFilter(e.target.value)}><option value="all">Alle Orte</option>{locations.map(l => <option key={l} value={l}>{l}</option>)}</select></label>
-        <label><span>Schulungstyp</span><select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}><option value="all">Alle Typen</option>{types.map(t => <option key={t} value={t}>{t}</option>)}</select></label>
-        <label><span>Anbieter</span><select value={providerFilter} onChange={e => setProviderFilter(e.target.value)}><option value="all">Alle Anbieter</option>{window.SEED.providers.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
-      </div>
-
-      <div className={'provider-layout' + (selected ? ' provider-layout--detail-open' : '')}>
+      {providerViewMode === 'cards' ? <div className={'provider-layout' + (selected ? ' provider-layout--detail-open' : '')}>
         <div className="provider-grid">
           {filteredProviders.map(p => {
             const usage = usageFor(p.id);
@@ -2050,9 +2090,93 @@ function ProvidersView() {
             </button>
           </aside>
         )}
-      </div>
+      </div> : <React.Fragment>
+        {selectedProviderRows.size > 0 && <div className="training-bulk-bar">
+          <strong>{selectedProviderRows.size} ausgewählt</strong>
+          <button type="button"><Icon name="download" size={14} />Export</button>
+          <button type="button"><Icon name="edit" size={14} />Status ändern</button>
+          <button type="button" className="is-danger"><Icon name="trash" size={14} />Löschen</button>
+          <button type="button" className="is-clear" onClick={() => setSelectedProviderRows(new Set())}><Icon name="x" size={14} /></button>
+        </div>}
+        <div className="training-list-table card">
+          <table>
+            <thead><tr>
+              <th className="training-list-check"><input type="checkbox" checked={allVisibleProvidersSelected} onChange={toggleAllProviderRows} /></th>
+              {providerColumns.map(column => <th key={column.key}>
+                <button type="button" className="training-th-button" onClick={() => setProviderColumnMenu(providerColumnMenu === column.key ? null : column.key)}>
+                  {column.label}<span>{providerSort.key === column.key ? (providerSort.dir === 'asc' ? '↑' : '↓') : '⌄'}</span>
+                </button>
+                {providerColumnMenu === column.key && <div className="training-column-menu">
+                  <button type="button" onClick={() => { setProviderSort({ key:column.key, dir:'asc' }); setProviderColumnMenu(null); }}>A bis Z</button>
+                  <button type="button" onClick={() => { setProviderSort({ key:column.key, dir:'desc' }); setProviderColumnMenu(null); }}>Z bis A</button>
+                  <button type="button" className="is-filter" onClick={() => openProviderFilter(column.key)}>Filtern nach</button>
+                  <button type="button" onClick={() => { setProviderGroupBy(providerGroupBy === column.key ? '' : column.key); setProviderSort({ key:column.key, dir:'asc' }); setProviderColumnMenu(null); }}>Gruppieren nach "{column.label}"</button>
+                </div>}
+              </th>)}
+            </tr></thead>
+            <tbody>
+              {providerGroups.map(group => <React.Fragment key={group.label || 'all'}>
+                {group.label && <tr className="training-group-row"><td colSpan={providerColumns.length + 1}>{providerColumns.find(column => column.key === providerGroupBy)?.label}: {group.label} <span>{group.rows.length}</span></td></tr>}
+                {group.rows.map(provider => <tr key={provider.id} className={selectedProviderRows.has(provider.id) ? 'is-selected' : ''} onClick={() => setSelectedId(provider.id)}>
+                  <td className="training-list-check" onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedProviderRows.has(provider.id)} onChange={() => toggleProviderRow(provider.id)} /></td>
+                  {providerColumns.map(column => <td key={column.key}>{column.key === 'name' ? <strong>{providerValue(provider, column.key)}</strong> : providerValue(provider, column.key)}</td>)}
+                </tr>)}
+              </React.Fragment>)}
+            </tbody>
+          </table>
+        </div>
+      </React.Fragment>}
+      {providerFilterPanel && <div className="training-filter-backdrop" onClick={() => setProviderFilterPanel(null)}>
+        <aside className="training-filter-panel" onClick={event => event.stopPropagation()}>
+          <header>
+            <h2>Filtern nach "{providerColumns.find(column => column.key === providerFilterPanel)?.label}"</h2>
+            <button type="button" className="btn btn--ghost" onClick={() => setProviderFilterPanel(null)}><Icon name="x" size={18} /></button>
+          </header>
+          <main>
+            <input value={providerFilterSearch} onChange={event => setProviderFilterSearch(event.target.value)} placeholder="Text eingeben, um Filter zu finden" />
+            <div>
+              {visibleProviderFilterValues.map(value => <label key={value}><input type="checkbox" checked={(providerColumnFilters[providerFilterPanel] || []).includes(value)} onChange={() => toggleProviderFilter(providerFilterPanel, value)} /><span>{value}</span></label>)}
+            </div>
+          </main>
+          <footer>
+            <button type="button" className="btn btn--primary" onClick={() => setProviderFilterPanel(null)} disabled={!(providerColumnFilters[providerFilterPanel] || []).length}>Anwenden</button>
+            <button type="button" className="btn btn--ghost" onClick={() => clearProviderFilter(providerFilterPanel)}>Auswahl aufheben</button>
+          </footer>
+        </aside>
+      </div>}
+      {providerCreateOpen && <ProviderCreateModal onClose={() => setProviderCreateOpen(false)} />}
     </div>
   );
+}
+
+function ProviderCreateModal({ onClose }) {
+  const categories = ['Sicherheit', 'SCC', 'DVGW', 'Fahrerlaubnis', 'Unterweisung', 'Sicherheit / Verkehr'];
+  return <div className="training-create-backdrop" onClick={onClose}>
+    <section className="training-create-modal" onClick={event => event.stopPropagation()}>
+      <header>
+        <div>
+          <span>Neuer Anbieter</span>
+          <h2>Anbieter anlegen</h2>
+        </div>
+        <button type="button" onClick={onClose} title="Schliessen"><Icon name="x" size={16} /></button>
+      </header>
+      <div className="training-create-form">
+        <label><span>Name Anbieter</span><input placeholder="z.B. DEKRA Akademie" /></label>
+        <label><span>Sterne</span><select defaultValue="5">{[1,2,3,4,5].map(star => <option key={star} value={star}>{star} Stern{star > 1 ? 'e' : ''}</option>)}</select></label>
+        <label><span>Ansprechpartner</span><input placeholder="Name Ansprechpartner" /></label>
+        <label><span>Telefon</span><input placeholder="+49 ..." /></label>
+        <label><span>E-Mail</span><input placeholder="mail@anbieter.de" /></label>
+        <label><span>Adresse</span><input placeholder="Straße, PLZ Ort" /></label>
+        <label><span>Kategorie</span><select defaultValue="Sicherheit">{categories.map(category => <option key={category} value={category}>{category}</option>)}</select></label>
+        <label><span>Status</span><select defaultValue="aktiv"><option value="aktiv">Aktiv</option><option value="vorbereitung">In Vorbereitung</option><option value="inaktiv">Inaktiv</option></select></label>
+        <label className="is-wide"><span>Beschreibung</span><textarea placeholder="Kurze Beschreibung des Anbieters..." /></label>
+      </div>
+      <footer>
+        <button className="btn btn--ghost" type="button" onClick={onClose}>Abbrechen</button>
+        <button className="btn btn--primary" type="button" onClick={onClose}>Speichern</button>
+      </footer>
+    </section>
+  </div>;
 }
 
 function CompaniesViewOld() {

@@ -143,9 +143,30 @@ function CompanyDetail({ company, onBack }) {
 function CompanyMatrixPage({ company, onBack }) {
   const [selectedEmployee, setSelectedEmployee] = React.useState(null);
   const [showAllCompanies, setShowAllCompanies] = React.useState(false);
+  const [matrixSubView, setMatrixSubView] = React.useState('matrix');
   if (selectedEmployee && window.EmployeeAdminDetail) return <EmployeeAdminDetail emp={selectedEmployee} onBack={() => setSelectedEmployee(null)} />;
-  if (showAllCompanies) return <div className="emp-full company-matrix-page"><CompanyPageTitle title="Qualifikationsmatrix (Alle Firmen)" onBack={() => setShowAllCompanies(false)} /><MatrixView activeCompany="all" /></div>;
-  return <div className="emp-full company-matrix-page"><CompanyPageTitle title={`Qualifikationsmatrix (${company.name})`} onBack={onBack} /><MatrixView activeCompany={company.id} onEmployeeOpen={setSelectedEmployee} extraAction={<button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>} /></div>;
+  if (matrixSubView === 'trainings') return <div className="emp-full company-matrix-page">
+    <CompanyPageTitle title="Schulungen & Qualifikationen" onBack={() => setMatrixSubView('matrix')} />
+    <TrainingsView />
+  </div>;
+  if (matrixSubView === 'calendar') return <div className="emp-full company-matrix-page">
+    <CompanyPageTitle title={`Schulungskalender (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={() => setMatrixSubView('matrix')} />
+    <CalendarView activeCompany={showAllCompanies ? 'all' : company.id} />
+  </div>;
+  if (matrixSubView === 'providers') return <div className="emp-full company-matrix-page">
+    <CompanyPageTitle title="Akademien & Anbieter" onBack={() => setMatrixSubView('matrix')} />
+    <ProvidersView />
+  </div>;
+  const matrixActions = <React.Fragment>
+    <button className="btn btn--ghost" onClick={() => setMatrixSubView('trainings')}><Icon name="cap" size={14} />Schulungen</button>
+    <button className="btn btn--ghost" onClick={() => setMatrixSubView('calendar')}><Icon name="cal" size={14} />Schulungskalender</button>
+    <button className="btn btn--ghost" onClick={() => setMatrixSubView('providers')}><Icon name="building" size={14} />Akademien & Anbieter</button>
+    {showAllCompanies
+      ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
+      : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}
+  </React.Fragment>;
+  if (showAllCompanies) return <div className="emp-full company-matrix-page"><CompanyPageTitle title="Qualifikationsmatrix (Alle Firmen)" onBack={() => setShowAllCompanies(false)} /><MatrixView activeCompany="all" extraAction={matrixActions} /></div>;
+  return <div className="emp-full company-matrix-page"><CompanyPageTitle title={`Qualifikationsmatrix (${company.name})`} onBack={onBack} /><MatrixView activeCompany={company.id} onEmployeeOpen={setSelectedEmployee} extraAction={matrixActions} /></div>;
 }
 
 function CompanyEvaluationPage({ company, onBack }) {

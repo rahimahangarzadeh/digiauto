@@ -359,6 +359,7 @@ function EvaluationView({ activeCompany = 'all', extraAction = null } = {}) {
 
   const employeeGroup = (employee) => {
     const text = `${employee.department || ''} ${employee.position || ''}`.toLowerCase();
+    if (text.includes('azubi') || text.includes('auszubild')) return 'azubi';
     if (
       text.includes('bÃ¼ro') || text.includes('bÃƒÂ¼ro') ||
       text.includes('kaufm') || text.includes('bauleit') ||
@@ -619,12 +620,8 @@ function EvaluationView({ activeCompany = 'all', extraAction = null } = {}) {
 
   return (
     <div>
-      <div className="view__header">
-        <div>
-          <h1 className="view__title">Firmen-Auswertung</h1>
-          <div className="view__subtitle">Abdeckung je Schulung und Firma â€” Ampelsystem.</div>
-        </div>
-        <div className="view__actions">
+      <div className="view__header" style={{ justifyContent: 'flex-end' }}>
+        <div className="view__actions" style={{ marginLeft: 'auto' }}>
           <button className="btn btn--ghost"><Icon name="download" size={14} />Excel</button>
           {extraAction}
           <button className="btn btn--ghost"><Icon name="download" size={14} />PDF</button>
@@ -655,6 +652,7 @@ function EvaluationView({ activeCompany = 'all', extraAction = null } = {}) {
             <option value="all">Alle</option>
             <option value="angestellte">Angestellte</option>
             <option value="gewerbliche">Gewerbliche</option>
+            <option value="azubi">Azubi</option>
           </select>
         </label>
         <span className="chip" style={{ cursor: 'default' }}>

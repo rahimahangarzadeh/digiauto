@@ -1613,6 +1613,12 @@ function TrainingDetailPage({ training, onBack, stats, employees }) {
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [selectedEnrollId, setSelectedEnrollId] = React.useState(null);
   const [enrollNotice, setEnrollNotice] = React.useState('');
+  const [participantSort, setParticipantSort] = React.useState({ col:'status', dir:'asc' });
+  const [participantMenu, setParticipantMenu] = React.useState(null);
+  const [participantFilterPanel, setParticipantFilterPanel] = React.useState(null);
+  const [participantFilterSearch, setParticipantFilterSearch] = React.useState('');
+  const [participantFilters, setParticipantFilters] = React.useState({});
+  const [participantGroupBy, setParticipantGroupBy] = React.useState('');
   const panelEmployees = employees || window.SEED.employees;
 
   const statusCfg = {
@@ -1631,7 +1637,25 @@ function TrainingDetailPage({ training, onBack, stats, employees }) {
     return (order[a.status] ?? 3) - (order[b.status] ?? 3);
   });
 
-  const filteredEmpList = statusFilter === 'all' ? empList : empList.filter(item => item.status === statusFilter);
+  const baseParticipantList = statusFilter === 'all' ? empList : empList.filter(item => item.status === statusFilter);
+  const participantColumns = [
+    { key:'employee', label:'Mitarbeiter', value:item => item.emp.name },
+    { key:'company', label:'Firma', value:item => window.company(item.emp.company)?.short || item.emp.company },
+    { key:'position', label:'Position', value:item => item.emp.position },
+    { key:'pn', label:'PN', value:item => 'PN ' + item.emp.personalNr },
+    { key:'status', label:'Status', value:item => statusCfg[item.status]?.label || item.status },
+    { key:'document', label:'Dokument', value:item => item.cert?.file || '-' },
+  ];
+  const participantColumn = key => participantColumns.find(col => col.key === key);
+  const participantValue = (item, key) => participantColumn(key)?.value(item) ?? '';
+  const filteredEmpList = [...baseParticipantList]
+    .filter(item => Object.entries(participantFilters).every(([key, values]) => !values?.length || values.includes(participantValue(item, key))))
+    .sort((a, b) => {
+      const va = participantValue(a, participantSort.col);
+      const vb = participantValue(b, participantSort.col);
+      const cmp = String(va).localeCompare(String(vb), 'de', { numeric:true });
+      return participantSort.dir === 'asc' ? cmp : -cmp;
+    });
   const selectedEnroll = filteredEmpList.find(item => item.emp.id === selectedEnrollId);
   const canEnrollSelected = selectedEnroll && ['warn', 'expired', 'missing'].includes(selectedEnroll.status);
   const repeatText = training.months ? (training.months === 12 ? 'jährlich' : `alle ${Math.round(training.months / 12)} Jahre`) : '-';
@@ -1658,6 +1682,34 @@ function TrainingDetailPage({ training, onBack, stats, employees }) {
     return <span style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'2px 8px', borderRadius:999, fontSize:10.5, fontWeight:700, background:s.bg, border:'1px solid '+s.border, color:s.color }}>
       <span style={{ width:5, height:5, borderRadius:'50%', background:s.color }} />{s.label}
     </span>;
+  };
+  const participantFilterValues = key => Array.from(new Set(baseParticipantList.map(item => participantValue(item, key)))).sort((a, b) => String(a).localeCompare(String(b), 'de', { numeric:true }));
+  const toggleParticipantFilter = (key, value) => {
+    setParticipantFilters(current => {
+      const selected = current[key] || [];
+      const next = selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value];
+      const copy = { ...current };
+      if (next.length) copy[key] = next; else delete copy[key];
+      return copy;
+    });
+  };
+  const groupedParticipantRows = participantGroupBy
+    ? participantFilterValues(participantGroupBy).map(value => ({ value, rows: filteredEmpList.filter(item => participantValue(item, participantGroupBy) === value) })).filter(group => group.rows.length)
+    : [{ value:'', rows:filteredEmpList }];
+  const ParticipantHeader = ({ col }) => {
+    const active = participantSort.col === col.key || participantFilters[col.key]?.length || participantGroupBy === col.key;
+    return <th style={{ position:'relative' }}>
+      <button type="button" onClick={() => setParticipantMenu(participantMenu === col.key ? null : col.key)} style={{ display:'inline-flex', alignItems:'center', gap:5, border:0, background:'transparent', color:active ? 'var(--fg-1)' : 'var(--fg-3)', font:'inherit', fontWeight:active ? 800 : 700, cursor:'pointer', padding:0 }}>
+        <span>{col.label}</span>
+        <span style={{ fontSize:10 }}>{participantSort.col === col.key ? (participantSort.dir === 'asc' ? 'A-Z' : 'Z-A') : 'v'}</span>
+      </button>
+      {participantMenu === col.key && <div style={{ position:'absolute', top:'100%', left:0, zIndex:80, minWidth:250, background:'white', border:'1px solid var(--border-1)', boxShadow:'0 14px 34px rgba(0,0,0,.16)', borderRadius:4, overflow:'hidden', textTransform:'none', letterSpacing:0, color:'var(--fg-1)', fontWeight:400 }}>
+        <button type="button" onClick={() => { setParticipantSort({ col:col.key, dir:'asc' }); setParticipantMenu(null); }} style={{ display:'block', width:'100%', textAlign:'left', padding:'11px 18px', border:0, background:'white', cursor:'pointer', font:'inherit' }}>A bis Z</button>
+        <button type="button" onClick={() => { setParticipantSort({ col:col.key, dir:'desc' }); setParticipantMenu(null); }} style={{ display:'block', width:'100%', textAlign:'left', padding:'11px 18px', border:0, background:'white', cursor:'pointer', font:'inherit' }}>Z bis A</button>
+        <button type="button" onClick={() => { setParticipantFilterPanel(col.key); setParticipantFilterSearch(''); setParticipantMenu(null); }} style={{ display:'block', width:'100%', textAlign:'left', padding:'11px 18px', border:0, borderTop:'1px solid var(--border-1)', background:'#f3f2f1', cursor:'pointer', font:'inherit' }}>Filtern nach</button>
+        <button type="button" onClick={() => { setParticipantGroupBy(participantGroupBy === col.key ? '' : col.key); setParticipantSort({ col:col.key, dir:'asc' }); setParticipantMenu(null); }} style={{ display:'block', width:'100%', textAlign:'left', padding:'11px 18px', border:0, background:'white', cursor:'pointer', font:'inherit' }}>Gruppieren nach "{col.label}"</button>
+      </div>}
+    </th>;
   };
 
   const FieldCard = ({ icon, label, value }) => (
@@ -1740,37 +1792,72 @@ function TrainingDetailPage({ training, onBack, stats, employees }) {
             <button className="btn btn--ghost" style={{ padding:'7px 10px', fontSize:12 }}>Bearbeiten</button>
           </div>
         </div>
+        {(Object.keys(participantFilters).length > 0 || participantGroupBy) && (
+          <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:12 }}>
+            {Object.entries(participantFilters).map(([key, values]) => values.map(value => (
+              <span key={key + value} style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'5px 9px', borderRadius:999, background:'var(--color-parchment)', color:'var(--fg-1)', fontSize:12 }}>
+                <span style={{ color:'var(--fg-3)' }}>{participantColumn(key)?.label}:</span>{String(value)}
+                <button type="button" onClick={() => toggleParticipantFilter(key, value)} style={{ border:0, background:'transparent', padding:0, cursor:'pointer', display:'inline-flex' }}><Icon name="x" size={13} /></button>
+              </span>
+            )))}
+            {participantGroupBy && <span style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'5px 9px', borderRadius:999, background:'var(--color-parchment)', color:'var(--fg-1)', fontSize:12 }}>Gruppiert nach {participantColumn(participantGroupBy)?.label}<button type="button" onClick={() => setParticipantGroupBy('')} style={{ border:0, background:'transparent', padding:0, cursor:'pointer', display:'inline-flex' }}><Icon name="x" size={13} /></button></span>}
+            <button type="button" className="btn btn--ghost" onClick={() => { setParticipantFilters({}); setParticipantGroupBy(''); }} style={{ padding:'6px 9px', fontSize:12 }}>Zurücksetzen</button>
+          </div>
+        )}
         <div className="training-list-table">
           <table>
             <thead>
               <tr>
-                <th>Mitarbeiter</th>
-                <th>Firma</th>
-                <th>Position</th>
-                <th>PN</th>
-                <th>Status</th>
-                <th>Dokument</th>
+                {participantColumns.map(col => <ParticipantHeader key={col.key} col={col} />)}
               </tr>
             </thead>
             <tbody>
-              {filteredEmpList.map(item => {
-                const canEnroll = ['warn', 'expired', 'missing'].includes(item.status);
-                const selected = selectedEnrollId === item.emp.id;
-                return <tr key={item.emp.id} onClick={() => chooseParticipant(item)} style={{ cursor:canEnroll ? 'pointer' : 'default', background:selected ? 'var(--color-parchment)' : undefined }}>
-                  <td><strong>{item.emp.name}</strong><div className="small muted">{item.emp.email}</div></td>
-                  <td>{window.company(item.emp.company)?.short || item.emp.company}</td>
-                  <td>{item.emp.position}</td>
-                  <td>PN {item.emp.personalNr}</td>
-                  <td><StatusBadge status={item.status} /></td>
-                  <td>{item.cert?.file || '-'}</td>
-                </tr>;
-              })}
+              {groupedParticipantRows.map(group => <React.Fragment key={group.value || 'all'}>
+                {participantGroupBy && <tr><td colSpan={participantColumns.length} style={{ background:'var(--color-parchment)', color:'var(--fg-2)', fontSize:12, fontWeight:800, padding:'9px 14px' }}>{participantColumn(participantGroupBy)?.label}: {group.value}</td></tr>}
+                {group.rows.map(item => {
+                  const canEnroll = ['warn', 'expired', 'missing'].includes(item.status);
+                  const selected = selectedEnrollId === item.emp.id;
+                  return <tr key={item.emp.id} onClick={() => chooseParticipant(item)} style={{ cursor:canEnroll ? 'pointer' : 'default', background:selected ? 'var(--color-parchment)' : undefined }}>
+                    <td><strong>{item.emp.name}</strong><div className="small muted">{item.emp.email}</div></td>
+                    <td>{window.company(item.emp.company)?.short || item.emp.company}</td>
+                    <td>{item.emp.position}</td>
+                    <td>PN {item.emp.personalNr}</td>
+                    <td><StatusBadge status={item.status} /></td>
+                    <td>{item.cert?.file || '-'}</td>
+                  </tr>;
+                })}
+              </React.Fragment>)}
             </tbody>
           </table>
         </div>
         {enrollNotice && (
           <div style={{ marginTop:12, padding:'10px 12px', borderRadius:8, background:'#eff5ed', border:'1px solid #cde1cf', color:'#3f7a4a', fontWeight:700 }}>
             {enrollNotice}
+          </div>
+        )}
+        {participantFilterPanel && (
+          <div style={{ position:'fixed', inset:0, zIndex:3200, background:'rgba(0,0,0,.14)', display:'flex', justifyContent:'flex-end' }} onClick={() => setParticipantFilterPanel(null)}>
+            <aside style={{ width:360, maxWidth:'92vw', height:'100%', background:'var(--color-white)', boxShadow:'-18px 0 42px rgba(0,0,0,.18)', display:'flex', flexDirection:'column' }} onClick={event => event.stopPropagation()}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, padding:'22px 24px 12px' }}>
+                <h2 style={{ margin:0, fontFamily:'var(--font-serif)', fontSize:22, fontWeight:500 }}>Filtern nach {participantColumn(participantFilterPanel)?.label}</h2>
+                <button type="button" className="icon-btn" onClick={() => setParticipantFilterPanel(null)}><Icon name="x" size={18} /></button>
+              </div>
+              <div style={{ padding:'8px 24px 14px' }}>
+                <input value={participantFilterSearch} onChange={event => setParticipantFilterSearch(event.target.value)} placeholder="Filter suchen..." style={{ width:'100%', boxSizing:'border-box', height:38, border:'1px solid var(--border-1)', borderRadius:8, padding:'0 11px', font:'inherit' }} />
+              </div>
+              <div style={{ flex:1, overflow:'auto', padding:'4px 24px 16px' }}>
+                {participantFilterValues(participantFilterPanel).filter(value => String(value).toLowerCase().includes(participantFilterSearch.toLowerCase())).map(value => (
+                  <label key={String(value)} style={{ display:'flex', alignItems:'center', gap:10, padding:'8px 0', cursor:'pointer', color:'var(--fg-1)', fontSize:14 }}>
+                    <input type="checkbox" checked={(participantFilters[participantFilterPanel] || []).includes(value)} onChange={() => toggleParticipantFilter(participantFilterPanel, value)} style={{ width:16, height:16, accentColor:'var(--color-accent)' }} />
+                    <span>{String(value)}</span>
+                  </label>
+                ))}
+              </div>
+              <footer style={{ display:'flex', justifyContent:'flex-end', gap:8, padding:'14px 24px', borderTop:'1px solid var(--border-1)' }}>
+                <button type="button" className="btn btn--ghost" onClick={() => { setParticipantFilters(current => { const copy = { ...current }; delete copy[participantFilterPanel]; return copy; }); }}>Zurücksetzen</button>
+                <button type="button" className="btn btn--primary" onClick={() => setParticipantFilterPanel(null)}>Anwenden</button>
+              </footer>
+            </aside>
           </div>
         )}
       </section>

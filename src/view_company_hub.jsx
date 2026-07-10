@@ -990,7 +990,7 @@ function CompanyBGBauPage({ company, onBack }) {
 function companyMasterRecord(company) {
   const employees = window.SEED.employees.filter(employee => employee.company === company.id).length;
   const subcontractors = companySubcontractorRows().filter(row => row.company === company.id).length;
-  return { name:company.name, employees, subcontractors, manager:company.manager, address:company.address, phone:company.phone, logo:company.logo, status:company.status, description:company.description, changed:'05.06.2026, 09:40 Uhr - von Sabine Janning' };
+  return { name:company.name, employees, subcontractors, manager:company.manager, address:company.address, phone:company.phone, email:`info@${company.short.toLowerCase().replace(/\s+/g, '-')}.de`, logo:company.logo, status:company.status, description:company.description, changed:'05.06.2026, 09:40 Uhr\nvon Sabine Janning', projects:14, certificates:7, founded:2012 };
 }
 
 function CompanyMasterArea({ company }) {
@@ -1001,14 +1001,56 @@ function CompanyMasterRecord({ company, record, onBack }) {
   const [editing, setEditing] = React.useState(false);
   const [form, setForm] = React.useState(record);
   const set = (key, value) => setForm(current => ({ ...current, [key]:value }));
-  return <div className="emp-full emp-master-detail company-master-detail">
-    <CompanyPageTitle title={`Stammdaten (${company.name})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Alle bearbeiten</button><button className="btn btn--ghost is-danger"><Icon name="trash" size={14} />Firma löschen</button></div>} />
-    <div className="emp-master-layout"><main className="emp-master-main">
-      <CompanyMasterDataCard title="Firmendaten" icon="building"><div className="emp-master-field-grid"><CompanyMasterField label="Name Firma" icon="building" value={form.name} editing={editing}><input value={form.name} onChange={event => set('name', event.target.value)} /></CompanyMasterField><CompanyMasterField label="Anzahl Mitarbeiter" icon="users" value={form.employees} /><CompanyMasterField label="Anzahl Nachunternehmer" icon="users" value={form.subcontractors} /><CompanyMasterField label="Geschäftsführer" icon="users" value={form.manager} editing={editing}><input value={form.manager} onChange={event => set('manager', event.target.value)} /></CompanyMasterField><CompanyMasterField label="Status" icon="shield" value={form.status} editing={editing}><select value={form.status} onChange={event => set('status', event.target.value)}><option>Aktiv</option><option>In Vorbereitung</option><option>Inaktiv</option></select></CompanyMasterField></div></CompanyMasterDataCard>
-      <CompanyMasterDataCard title="Kontakt" icon="phone"><div className="emp-master-contact-list"><CompanyMasterField label="Adresse" icon="pin" value={form.address} editing={editing}><input value={form.address} onChange={event => set('address', event.target.value)} /></CompanyMasterField><CompanyMasterField label="Tel" icon="phone" value={form.phone} editing={editing}><input value={form.phone} onChange={event => set('phone', event.target.value)} /></CompanyMasterField></div></CompanyMasterDataCard>
-      <CompanyMasterDataCard title="Beschreibung" icon="doc">{editing ? <textarea className="emp-master-description-input" value={form.description} onChange={event => set('description', event.target.value)} /> : <p className="emp-master-description">{form.description}</p>}</CompanyMasterDataCard>
-    </main><aside className="emp-master-aside"><CompanyMasterDataCard title="GeÃ¤ndert" icon="history"><p className="emp-last-change">{form.changed}</p></CompanyMasterDataCard><CompanyMasterDataCard title="Logo" icon="doc"><div className="company-master-photo"><img src={form.logo} alt={company.short} /><div><strong>Firmenlogo</strong><small>PNG oder JPG</small><label><Icon name="upload" size={14} />Logo Ã¤ndern<input type="file" accept="image/*" /></label></div></div></CompanyMasterDataCard></aside></div>
-    {editing && <div className="emp-master-savebar"><button className="btn btn--ghost" onClick={() => setEditing(false)}>Abbrechen</button><button className="btn btn--primary" onClick={() => setEditing(false)}>Speichern</button></div>}
+  const statusClass = form.status === 'Aktiv' ? 'is-active' : form.status === 'Inaktiv' ? 'is-inactive' : 'is-warn';
+  const infoField = (icon, label, value, editor) => <div className="company-master-new-field"><span className="company-master-new-icon"><Icon name={icon} size={19} /></span><div><small>{label}</small>{editing && editor ? editor : <strong>{value}</strong>}</div></div>;
+  return <div className="emp-full company-master-new">
+    <header className="company-master-new-head">
+      <div className="company-master-new-title">{onBack && <button className="emp-round-back" onClick={onBack} title="Zurück"><Icon name="chevL" size={18} stroke={2} /></button>}<h1>Stammdaten ({company.name})</h1></div>
+      <div className="company-master-new-actions"><button className="company-master-edit-green" onClick={() => setEditing(true)}><Icon name="edit" size={16} />Bearbeiten</button><button className="company-master-delete-red"><Icon name="trash" size={16} />Firma löschen</button></div>
+    </header>
+
+    <div className="company-master-new-grid">
+      <section className="company-master-new-card company-master-new-card--wide">
+        <header><span className="company-master-new-icon"><Icon name="building" size={19} /></span><h2>Firmendaten</h2></header>
+        <div className="company-master-new-fields company-master-new-fields--two">
+          {infoField('building', 'Firmenname', form.name, <input value={form.name} onChange={event => set('name', event.target.value)} />)}
+          {infoField('users', 'Anzahl Mitarbeiter', form.employees)}
+          {infoField('users', 'Anzahl Nachunternehmer', form.subcontractors)}
+          {infoField('users', 'Geschäftsführer', form.manager, <input value={form.manager} onChange={event => set('manager', event.target.value)} />)}
+          <div className="company-master-new-field"><span className="company-master-new-icon"><Icon name="shield" size={19} /></span><div><small>Status</small>{editing ? <select value={form.status} onChange={event => set('status', event.target.value)}><option>Aktiv</option><option>In Vorbereitung</option><option>Inaktiv</option></select> : <span className={'company-master-status ' + statusClass}>{form.status}</span>}</div></div>
+        </div>
+      </section>
+
+      <section className="company-master-new-card">
+        <header><span className="company-master-new-icon"><Icon name="phone" size={19} /></span><h2>Kontakt</h2></header>
+        <div className="company-master-new-fields">
+          {infoField('pin', 'Adresse', form.address, <input value={form.address} onChange={event => set('address', event.target.value)} />)}
+          {infoField('phone', 'Telefon', form.phone, <input value={form.phone} onChange={event => set('phone', event.target.value)} />)}
+          {infoField('mail', 'E-Mail', form.email, <input value={form.email} onChange={event => set('email', event.target.value)} />)}
+        </div>
+      </section>
+
+      <aside className="company-master-new-side">
+        <section className="company-master-new-card company-master-new-small"><header><span className="company-master-new-icon"><Icon name="history" size={19} /></span><h2>Geändert</h2></header><p>{form.changed}</p></section>
+        <section className="company-master-new-card company-master-new-logo"><header><span className="company-master-new-icon"><Icon name="doc" size={19} /></span><h2>Logo</h2></header><div><img src={form.logo} alt={company.short} /><div><strong>Firmenlogo</strong><small>PNG oder JPG</small><label><Icon name="upload" size={15} />Logo ändern<input type="file" accept="image/*" /></label></div></div></section>
+      </aside>
+
+      <section className="company-master-new-card company-master-new-description">
+        <header><span className="company-master-new-icon"><Icon name="building" size={19} /></span><h2>Beschreibung</h2></header>
+        {editing ? <textarea value={form.description} onChange={event => set('description', event.target.value)} /> : <p>{form.description}</p>}
+        <div className="company-master-new-illustration"><Icon name="building" size={58} /><Icon name="users" size={38} /></div>
+      </section>
+
+      <section className="company-master-new-stats">
+        <div><Icon name="users" size={26} /><strong>{form.employees}</strong><span>Mitarbeiter</span></div>
+        <div><Icon name="users" size={26} /><strong>{form.subcontractors}</strong><span>Nachunternehmer</span></div>
+        <div><Icon name="building" size={26} /><strong>{form.projects}</strong><span>Projekte</span></div>
+        <div><Icon name="shield" size={26} /><strong>{form.certificates}</strong><span>Zertifikate</span></div>
+        <div><Icon name="cal" size={26} /><span>Gegründet</span><strong>{form.founded}</strong></div>
+      </section>
+    </div>
+
+    {editing && <div className="emp-master-savebar"><button className="btn btn--ghost" onClick={() => { setForm(record); setEditing(false); }}>Abbrechen</button><button className="btn btn--primary" onClick={() => setEditing(false)}>Speichern</button></div>}
   </div>;
 }
 

@@ -30,6 +30,8 @@ function BGBauAushangView({ activeCompany, activeProject = '', extraAction = nul
   const [filterSearch, setFilterSearch] = React.useState('');
   const [previewRow, setPreviewRow] = React.useState(null);
   const [editRow, setEditRow] = React.useState(null);
+  const [viewMode, setViewMode] = React.useState('list');
+  const [calendarView, setCalendarView] = React.useState('month');
 
   const today = new Date();
   const companyName = id => window.company(id)?.name || id;
@@ -139,6 +141,65 @@ function BGBauAushangView({ activeCompany, activeProject = '', extraAction = nul
 
   const scopedRows = rows.filter(r => (activeCompany === 'all' || r.company === activeCompany) && (!activeProject || r.project === activeProject));
   const statusCounts = Object.fromEntries(Object.keys(statusCfg).map(status => [status, scopedRows.filter(r => r.status === status).length]));
+  const calendarBaseDate = visible[0]?.start || window.SEED.today;
+  const calendarBase = new Date(calendarBaseDate + 'T00:00:00');
+  const calendarIso = date => date.toISOString().slice(0, 10);
+  const rowsForDate = iso => visible.filter(row => row.start <= iso && row.end >= iso);
+  const calendarMonthStart = new Date(calendarBaseDate + 'T00:00:00');
+  calendarMonthStart.setDate(1);
+  const calendarGridStart = new Date(calendarMonthStart);
+  const calendarOffset = calendarGridStart.getDay();
+  calendarGridStart.setDate(calendarGridStart.getDate() - calendarOffset);
+  const calendarDays = Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(calendarGridStart);
+    date.setDate(calendarGridStart.getDate() + index);
+    const iso = date.toISOString().slice(0, 10);
+    const items = visible.filter(row => row.start <= iso && row.end >= iso);
+    return { date, iso, items, inMonth: date.getMonth() === calendarMonthStart.getMonth() };
+  });
+  const calendarMonthLabel = calendarMonthStart.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+  const calendarWeekStart = new Date(calendarBase);
+  calendarWeekStart.setDate(calendarBase.getDate() - calendarBase.getDay());
+  const calendarWeekDays = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(calendarWeekStart);
+    date.setDate(calendarWeekStart.getDate() + index);
+    const iso = calendarIso(date);
+    return { date, iso, items: rowsForDate(iso), inMonth: true };
+  });
+  const calendarWeekEnd = new Date(calendarWeekStart);
+  calendarWeekEnd.setDate(calendarWeekStart.getDate() + 6);
+  const calendarDayItems = rowsForDate(calendarBaseDate);
+  const calendarDayLabel = calendarBase.toLocaleDateString('de-DE', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+  const calendarWeekLabel = `${calendarWeekStart.toLocaleDateString('de-DE', { day:'2-digit', month:'short' })} - ${calendarWeekEnd.toLocaleDateString('de-DE', { day:'2-digit', month:'short', year:'numeric' })}`;
+  const calendarYear = calendarMonthStart.getFullYear();
+  const miniMonthDays = monthIndex => {
+    const monthStart = new Date(calendarYear, monthIndex, 1);
+    const gridStart = new Date(monthStart);
+    gridStart.setDate(monthStart.getDate() - monthStart.getDay());
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(gridStart);
+      date.setDate(gridStart.getDate() + index);
+      const iso = calendarIso(date);
+      return { date, iso, inMonth: date.getMonth() === monthIndex, hasItem: rowsForDate(iso).length > 0 };
+    });
+  };
+  const calendarYearMonths = Array.from({ length: 12 }, (_, index) => {
+    const start = new Date(calendarYear, index, 1);
+    const end = new Date(calendarYear, index + 1, 0);
+    const startIso = calendarIso(start);
+    const endIso = calendarIso(end);
+    const items = visible.filter(row => row.start <= endIso && row.end >= startIso);
+    return { month: index, label: start.toLocaleDateString('de-DE', { month:'long' }), items };
+  });
+  const renderCalendarEvent = row => {
+    const cfg = statusCfg[row.status] || statusCfg.aktiv;
+    return (
+      <button key={row.id} type="button" className="bgbau-calendar__event" onClick={() => setPreviewRow(row)} style={{ borderLeftColor: cfg.color, background: cfg.bg }}>
+        <strong>{row.project}</strong>
+        <small>{companyShort(row.company)} · {employeeName(row.responsible)}</small>
+      </button>
+    );
+  };
   const toggleRow = id => setSelectedIds(prev => {
     const next = new Set(prev);
     next.has(id) ? next.delete(id) : next.add(id);
@@ -267,6 +328,55 @@ function BGBauAushangView({ activeCompany, activeProject = '', extraAction = nul
         .bgbau-table tr:hover td { background:rgba(201,100,66,.035); }
         .column-menu-row { display:block; width:100%; border:0; background:transparent; text-align:left; padding:9px 8px; border-radius:6px; cursor:pointer; font:inherit; }
         .column-menu-row:hover { background:var(--color-parchment); }
+        .bgbau-viewbar { display:flex; justify-content:flex-end; align-items:center; gap:8px; margin-bottom:14px; }
+        .bgbau-viewbar__seg { display:inline-flex; align-items:center; padding:3px; border:1px solid var(--border-1); border-radius:9px; background:var(--color-ivory); box-shadow:0 1px 3px rgba(0,0,0,.04); }
+        .bgbau-viewbar__seg button { min-height:30px; border:0; border-radius:7px; padding:0 12px; background:transparent; color:var(--fg-2); font:inherit; font-size:12px; font-weight:750; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+        .bgbau-viewbar__seg button.is-active { background:var(--color-near-black); color:#fff; }
+        .bgbau-calendar { border:1px solid var(--border-1); border-radius:10px; overflow:hidden; background:white; box-shadow:0 1px 0 rgba(0,0,0,.04); }
+        .bgbau-calendar__head { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 18px; border-bottom:1px solid #dfe5ee; background:#fff; }
+        .bgbau-calendar__head h3 { margin:0; font-family:Arial, sans-serif; font-size:22px; font-weight:500; color:#1f2933; }
+        .bgbau-calendar__legend { display:flex; flex-wrap:wrap; gap:10px; color:var(--fg-3); font-size:11px; font-weight:700; }
+        .bgbau-calendar__legend span { display:inline-flex; align-items:center; gap:5px; }
+        .bgbau-calendar__legend i { width:8px; height:8px; border-radius:50%; }
+        .bgbau-calendar__weekdays, .bgbau-calendar__grid { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); }
+        .bgbau-calendar__weekdays div { min-height:38px; display:flex; align-items:center; justify-content:center; background:#fff; color:#1f2933; font-size:13px; font-weight:600; text-transform:uppercase; border-right:1px solid #dfe5ee; }
+        .bgbau-calendar__day { min-height:150px; border-top:1px solid #dfe5ee; border-right:1px solid #dfe5ee; padding:10px; background:#fff; }
+        .bgbau-calendar__day.is-muted { background:#fff; color:#8b97a5; }
+        .bgbau-calendar__date { display:flex; justify-content:center; align-items:center; margin-bottom:8px; color:#111827; font-size:16px; font-weight:600; }
+        .bgbau-calendar__date.is-today span { background:#0b57d0; color:#fff; border-radius:999px; min-width:32px; height:32px; display:inline-flex; align-items:center; justify-content:center; padding:0; }
+        .bgbau-calendar__events { display:grid; gap:5px; }
+        .bgbau-calendar__event { width:100%; border:1px solid var(--border-1); border-left-width:4px; border-radius:7px; background:var(--color-ivory); padding:6px 7px; text-align:left; color:var(--fg-1); cursor:pointer; font:inherit; font-size:11px; line-height:1.25; }
+        .bgbau-calendar__event strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; }
+        .bgbau-calendar__event small { display:block; margin-top:2px; color:var(--fg-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .bgbau-calendar__toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .bgbau-calendar__mode { display:inline-flex; align-items:center; gap:2px; padding:3px; border:1px solid var(--border-1); border-radius:9px; background:#fff; }
+        .bgbau-calendar__mode button { min-height:28px; border:0; border-radius:7px; padding:0 10px; background:transparent; color:var(--fg-2); cursor:pointer; font:inherit; font-size:12px; font-weight:750; }
+        .bgbau-calendar__mode button.is-active { background:var(--color-accent); color:#fff; }
+        .bgbau-calendar__agenda { display:grid; gap:8px; padding:14px; min-height:260px; }
+        .bgbau-calendar__agenda-row { display:grid; grid-template-columns:112px 1fr; gap:12px; align-items:start; padding:12px; border:1px solid var(--border-1); border-radius:9px; background:#fff; }
+        .bgbau-calendar__agenda-date { color:var(--fg-3); font-size:11px; font-weight:800; text-transform:uppercase; }
+        .bgbau-calendar__agenda-list { display:grid; gap:7px; }
+        .bgbau-calendar__empty { padding:24px; color:var(--fg-3); text-align:center; border:1px dashed var(--border-1); border-radius:10px; background:#faf9f5; }
+        .bgbau-calendar__year { display:grid; grid-template-columns:repeat(4, minmax(230px,1fr)); gap:54px 64px; padding:34px 44px 48px; background:#fff; }
+        .bgbau-calendar__month-card { min-height:auto; border:0; border-radius:0; background:#fff; padding:0; box-shadow:none; }
+        .bgbau-calendar__month-card h4 { margin:0 0 18px; font-family:Arial, sans-serif; font-size:22px; font-weight:500; color:#1f2933; }
+        .bgbau-mini-month { display:grid; grid-template-columns:repeat(7, 32px); grid-auto-rows:32px; gap:4px 10px; align-items:center; }
+        .bgbau-mini-month__weekday { color:#1f2933; font-size:15px; text-align:center; font-weight:500; }
+        .bgbau-mini-month__day { border:0; background:transparent; color:#111827; font:inherit; font-size:14px; font-weight:500; border-radius:999px; cursor:pointer; display:flex; align-items:center; justify-content:center; position:relative; }
+        .bgbau-mini-month__day.is-muted { color:#1f2933; opacity:.85; }
+        .bgbau-mini-month__day.is-today { background:#0b57d0; color:#fff; }
+        .bgbau-mini-month__day.has-item::after { content:""; position:absolute; bottom:2px; width:4px; height:4px; border-radius:999px; background:#0b57d0; }
+        .bgbau-mini-month__day.is-today.has-item::after { background:#fff; }
+        .bgbau-week-grid { display:grid; grid-template-columns:86px repeat(7, minmax(0,1fr)); background:#fff; }
+        .bgbau-week-grid__corner { border-right:1px solid #dfe5ee; border-bottom:1px solid #dfe5ee; color:#1f2933; font-size:13px; padding-top:66px; text-align:left; }
+        .bgbau-week-grid__dayhead { min-height:92px; border-right:1px solid #dfe5ee; border-bottom:1px solid #b8c0cc; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; color:#1f2933; }
+        .bgbau-week-grid__dayname { font-size:14px; font-weight:600; text-transform:uppercase; }
+        .bgbau-week-grid__daynum { font-size:30px; line-height:1; font-weight:400; min-width:48px; height:48px; border-radius:999px; display:flex; align-items:center; justify-content:center; }
+        .bgbau-week-grid__dayhead.is-today .bgbau-week-grid__dayname { color:#0b57d0; }
+        .bgbau-week-grid__dayhead.is-today .bgbau-week-grid__daynum { background:#0b57d0; color:#fff; }
+        .bgbau-week-grid__time { min-height:64px; border-right:1px solid #dfe5ee; border-bottom:1px solid #dfe5ee; color:#1f2933; font-size:13px; padding:8px 10px 0 0; text-align:right; }
+        .bgbau-week-grid__cell { min-height:64px; border-right:1px solid #dfe5ee; border-bottom:1px solid #dfe5ee; padding:6px; position:relative; }
+        .bgbau-week-grid__event { border:0; border-radius:999px; background:#0b57d0; color:#fff; padding:4px 8px; font:inherit; font-size:11px; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
       `}</style>
 
       {!compact && <div className="view__header">
@@ -328,7 +438,26 @@ function BGBauAushangView({ activeCompany, activeProject = '', extraAction = nul
         </div>
       )}
 
-      <div className="bgbau-project-shell">
+      <div className="bgbau-viewbar">
+        <div className="bgbau-viewbar__seg" aria-label="Ansicht wechseln">
+          <button type="button" className={viewMode === 'list' ? 'is-active' : ''} onClick={() => setViewMode('list')}><Icon name="matrix" size={13} />Liste</button>
+          <button type="button" className={viewMode === 'calendar' ? 'is-active' : ''} onClick={() => setViewMode('calendar')}><Icon name="cal" size={13} />Kalender</button>
+        </div>
+        {viewMode === 'calendar' && (
+          <div className="bgbau-calendar__mode" aria-label="Kalenderansicht wechseln">
+            {[
+              ['day', 'Tag'],
+              ['week', 'Woche'],
+              ['month', 'Monat'],
+              ['year', 'Jahr'],
+            ].map(([key, label]) => (
+              <button key={key} type="button" className={calendarView === key ? 'is-active' : ''} onClick={() => setCalendarView(key)}>{label}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {viewMode === 'list' ? <div className="bgbau-project-shell">
         <div className="bgbau-project">
           <div className="bgbau-left">
             <div className="bgbau-grid-head">
@@ -397,7 +526,103 @@ function BGBauAushangView({ activeCompany, activeProject = '', extraAction = nul
             })}
           </div>
         </div>
-      </div>
+      </div> : <div className="bgbau-calendar">
+        <div className="bgbau-calendar__head">
+          <h3>{calendarView === 'day' ? calendarDayLabel : calendarView === 'week' ? calendarWeekLabel : calendarView === 'year' ? calendarYear : calendarMonthLabel}</h3>
+          <div className="bgbau-calendar__toolbar">
+            <div className="bgbau-calendar__legend">
+              {Object.entries(statusCfg).map(([key, cfg]) => <span key={key}><i style={{ background: cfg.color }} />{cfg.label}</span>)}
+            </div>
+          </div>
+        </div>
+        {calendarView === 'day' && (
+          <div className="bgbau-calendar__agenda">
+            {calendarDayItems.length ? calendarDayItems.map(row => (
+              <div key={row.id} className="bgbau-calendar__agenda-row">
+                <div className="bgbau-calendar__agenda-date">{fmtDate(row.start)} - {fmtDate(row.end)}</div>
+                <div className="bgbau-calendar__agenda-list">{renderCalendarEvent(row)}</div>
+              </div>
+            )) : <div className="bgbau-calendar__empty">Keine Baustellenaushänge an diesem Tag.</div>}
+          </div>
+        )}
+        {calendarView === 'week' && (
+          <div className="bgbau-week-grid">
+            <div className="bgbau-week-grid__corner">GMT+02</div>
+            {calendarWeekDays.map(day => {
+              const isToday = day.iso === window.SEED.today;
+              const dayName = day.date.toLocaleDateString('de-DE', { weekday:'short' }).replace('.', '').toUpperCase();
+              return (
+                <div key={day.iso} className={'bgbau-week-grid__dayhead' + (isToday ? ' is-today' : '')}>
+                  <div className="bgbau-week-grid__dayname">{dayName}</div>
+                  <div className="bgbau-week-grid__daynum">{day.date.getDate()}</div>
+                </div>
+              );
+            })}
+            {['7 AM','8 AM','9 AM','10 AM','11 AM','12 PM','1 PM','2 PM','3 PM','4 PM'].map((hour, hourIndex) => (
+              <React.Fragment key={hour}>
+                <div className="bgbau-week-grid__time">{hour}</div>
+                {calendarWeekDays.map(day => (
+                  <div key={day.iso + hour} className="bgbau-week-grid__cell">
+                    {hourIndex === 2 && day.items.slice(0, 2).map(row => (
+                      <button key={row.id} type="button" className="bgbau-week-grid__event" onClick={() => setPreviewRow(row)}>{row.project}</button>
+                    ))}
+                  </div>
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
+        {calendarView === 'month' && (
+          <>
+            <div className="bgbau-calendar__weekdays">{['SO','MO','DI','MI','DO','FR','SA'].map(day => <div key={day}>{day}</div>)}</div>
+            <div className="bgbau-calendar__grid">
+              {calendarDays.map(day => {
+                const isToday = day.iso === window.SEED.today;
+                const isFirst = day.date.getDate() === 1;
+                return (
+                  <div key={day.iso} className={'bgbau-calendar__day' + (!day.inMonth ? ' is-muted' : '')}>
+                    <div className={'bgbau-calendar__date' + (isToday ? ' is-today' : '')}>
+                      <span>{isFirst ? day.date.toLocaleDateString('de-DE', { day:'numeric', month:'short' }) : day.date.getDate()}</span>
+                    </div>
+                    <div className="bgbau-calendar__events">
+                      {day.items.slice(0, 2).map(renderCalendarEvent)}
+                      {day.items.length > 2 && <small style={{ color:'var(--fg-3)', fontSize:10 }}>+ {day.items.length - 2} weitere</small>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+        {calendarView === 'year' && (
+          <div className="bgbau-calendar__year">
+            {calendarYearMonths.map(month => (
+              <div key={month.month} className="bgbau-calendar__month-card">
+                <h4>{month.label}</h4>
+                <div className="bgbau-mini-month">
+                  {['S','M','D','M','D','F','S'].map((day, index) => <div key={day + index} className="bgbau-mini-month__weekday">{day}</div>)}
+                  {miniMonthDays(month.month).map(day => {
+                    const isToday = day.iso === window.SEED.today;
+                    return (
+                      <button
+                        key={day.iso}
+                        type="button"
+                        className={'bgbau-mini-month__day' + (!day.inMonth ? ' is-muted' : '') + (isToday ? ' is-today' : '') + (day.hasItem ? ' has-item' : '')}
+                        onClick={() => {
+                          const first = rowsForDate(day.iso)[0];
+                          if (first) setPreviewRow(first);
+                        }}
+                      >
+                        {day.date.getDate()}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>}
 
       <div style={{ display:'flex', gap:8, justifyContent:'flex-end', marginTop:12 }}>
         <button className="btn btn--ghost" disabled={!previewRow} onClick={() => previewRow && setEditRow(previewRow)}><Icon name="edit" size={14} />Bearbeiten</button>

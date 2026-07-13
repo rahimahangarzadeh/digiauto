@@ -1,401 +1,375 @@
 function DocumentsView({ mode = 'home' }) {
-  const isHome = mode === 'home';
+  const isDrive = mode === 'drive';
+  const title = isDrive ? 'Meine Ablage' : 'Dokumente';
 
-  function file(name, type, changed, owner, size) {
-    return { id:'file-' + name, name, type, changed, owner, size };
-  }
+  const seedDocs = [
+    {
+      id: 'doc-001',
+      name: 'SCC_Audit_Checkliste_2026.pdf',
+      company: 'Janning Tiefbau GmbH',
+      category: 'Audits',
+      owner: 'Rahim Ahangarzadeh',
+      location: 'Audits / SCC / 2026',
+      type: 'PDF',
+      size: '1.8 MB',
+      version: '1.2',
+      changed: '18.06.2026',
+      changedBy: 'Rahim Ahangarzadeh',
+      release: 'Freigegeben',
+      validity: '31.12.2026',
+      reason: 'läuft bald ab',
+      status: 'warning',
+    },
+    {
+      id: 'doc-002',
+      name: 'BGBAU_Tiefbau_Aushang_2026.pdf',
+      company: 'Janning Tiefbau GmbH',
+      category: 'Baustellenaushang',
+      owner: 'Sabine Janning',
+      location: 'BGBAU / Janning Tiefbau GmbH / 2026',
+      type: 'PDF',
+      size: '1.4 MB',
+      version: '2.0',
+      changed: '24.05.2026',
+      changedBy: 'Sabine Janning',
+      release: 'Freigegeben',
+      validity: '28.06.2026',
+      reason: 'kürzlich geändert',
+      status: 'ok',
+    },
+    {
+      id: 'doc-003',
+      name: 'Gefaehrdungsbeurteilung_Kanalsanierung.pdf',
+      company: 'Janning Tiefbau GmbH',
+      category: 'Gefährdungsbeurteilung',
+      owner: 'Alexander Petersen',
+      location: 'Baustellen / Kanalsanierung Nordhorn',
+      type: 'PDF',
+      size: '2.2 MB',
+      version: '1.0',
+      changed: '05.06.2026',
+      changedBy: 'Alexander Petersen',
+      release: 'Zur Prüfung',
+      validity: '31.12.2026',
+      reason: 'für mich freigegeben',
+      status: 'review',
+    },
+    {
+      id: 'doc-004',
+      name: 'Unfallstatistik_Q2_2026.xlsx',
+      company: 'Janning Rohrbau GmbH',
+      category: 'Unfallstatistik',
+      owner: 'HSE',
+      location: 'Unfallstatistik / 2026',
+      type: 'Excel',
+      size: '380 KB',
+      version: '1.1',
+      changed: '30.06.2026',
+      changedBy: 'HSE',
+      release: 'Intern',
+      validity: '-',
+      reason: 'häufig verwendet',
+      status: 'ok',
+    },
+    {
+      id: 'doc-005',
+      name: 'Organigramm_Janning_Group_V3.pdf',
+      company: 'Janning Group',
+      category: 'Organigramm',
+      owner: 'Christian Janning',
+      location: 'Organisation / Freigaben',
+      type: 'PDF',
+      size: '920 KB',
+      version: '3.0',
+      changed: '12.06.2026',
+      changedBy: 'Christian Janning',
+      release: 'Neue Version',
+      validity: '31.12.2027',
+      reason: 'neue Version vorhanden',
+      status: 'new',
+    },
+    {
+      id: 'doc-006',
+      name: 'Fahrerlaubnis_Bestaetigung_SGU_007.pdf',
+      company: 'Janning Transporte GmbH',
+      category: 'Führerscheinkontrolle',
+      owner: 'Fuhrpark',
+      location: 'Formulare / SGU',
+      type: 'PDF',
+      size: '760 KB',
+      version: '2.0',
+      changed: '10.05.2026',
+      changedBy: 'Fuhrpark',
+      release: 'Freigegeben',
+      validity: '31.12.2026',
+      reason: 'zuletzt geöffnet',
+      status: 'ok',
+    },
+  ];
 
-  const makeYears = (prefix, owner) => ([
-    { name:'2022', folders:[], files:[
-      file(prefix + '_Aushang_2022.pdf', 'PDF', '12.12.2022', owner, '1.4 MB'),
-      file(prefix + '_Nachweis_2022.pdf', 'PDF', '14.12.2022', 'Michael Janning', '980 KB'),
-    ]},
-    { name:'2023', folders:[], files:[
-      file(prefix + '_Baustellenaushang_2023.pdf', 'PDF', '18.11.2023', owner, '1.6 MB'),
-      file(prefix + '_Unternehmermodell_2023.pdf', 'PDF', '20.11.2023', 'HSE', '1.1 MB'),
-    ]},
-    { name:'2024', folders:[], files:[
-      file(prefix + '_Aushang_2024.pdf', 'PDF', '09.09.2024', owner, '1.7 MB'),
-      file(prefix + '_Pruefnachweis_2024.pdf', 'PDF', '11.09.2024', 'Rahim', '860 KB'),
-    ]},
-    { name:'2025', folders:[], files:[
-      file(prefix + '_Aushang_2025.pdf', 'PDF', '16.10.2025', owner, '1.5 MB'),
-      file(prefix + '_Meldebogen_2025.pdf', 'PDF', '17.10.2025', 'Sabine Janning', '760 KB'),
-    ]},
-    { name:'2026', folders:[], files:[
-      file(prefix + '_Aushang_2026.pdf', 'PDF', '24.05.2026', owner, '1.8 MB'),
-      file(prefix + '_Meldeformular_2026.pdf', 'PDF', '18.05.2026', 'Sabine Janning', '820 KB'),
-    ]},
-  ]);
+  const columns = [
+    ['name', 'Name'],
+    ['company', 'Firma'],
+    ['category', 'Kategorie'],
+    ['owner', 'Eigentümer'],
+    ['location', 'Speicherort'],
+    ['type', 'Dateityp'],
+    ['size', 'Dateigröße'],
+    ['version', 'Versionsnummer'],
+    ['changed', 'Änderungsdatum'],
+    ['changedBy', 'geändert von'],
+    ['release', 'Freigabestatus'],
+    ['validity', 'Gültigkeit'],
+  ];
 
-  const initialDrive = {
-    name:'Meine Ablage',
-    folders:[
-      {
-        name:'BGBAU',
-        folders:[
-          { name:'Janning Tiefbau GmbH', folders:makeYears('BGBAU_Tiefbau', 'Sabine Janning'), files:[] },
-          { name:'Janning Rohrbau GmbH', folders:makeYears('BGBAU_Rohrbau', 'Thomas Wegener'), files:[] },
-          { name:'Janning Bohrtechnik GmbH', folders:makeYears('BGBAU_Bohrtechnik', 'Rahim'), files:[] },
-        ],
-        files:[]
-      },
-      {
-        name:'Audits',
-        folders:[
-          { name:'ISO 9001', folders:[
-            { name:'2026', folders:[], files:[
-              file('Auditplan_ISO_9001_2026.xlsx', 'Excel', '20.05.2026', 'Rahim', '154 KB'),
-              file('Auditbericht_ISO_9001_2026.pdf', 'PDF', '21.05.2026', 'Rahim', '2.4 MB'),
-              file('Massnahmenliste_ISO_9001_2026.docx', 'Word', '22.05.2026', 'Sabine Janning', '312 KB'),
-            ]},
-            { name:'2025', folders:[], files:[file('Auditbericht_ISO_9001_2025.pdf', 'PDF', '18.12.2025', 'Sabine Janning', '2.1 MB')] },
-          ], files:[] },
-          { name:'SCC', folders:[{ name:'2026', folders:[], files:[file('SCC_Audit_Checkliste_2026.xlsx', 'Excel', '06.05.2026', 'Michael Janning', '188 KB')] }], files:[] },
-        ],
-        files:[]
-      },
-      {
-        name:'Referenzschreiben',
-        folders:[
-          { name:'Tiefbau', folders:[{ name:'2026', folders:[], files:[file('Referenz_Kanalsanierung_Nordhorn.pdf', 'PDF', '14.05.2026', 'Sabine Janning', '650 KB')] }], files:[] },
-          { name:'Rohrbau', folders:[{ name:'2026', folders:[], files:[file('Referenz_Hausanschluesse_Suedring.docx', 'Word', '08.05.2026', 'Thomas Wegener', '238 KB')] }], files:[] },
-        ],
-        files:[]
-      },
-      {
-        name:'Unfallstatistik',
-        folders:[
-          { name:'2026', folders:[], files:[
-            file('Unfallstatistik_Q1_2026.xlsx', 'Excel', '31.03.2026', 'HSE', '121 KB'),
-            file('Beinaheunfaelle_2026.pdf', 'PDF', '12.05.2026', 'HSE', '740 KB'),
-          ]},
-          { name:'2025', folders:[], files:[file('Unfallstatistik_2025.xlsx', 'Excel', '10.01.2026', 'HSE', '144 KB')] },
-        ],
-        files:[]
-      },
-      {
-        name:'Gefaehrdungsbeurteilung',
-        folders:[
-          { name:'Tiefbau', folders:[{ name:'2026', folders:[], files:[file('GB_Tiefbau_Baustelle_2026.pdf', 'PDF', '02.05.2026', 'Rahim', '1.2 MB')] }], files:[] },
-          { name:'Rohrbau', folders:[{ name:'2026', folders:[], files:[file('GB_Rohrbau_Graben_2026.pdf', 'PDF', '05.05.2026', 'Rahim', '1.1 MB')] }], files:[] },
-        ],
-        files:[]
-      },
-    ],
-    files:[]
-  };
-
-  const storageKey = 'document_drive_v1';
-  const [drive, setDrive] = React.useState(() => {
-    try { return JSON.parse(localStorage.getItem(storageKey) || 'null') || initialDrive; }
-    catch { return initialDrive; }
-  });
-  const [path, setPath] = React.useState([]);
-  const [selectedIds, setSelectedIds] = React.useState([]);
-  const [newOpen, setNewOpen] = React.useState(false);
-  const [titleMenuOpen, setTitleMenuOpen] = React.useState(false);
-  const fileInputRef = React.useRef(null);
-  const folderInputRef = React.useRef(null);
+  const [docs, setDocs] = React.useState(seedDocs);
+  const [view, setView] = React.useState(isDrive ? 'grid' : 'list');
+  const [selected, setSelected] = React.useState([]);
+  const [openMenu, setOpenMenu] = React.useState(null);
+  const [columnMenu, setColumnMenu] = React.useState(null);
+  const [hiddenCols, setHiddenCols] = React.useState([]);
+  const [sort, setSort] = React.useState({ key: 'changed', dir: 'desc' });
+  const [groupBy, setGroupBy] = React.useState('');
 
   React.useEffect(() => {
-    try { localStorage.setItem(storageKey, JSON.stringify(drive)); } catch {}
-  }, [drive]);
-
-  React.useEffect(() => {
-    setSelectedIds([]);
-    if (isHome) setPath([]);
+    setView(isDrive ? 'grid' : 'list');
+    setSelected([]);
   }, [mode]);
 
-  const getFolder = (node, folderPath) => {
-    let current = node;
-    for (const name of folderPath) {
-      current = (current.folders || []).find(folder => folder.name === name) || current;
-    }
-    return current;
+  const visibleColumns = columns.filter(([key]) => !hiddenCols.includes(key));
+  const selectedDocs = docs.filter(doc => selected.includes(doc.id));
+  const recentDocs = docs.slice(0, 4);
+  const suggestedDocs = docs.filter(doc => doc.reason).slice(0, 4);
+
+  const sortedDocs = [...docs].sort((a, b) => {
+    const av = String(a[sort.key] || '');
+    const bv = String(b[sort.key] || '');
+    return sort.dir === 'asc' ? av.localeCompare(bv, 'de') : bv.localeCompare(av, 'de');
+  });
+
+  const groupedRows = groupBy
+    ? sortedDocs.reduce((acc, doc) => {
+        const group = doc[groupBy] || 'Ohne Wert';
+        acc[group] = acc[group] || [];
+        acc[group].push(doc);
+        return acc;
+      }, {})
+    : null;
+
+  const toggleSelected = (id) => {
+    setSelected(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
   };
 
-  const walkFiles = (node, parts = []) => {
-    const files = (node.files || []).map(doc => ({
-      ...doc,
-      kind:'file',
-      path:parts,
-      rowId:['file', ...parts, doc.name].join('/'),
-      storage:parts.length ? parts.join(' / ') : 'Meine Ablage',
-      reason:doc.changed ? 'Geaendert am ' + doc.changed : 'In Meine Ablage',
-    }));
-    return [
-      ...files,
-      ...(node.folders || []).flatMap(folder => walkFiles(folder, [...parts, folder.name])),
-    ];
+  const toggleAll = () => {
+    setSelected(selected.length === docs.length ? [] : docs.map(doc => doc.id));
   };
 
-  const current = getFolder(drive, path);
-  const driveRows = [
-    ...(current.folders || []).map(folder => ({ ...folder, kind:'folder', rowId:['folder', ...path, folder.name].join('/'), path:[...path, folder.name] })),
-    ...(current.files || []).map(doc => ({ ...doc, kind:'file', rowId:['file', ...path, doc.name].join('/'), path, storage:path.join(' / ') || 'Meine Ablage' })),
-  ];
-  const homeRows = walkFiles(drive);
-  const rows = isHome ? homeRows : driveRows;
-
-  const updateFolder = (targetPath, updater) => {
-    const walk = (node, rest) => {
-      if (!rest.length) return updater(node);
-      return {
-        ...node,
-        folders:(node.folders || []).map(folder => folder.name === rest[0] ? walk(folder, rest.slice(1)) : folder),
-      };
-    };
-    setDrive(prev => walk(prev, targetPath));
-  };
-
-  const createFolder = () => {
-    const name = window.prompt('Ordnername');
-    if (!name) return;
-    updateFolder(path, folder => ({
-      ...folder,
-      folders:[...(folder.folders || []), { name, folders:[], files:[] }],
-    }));
-    setNewOpen(false);
-    setTitleMenuOpen(false);
-  };
-
-  const fileType = (name) => {
-    const ext = String(name).split('.').pop().toLowerCase();
-    if (ext === 'pdf') return 'PDF';
-    if (['xlsx','xls','csv'].includes(ext)) return 'Excel';
-    if (['docx','doc'].includes(ext)) return 'Word';
-    if (['png','jpg','jpeg','webp'].includes(ext)) return 'Bild';
-    if (['zip','rar'].includes(ext)) return 'Archiv';
-    return ext ? ext.toUpperCase() : 'Datei';
-  };
-
-  const formatSize = (size) => {
-    if (!size) return '-';
-    if (size > 1024 * 1024) return (size / 1024 / 1024).toFixed(1) + ' MB';
-    return Math.max(1, Math.round(size / 1024)) + ' KB';
-  };
-
-  const addFiles = (event) => {
-    const uploaded = Array.from(event.target.files || []).map(item => ({
-      id:'file-' + Date.now() + '-' + item.name,
-      name:item.name,
-      type:fileType(item.name),
-      changed:new Date().toLocaleDateString('de-DE'),
-      owner:'Michael Janning',
-      size:formatSize(item.size),
-    }));
-    if (!uploaded.length) return;
-    updateFolder(path, folder => ({ ...folder, files:[...(folder.files || []), ...uploaded] }));
-    event.target.value = '';
-    setNewOpen(false);
-    setTitleMenuOpen(false);
-  };
-
-  const addFolderUpload = (event) => {
-    const uploaded = Array.from(event.target.files || []);
-    if (!uploaded.length) return;
-    const firstFolder = uploaded[0].webkitRelativePath?.split('/')?.[0] || 'Hochgeladener Ordner';
-    const files = uploaded.map(item => ({
-      id:'file-' + Date.now() + '-' + item.name,
-      name:item.name,
-      type:fileType(item.name),
-      changed:new Date().toLocaleDateString('de-DE'),
-      owner:'Michael Janning',
-      size:formatSize(item.size),
-    }));
-    updateFolder(path, folder => ({
-      ...folder,
-      folders:[...(folder.folders || []), { name:firstFolder, folders:[], files }],
-    }));
-    event.target.value = '';
-    setNewOpen(false);
-    setTitleMenuOpen(false);
-  };
-
-  const deleteByPath = (row) => {
-    if (isHome && row.kind === 'file') {
-      updateFolder(row.path, folder => ({ ...folder, files:(folder.files || []).filter(item => item.name !== row.name) }));
-      setSelectedIds(ids => ids.filter(id => id !== row.rowId));
-      return;
-    }
-    updateFolder(path, folder => row.kind === 'folder'
-      ? { ...folder, folders:(folder.folders || []).filter(item => item.name !== row.name) }
-      : { ...folder, files:(folder.files || []).filter(item => item.name !== row.name) }
+  const confirmDelete = (ids) => {
+    const amount = Array.isArray(ids) ? ids.length : 1;
+    const ok = window.confirm(amount > 1
+      ? `Möchten Sie diese ${amount} Dateien wirklich löschen?`
+      : 'Möchten Sie diese Datei wirklich löschen?'
     );
-    setSelectedIds(ids => ids.filter(id => id !== row.rowId));
+    if (!ok) return;
+    const deleteIds = Array.isArray(ids) ? ids : [ids];
+    setDocs(current => current.filter(doc => !deleteIds.includes(doc.id)));
+    setSelected(current => current.filter(id => !deleteIds.includes(id)));
+    setOpenMenu(null);
   };
 
-  const deleteSelected = () => {
-    if (isHome) {
-      selectedIds.forEach(id => {
-        const row = rows.find(item => item.rowId === id);
-        if (row) deleteByPath(row);
-      });
-      setSelectedIds([]);
-      return;
-    }
-    updateFolder(path, folder => ({
-      ...folder,
-      folders:(folder.folders || []).filter(item => !selectedIds.includes(['folder', ...path, item.name].join('/'))),
-      files:(folder.files || []).filter(item => !selectedIds.includes(['file', ...path, item.name].join('/'))),
-    }));
-    setSelectedIds([]);
-  };
+  const actionItems = [
+    'Vorschau öffnen',
+    'herunterladen',
+    'bearbeiten',
+    'umbenennen',
+    'verschieben',
+    'kopieren',
+    'neue Version hochladen',
+    'Freigabe ändern',
+    'Link kopieren',
+    'archivieren',
+    'löschen',
+  ];
 
-  const toggleSelected = (id) => setSelectedIds(ids => ids.includes(id) ? ids.filter(item => item !== id) : [...ids, id]);
-  const allSelected = rows.length > 0 && rows.every(row => selectedIds.includes(row.rowId));
-  const toggleAll = () => setSelectedIds(allSelected ? [] : rows.map(row => row.rowId));
-  const typeColor = (type) => ({
-    PDF:'#a13232',
-    Excel:'#3f7a4a',
-    Word:'#2d6fa3',
-    Bild:'#8a6a1f',
-    Archiv:'#6f6a60',
-    Ordner:'#4d4a43',
-  }[type] || 'var(--fg-2)');
+  const statusClass = (status) => ({
+    ok: 'is-ok',
+    warning: 'is-warning',
+    review: 'is-review',
+    new: 'is-new',
+  }[status] || 'is-ok');
+
+  const renderActionMenu = (doc) => (
+    <div className="docs-action-menu" onClick={(event) => event.stopPropagation()}>
+      <button className="docs-more" onClick={() => setOpenMenu(openMenu === doc.id ? null : doc.id)} aria-label="Dateiaktionen">⋮</button>
+      {openMenu === doc.id && (
+        <div className="docs-menu-popover">
+          {actionItems.map(action => (
+            <button
+              key={action}
+              className={action === 'löschen' ? 'is-danger' : ''}
+              onClick={() => action === 'löschen' ? confirmDelete(doc.id) : setOpenMenu(null)}
+            >
+              {action}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderColumnHead = ([key, label]) => (
+    <th key={key}>
+      <div className="docs-column-head">
+        <button onClick={() => setColumnMenu(columnMenu === key ? null : key)}>{label}⌄</button>
+        {columnMenu === key && (
+          <div className="docs-column-menu">
+            <button onClick={() => { setSort({ key, dir: 'asc' }); setColumnMenu(null); }}>A bis Z</button>
+            <button onClick={() => { setSort({ key, dir: 'desc' }); setColumnMenu(null); }}>Z bis A</button>
+            <button onClick={() => setColumnMenu(null)}>Filtern nach</button>
+            <button onClick={() => { setGroupBy(key); setColumnMenu(null); }}>Gruppieren nach "{label}"</button>
+            <button onClick={() => { setHiddenCols(cols => [...cols, key]); setColumnMenu(null); }}>Spalte ausblenden</button>
+          </div>
+        )}
+      </div>
+    </th>
+  );
+
+  const renderTableRows = (items) => items.map(doc => (
+    <tr key={doc.id} className={selected.includes(doc.id) ? 'is-selected' : ''}>
+      <td><input type="checkbox" checked={selected.includes(doc.id)} onChange={() => toggleSelected(doc.id)} /></td>
+      {visibleColumns.map(([key]) => (
+        <td key={key}>
+          {key === 'name' && <strong>{doc.name}</strong>}
+          {key === 'release' && <span className={`docs-status ${statusClass(doc.status)}`}>{doc.release}</span>}
+          {key !== 'name' && key !== 'release' && doc[key]}
+        </td>
+      ))}
+      <td>{renderActionMenu(doc)}</td>
+    </tr>
+  ));
 
   return (
-    <div>
-      <style>{`
-        .drive-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; }
-        .drive-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:16px 0; }
-        .drive-new { position:relative; }
-        .drive-new-menu { position:absolute; top:calc(100% + 8px); right:0; width:230px; background:white; border:1px solid var(--border-1); border-radius:10px; box-shadow:0 14px 40px rgba(0,0,0,.14); padding:6px; z-index:20; }
-        .drive-new-menu button { width:100%; border:0; background:transparent; display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:8px; font:inherit; text-align:left; cursor:pointer; }
-        .drive-new-menu button:hover { background:var(--color-warm-sand); }
-        .drive-title-menu { position:relative; display:inline-block; }
-        .drive-title-button { border:1px solid transparent; background:transparent; border-radius:999px; margin:0 0 6px; padding:2px 10px 4px 0; font:inherit; font-size:36px; color:var(--fg-1); cursor:pointer; display:inline-flex; align-items:center; gap:8px; }
-        .drive-title-button:hover, .drive-title-button.is-open { border-color:#88aef4; box-shadow:0 0 0 1px #88aef4 inset; }
-        .drive-title-menu .drive-new-menu { left:0; right:auto; top:calc(100% + 2px); width:300px; border-radius:0 0 4px 4px; padding:0; }
-        .drive-title-menu .drive-new-menu button { border-radius:0; min-height:48px; justify-content:space-between; }
-        .drive-title-menu .drive-new-menu button span:first-child { display:inline-flex; align-items:center; gap:14px; }
-        .drive-shortcut { color:var(--fg-3); font-size:13px; white-space:nowrap; }
-        .drive-breadcrumb { display:flex; flex-wrap:wrap; align-items:center; gap:6px; color:var(--fg-3); font-size:14px; }
-        .drive-breadcrumb button { border:0; background:transparent; color:var(--fg-1); font:inherit; cursor:pointer; padding:0; }
-        .drive-view-toggle { display:inline-flex; border:1px solid var(--border-1); border-radius:999px; overflow:hidden; background:white; }
-        .drive-view-toggle span { padding:7px 12px; }
-        .drive-view-toggle span:first-child { background:#d8ecfb; color:#0d3854; font-weight:700; }
-        .drive-row-name { border:0; background:transparent; padding:0; display:inline-flex; align-items:center; gap:10px; font:inherit; color:var(--fg-1); cursor:pointer; }
-        .drive-row-file { cursor:default; }
-      `}</style>
-
-      <div className="drive-head">
+    <div className="documents-page">
+      <div className="documents-head">
         <div>
-          {isHome ? (
-            <h1 style={{ margin:'0 0 6px', fontSize:36 }}>Startseite</h1>
-          ) : (
-            <div className="drive-title-menu">
-              <button className={'drive-title-button' + (titleMenuOpen ? ' is-open' : '')} onClick={() => { setNewOpen(false); setTitleMenuOpen(open => !open); }}>
-                Meine Ablage <Icon name="chev" size={18} />
-              </button>
-              {titleMenuOpen && (
-                <div className="drive-new-menu">
-                  <button onClick={createFolder}>
-                    <span><Icon name="building" size={16} />Neuer Ordner</span>
-                    <span className="drive-shortcut">Alt+C dann F</span>
-                  </button>
-                  <button onClick={() => fileInputRef.current?.click()}>
-                    <span><Icon name="upload" size={16} />Dateien hochladen</span>
-                    <span className="drive-shortcut">Alt+C dann U</span>
-                  </button>
-                  <button onClick={() => folderInputRef.current?.click()}>
-                    <span><Icon name="upload" size={16} />Ordner hochladen</span>
-                    <span className="drive-shortcut">Alt+C dann I</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-          <p className="muted" style={{ margin:0 }}>
-            {isHome ? 'Alle Dateien aus der Ablage als klare Liste.' : 'Ordner, Unterordner und Dateien wie in einer Drive-Ablage verwalten.'}
-          </p>
+          <h1>{title}</h1>
+          <p>Dateien, Freigaben, Versionen und Ablageorte zentral verwalten.</p>
         </div>
-        <div>
-          <input ref={fileInputRef} type="file" multiple onChange={addFiles} style={{ display:'none' }} />
-          <input ref={folderInputRef} type="file" multiple webkitdirectory="true" onChange={addFolderUpload} style={{ display:'none' }} />
+        <div className="documents-head-actions">
+          <div className="segmented">
+            <button className={view === 'list' ? 'active' : ''} onClick={() => setView('list')}>Liste</button>
+            <button className={view === 'grid' ? 'active' : ''} onClick={() => setView('grid')}>Raster</button>
+          </div>
+          <button className="btn"><Icon name="download" size={15} /> Export</button>
+          <button className="btn primary"><Icon name="upload" size={15} /> Datei hochladen</button>
         </div>
       </div>
 
-      <div className="drive-toolbar">
-        <div className="drive-breadcrumb">
-          {isHome ? (
-            <strong>Vorgeschlagene Dateien</strong>
-          ) : (
-            <>
-              <button onClick={() => setPath([])}>Meine Ablage</button>
-              {path.map((part, index) => (
-                <React.Fragment key={part + index}>
-                  <span>/</span>
-                  <button onClick={() => setPath(path.slice(0, index + 1))}>{part}</button>
-                </React.Fragment>
+      {!isDrive && (
+        <div className="documents-top-grid">
+          <section className="documents-suggestion-panel">
+            <header>
+              <h2>Vorgeschlagene Dateien</h2>
+              <span>{suggestedDocs.length} Hinweise</span>
+            </header>
+            <div className="documents-suggestion-list">
+              {suggestedDocs.map(doc => (
+                <button key={doc.id} className="documents-suggestion-card">
+                  <span className={`docs-preview docs-preview--${doc.type.toLowerCase()}`}>{doc.type}</span>
+                  <span>
+                    <strong>{doc.name}</strong>
+                    <small>{doc.company} · {doc.category}</small>
+                  </span>
+                  <em>{doc.reason}</em>
+                </button>
               ))}
-            </>
-          )}
-        </div>
-        <div className="drive-view-toggle" aria-label="Ansicht">
-          <span>Liste</span>
-          <span>Raster</span>
-        </div>
-      </div>
-
-      {selectedIds.length > 0 && (
-        <div className="job-bulkbar">
-          <strong>{selectedIds.length} ausgewaehlt</strong>
-          <button><Icon name="download" size={14} />Download</button>
-          <button><Icon name="edit" size={14} />Umbenennen</button>
-          <button className="is-danger" onClick={deleteSelected}><Icon name="x" size={14} />Loeschen</button>
+            </div>
+          </section>
+          <section className="documents-suggestion-panel">
+            <header>
+              <h2>Zuletzt verwendet</h2>
+              <span>aktuell</span>
+            </header>
+            <div className="documents-recent-list">
+              {recentDocs.map(doc => (
+                <button key={doc.id}>
+                  <Icon name="doc" size={16} />
+                  <span>
+                    <strong>{doc.name}</strong>
+                    <small>{doc.changed} · {doc.changedBy}</small>
+                  </span>
+                  <b>{doc.type}</b>
+                </button>
+              ))}
+            </div>
+          </section>
         </div>
       )}
 
-      <div className="tbl-wrap">
-        <table className="tbl job-table">
-          <thead>
-            <tr>
-              <th style={{ width:38 }}><input type="checkbox" checked={allSelected} onChange={toggleAll} /></th>
-              <th>Name</th>
-              {isHome && <th>Vorgeschlagener Grund</th>}
-              <th>Eigentuemer</th>
-              <th>{isHome ? 'Speicherort' : 'Aenderungsdatum'}</th>
-              {!isHome && <th>Dateigroesse</th>}
-              {isHome && <th>Typ</th>}
-              <th style={{ textAlign:'center' }}>Aktionen</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(row => (
-              <tr key={row.rowId} className="job-row" onDoubleClick={() => row.kind === 'folder' && setPath(row.path)}>
-                <td><input type="checkbox" checked={selectedIds.includes(row.rowId)} onChange={() => toggleSelected(row.rowId)} /></td>
-                <td>
-                  <button
-                    className={'drive-row-name' + (row.kind === 'file' ? ' drive-row-file' : '')}
-                    onClick={() => row.kind === 'folder' ? setPath(row.path) : null}
-                  >
-                    <Icon name={row.kind === 'folder' ? 'building' : 'doc'} size={16} style={{ color:typeColor(row.kind === 'folder' ? 'Ordner' : row.type) }} />
-                    <strong>{row.name}</strong>
-                  </button>
-                </td>
-                {isHome && <td>{row.reason}</td>}
-                <td>{row.owner || 'Ich'}</td>
-                <td>{isHome ? row.storage : (row.kind === 'folder' ? '-' : row.changed)}</td>
-                {!isHome && <td>{row.kind === 'folder' ? '-' : row.size}</td>}
-                {isHome && <td><span className="badge" style={{ color:typeColor(row.type) }}>{row.type}</span></td>}
-                <td style={{ textAlign:'center' }}>
-                  <div style={{ display:'inline-flex', gap:8 }}>
-                    <button className="job-icon-btn" title="Vorschau"><Icon name="eye" size={15} /></button>
-                    <button className="job-icon-btn" title="Download"><Icon name="download" size={15} /></button>
-                    <button className="job-icon-btn" title="Bearbeiten"><Icon name="edit" size={15} /></button>
-                    <button className="job-icon-btn" title="Loeschen" style={{ color:'#a13232' }} onClick={() => deleteByPath(row)}><Icon name="trash" size={15} /></button>
-                  </div>
-                </td>
+      {selected.length > 0 && (
+        <div className="documents-bulkbar">
+          <strong>{selected.length} Datei(en) ausgewählt</strong>
+          <button>herunterladen</button>
+          <button>verschieben</button>
+          <button>kopieren</button>
+          <button>Eigentümer ändern</button>
+          <button>Freigabe ändern</button>
+          <button>Firma zuordnen</button>
+          <button>archivieren</button>
+          <button className="is-danger" onClick={() => confirmDelete(selected)}>löschen</button>
+        </div>
+      )}
+
+      {view === 'list' ? (
+        <div className="documents-table-wrap">
+          <table className="documents-table">
+            <thead>
+              <tr>
+                <th className="is-select"><input type="checkbox" checked={selected.length === docs.length} onChange={toggleAll} /></th>
+                {visibleColumns.map(renderColumnHead)}
+                <th>Aktionen</th>
               </tr>
-            ))}
-            {!rows.length && (
-              <tr><td colSpan={isHome ? 7 : 6} style={{ textAlign:'center', color:'var(--fg-3)', padding:28 }}>Dieser Bereich ist leer.</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {groupedRows
+                ? Object.entries(groupedRows).map(([group, items]) => (
+                    <React.Fragment key={group}>
+                      <tr className="docs-group-row"><td colSpan={visibleColumns.length + 2}>{group}<span>{items.length} Dateien</span></td></tr>
+                      {renderTableRows(items)}
+                    </React.Fragment>
+                  ))
+                : renderTableRows(sortedDocs)
+              }
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="documents-grid">
+          {sortedDocs.map(doc => (
+            <article key={doc.id} className="documents-card">
+              <header>
+                <div className={`docs-preview docs-preview--${doc.type.toLowerCase()}`}>{doc.type}</div>
+                <div>
+                  <h3>{doc.name}</h3>
+                  <p>{doc.category} · {doc.company}</p>
+                </div>
+                {renderActionMenu(doc)}
+              </header>
+              <div className="documents-card-preview">
+                <span>{doc.type === 'PDF' ? 'PDF-Vorschau Seite 1' : 'Dateivorschau'}</span>
+                <i />
+                <i />
+                <i />
+              </div>
+              <dl>
+                <div><dt>Eigentümer</dt><dd>{doc.owner}</dd></div>
+                <div><dt>Änderungsdatum</dt><dd>{doc.changed}</dd></div>
+                <div><dt>Status</dt><dd><span className={`docs-status ${statusClass(doc.status)}`}>{doc.release}</span></dd></div>
+              </dl>
+            </article>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

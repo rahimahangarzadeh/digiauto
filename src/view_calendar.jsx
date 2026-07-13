@@ -62,15 +62,31 @@ function CalendarView({ activeCompany, selectedTraining, selectedInstruction, se
   const calendarColumns = [
     { key:'date', label:'Datum' },
     { key:'time', label:'Uhrzeit' },
-    { key:'title', label:'Termin' },
+    { key:'title', label:'Schulung' },
+    { key:'company', label:'Firma' },
     { key:'location', label:'Ort' },
     { key:'provider', label:'Anbieter' },
-    { key:'participants', label:'TN' },
+    { key:'trainer', label:'Referent' },
+    { key:'participants', label:'Teilnehmer' },
+    { key:'maxParticipants', label:'Max. TN' },
     { key:'status', label:'Status' },
+    { key:'certificatesComplete', label:'Zertifikate vollst.' },
+    { key:'documentsComplete', label:'Dokumente vollst.' },
+    { key:'billingPaid', label:'Rechnung bezahlt' },
+    { key:'responsible', label:'Verantwortlich' },
+    { key:'actions', label:'Aktionen' },
   ];
   const calendarValue = (event, key) => {
     if (key === 'date') return window.fmtDE(event.date);
     if (key === 'provider') return window.provider(event.provider)?.name || '-';
+    if (key === 'company') return event.company || 'Janning Tiefbau GmbH';
+    if (key === 'trainer') return event.trainer || 'wird vom Anbieter gestellt';
+    if (key === 'maxParticipants') return event.maxParticipants || 18;
+    if (key === 'certificatesComplete') return event.certificatesComplete || (event.status === 'abgeschlossen' ? 'vollständig' : 'offen');
+    if (key === 'documentsComplete') return event.documentsComplete || (event.documents?.length ? 'vollständig' : 'offen');
+    if (key === 'billingPaid') return event.billingPaid || 'offen';
+    if (key === 'responsible') return event.responsible || 'Rahim Ahangarzadeh';
+    if (key === 'actions') return 'Aktionen';
     return event[key] ?? '';
   };
   const calendarSortValue = (event, key) => key === 'date' ? event.date : calendarValue(event, key);
@@ -101,6 +117,9 @@ function CalendarView({ activeCompany, selectedTraining, selectedInstruction, se
     return next;
   });
   const toggleAllCalendarRows = () => setSelectedCalendarRows(allVisibleCalendarSelected ? new Set() : new Set(visibleCalendarRows.map(row => row.id)));
+  const closingRows = visibleCalendarRows.filter(row => ['durchgefuehrt','durchgeführt','abschluss_unvollstaendig','abgeschlossen'].includes(String(row.status).toLowerCase()) || row.id === 'ev1').slice(0, 4);
+  const archiveRows = visibleCalendarRows.filter(row => ['archiviert','abgeschlossen'].includes(String(row.status).toLowerCase())).slice(0, 4);
+  if (!archiveRows.length && visibleCalendarRows[0]) archiveRows.push({ ...visibleCalendarRows[0], status:'Archiviert', archivedAt:'12.06.2026', closedBy:'Rahim Ahangarzadeh' });
 
   return (
     <div>
@@ -112,14 +131,19 @@ function CalendarView({ activeCompany, selectedTraining, selectedInstruction, se
         <div className="view__actions">
           {extraAction}
           <div style={{ display: 'flex', gap: 4, background: 'var(--color-ivory)', border: '1px solid var(--border-1)', borderRadius: 8, padding: 3 }}>
-            {['month', 'list'].map(m => (
+            {[
+              ['month', 'Kalender'],
+              ['list', 'Liste'],
+              ['closing', 'Abschluss'],
+              ['archive', 'Archiv'],
+            ].map(([m, label]) => (
               <button
                 key={m}
                 className={'chip' + (mode === m ? ' chip--active' : '')}
                 onClick={() => setMode(m)}
                 style={{ border: 0, background: mode === m ? 'var(--color-near-black)' : 'transparent', color: mode === m ? 'var(--color-ivory)' : 'var(--fg-2)' }}
               >
-                {m === 'month' ? 'Kalender' : 'Liste'}
+                {label}
               </button>
             ))}
           </div>
@@ -189,13 +213,83 @@ function CalendarView({ activeCompany, selectedTraining, selectedInstruction, se
                   {group.label && <tr className="training-group-row"><td colSpan={calendarColumns.length + 1}>{calendarColumns.find(column => column.key === calendarGroupBy)?.label}: {group.label} <span>{group.rows.length}</span></td></tr>}
                   {group.rows.map(ev => <tr key={ev.id} className={selectedCalendarRows.has(ev.id) ? 'is-selected' : ''}>
                     <td className="training-list-check" onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedCalendarRows.has(ev.id)} onChange={() => toggleCalendarRow(ev.id)} /></td>
-                    {calendarColumns.map(column => <td key={column.key}>{column.key === 'title' ? <strong>{calendarValue(ev, column.key)}</strong> : column.key === 'status' ? <span className="badge badge--planned">{calendarValue(ev, column.key)}</span> : calendarValue(ev, column.key)}</td>)}
+                    {calendarColumns.map(column => <td key={column.key}>
+                      {column.key === 'title' ? <strong>{calendarValue(ev, column.key)}</strong>
+                        : column.key === 'status' ? <span className="badge badge--planned">{calendarValue(ev, column.key)}</span>
+                        : column.key === 'actions' ? <div className="training-row-actions"><button>Details</button><button>Bearbeiten</button><button>⋮</button></div>
+                        : calendarValue(ev, column.key)}
+                    </td>)}
                   </tr>)}
                 </React.Fragment>)}
               </tbody>
             </table>
           </div>
         </React.Fragment>
+      )}
+
+      {mode === 'closing' && (
+        <div className="training-list-table card calendar-completion-table">
+          <div className="calendar-completion-head">
+            <div>
+              <h2>Abschluss</h2>
+              <p>Durchgeführte Termine mit fehlenden Unterlagen oder Angaben.</p>
+            </div>
+            <button className="btn btn--primary">Termin abschließen</button>
+          </div>
+          <table>
+            <thead><tr><th>Termin</th><th>Teilnehmer</th><th>Anwesenheit</th><th>Zertifikate</th><th>Rechnung</th><th>Status</th><th>Aktionen</th></tr></thead>
+            <tbody>
+              {(closingRows.length ? closingRows : visibleCalendarRows.slice(0, 2)).map((ev, index) => (
+                <tr key={ev.id + '-closing'}>
+                  <td><strong>{ev.title}</strong><div className="small muted">{window.fmtDE(ev.date)} · {calendarValue(ev, 'company')}</div></td>
+                  <td>{ev.participants || 0} von {ev.maxParticipants || 18}</td>
+                  <td><span className="docs-status is-ok">vollständig</span></td>
+                  <td><span className={'docs-status ' + (index === 0 ? 'is-warning' : 'is-ok')}>{index === 0 ? '10 von 12' : 'vollständig'}</span></td>
+                  <td><span className={'docs-status ' + (index === 1 ? 'is-warning' : 'is-ok')}>{index === 1 ? 'offen' : 'bezahlt'}</span></td>
+                  <td><span className="docs-status is-warning">unvollständig</span></td>
+                  <td><div className="training-row-actions"><button>Abschlusskontrolle</button><button>Zertifikate</button><button>Archivieren</button></div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="calendar-checklist">
+            {['Termin wurde durchgeführt', 'Teilnehmerliste vollständig', 'Anwesenheit dokumentiert', 'Ergebnisse eingetragen', 'Zertifikate hochgeladen', 'Gültigkeitsdaten eingetragen', 'nächste Wiederholung festgelegt', 'Sicherheitspass-Aufkleber dokumentiert', 'Rechnung erhalten', 'Rechnung bezahlt', 'Schulungsunterlagen gespeichert'].map((item, index) => (
+              <label key={item}><input type="checkbox" defaultChecked={index < 4} /> {item}</label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {mode === 'archive' && (
+        <div className="training-list-table card calendar-completion-table">
+          <div className="calendar-completion-head">
+            <div>
+              <h2>Archiv</h2>
+              <p>Vollständig abgeschlossene Schulungstermine bleiben nachvollziehbar gespeichert.</p>
+            </div>
+            <button className="btn btn--ghost">Abschlussbericht PDF</button>
+          </div>
+          <table>
+            <thead><tr><th>Abschlussdatum</th><th>Schulungsdatum</th><th>Schulung</th><th>Firma</th><th>Anbieter</th><th>Teilnehmer</th><th>Zertifikate</th><th>Rechnung</th><th>abgeschlossen von</th><th>archiviert am</th><th>Aktionen</th></tr></thead>
+            <tbody>
+              {archiveRows.map(ev => (
+                <tr key={ev.id + '-archive'}>
+                  <td>{ev.closedAt || '12.06.2026'}</td>
+                  <td>{window.fmtDE(ev.date)}</td>
+                  <td><strong>{ev.title}</strong></td>
+                  <td>{calendarValue(ev, 'company')}</td>
+                  <td>{calendarValue(ev, 'provider')}</td>
+                  <td>{ev.participants || 0}</td>
+                  <td>vollständig</td>
+                  <td>bezahlt</td>
+                  <td>{ev.closedBy || 'Rahim Ahangarzadeh'}</td>
+                  <td>{ev.archivedAt || '13.06.2026'}</td>
+                  <td><div className="training-row-actions"><button>Details</button><button>Dokumente</button><button>Wiederherstellen</button></div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {calendarFilterPanel && <div className="training-filter-backdrop" onClick={() => setCalendarFilterPanel(null)}>
@@ -240,18 +334,36 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
     provider: selectedProvider?.id || '',
     customTitle: selectedInstruction?.title || '',
     location: selectedInstruction?.location || '',
+    room: '',
+    company: 'Janning Tiefbau GmbH',
+    responsible: 'Rahim Ahangarzadeh',
+    trainer: '',
+    maxParticipants: 18,
+    registrationDeadline: '',
+    costPerPerson: '',
+    totalCost: '',
+    validity: '24 Monate',
+    nextRepeat: '',
+    repeatInterval: 'alle 2 Jahre',
     startDate: selectedDate || '',
     startTime: '',
     endDate: selectedDate || '',
     endTime: '',
     status: 'geplant',
     participants: selectedInstruction?.participantId ? [selectedInstruction.participantId] : [],
+    participantStatus: {},
     participantRelease: {},
     hotel: 'nicht_erforderlich',
     academyConfirmed: 'nicht_erforderlich',
+    billingReceived: 'nicht_erforderlich',
     billingPaid: 'nicht_erforderlich',
+    certificatesReceived: 'nein',
+    certificatesUploaded: 'nein',
+    passportSticker: 'nein',
+    completionNote: '',
     contactName: '',
-    documents: ['Einladung.pdf'],
+    documents: [{ type:'Einladung', name:'Einladung.pdf' }],
+    documentKind: 'Einladung',
     notes: selectedInstruction ? `${selectedInstruction.kind || 'Nachholtermin'} fuer ${selectedInstruction.title} (${selectedInstruction.number}) - ${selectedInstruction.participantName}` : '',
   });
   const [saved, setSaved] = React.useState(false);
@@ -299,17 +411,23 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
       participantRelease: f.participants.includes(empId)
         ? Object.fromEntries(Object.entries(f.participantRelease || {}).filter(([id]) => id !== empId))
         : f.participantRelease,
+      participantStatus: f.participants.includes(empId)
+        ? Object.fromEntries(Object.entries(f.participantStatus || {}).filter(([id]) => id !== empId))
+        : { ...(f.participantStatus || {}), [empId]:'Vorgemerkt' },
     }));
   };
 
   const setParticipantRelease = (empId, checked) => {
     setForm(f => ({ ...f, participantRelease: { ...(f.participantRelease || {}), [empId]: checked } }));
   };
+  const setParticipantStatus = (empId, status) => {
+    setForm(f => ({ ...f, participantStatus: { ...(f.participantStatus || {}), [empId]: status } }));
+  };
 
   const addDocument = () => {
     const name = prompt('Name des Dokuments');
     if (!name) return;
-    setForm(f => ({ ...f, documents: [...f.documents, name] }));
+    setForm(f => ({ ...f, documents: [...f.documents, { type:f.documentKind || 'sonstige Dokumente', name }] }));
   };
 
   const removeDocument = (idx) => {
@@ -332,10 +450,21 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
       date: form.startDate,
       time: `${form.startTime || '08:00'}-${form.endTime || '16:00'}`,
       location: form.location,
+      room: form.room,
+      company: form.company,
+      responsible: form.responsible,
+      trainer: form.trainer || 'wird vom Anbieter gestellt',
+      maxParticipants: form.maxParticipants,
+      registrationDeadline: form.registrationDeadline,
       provider: selectedProviderId,
       participants: form.participants.length,
       status: form.status,
       freigabeFuerMitarbeiter: form.participantRelease,
+      participantStatus: form.participantStatus,
+      billingReceived: form.billingReceived,
+      billingPaid: form.billingPaid,
+      certificatesComplete: form.certificatesUploaded === 'ja' ? 'vollständig' : 'offen',
+      documentsComplete: form.documents.length ? 'vollständig' : 'offen',
       documents: form.documents,
     });
 
@@ -358,6 +487,9 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
       hotel: form.hotel,
       academyConfirmed: form.academyConfirmed,
       billingPaid: form.billingPaid,
+      billingReceived: form.billingReceived,
+      maxParticipants: form.maxParticipants,
+      responsible: form.responsible,
       contactName: form.contactName,
       documents: form.documents,
       notes: form.notes,
@@ -387,6 +519,7 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
         hotelbuchung: form.hotel,
         akademieBestaetigt: form.academyConfirmed,
         rechnungBezahlt: form.billingPaid,
+        rechnungErhalten: form.billingReceived,
         documents: form.documents,
       });
     });
@@ -400,6 +533,11 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
     ['nein', 'Nein'],
     ['nicht_erforderlich', 'Nicht erforderlich'],
   ];
+  const companies = ['Janning Tiefbau GmbH', 'Janning Bohrtechnik GmbH', 'Janning Rohrbau GmbH', 'Janning Galabau GmbH', 'Janning Transporte GmbH', 'alle Firmen'];
+  const responsibleOptions = ['Rahim Ahangarzadeh', 'Personalabteilung', 'Bauleiter', 'Vorarbeiter'];
+  const participantStatuses = ['Vorgemerkt', 'Eingeladen', 'Angemeldet', 'Bestätigt', 'Warteliste', 'Teilgenommen', 'Nicht erschienen', 'Bestanden', 'Nicht bestanden'];
+  const appointmentStatuses = ['Entwurf', 'Geplant', 'Anmeldung offen', 'Ausgebucht', 'Bestätigt', 'Durchgeführt', 'Abschluss unvollständig', 'Abschluss vollständig', 'Archiviert', 'Verschoben', 'Abgesagt'];
+  const documentKinds = ['Einladung', 'Angebot', 'Auftragsbestätigung', 'Teilnehmerliste', 'Anwesenheitsliste', 'Schulungsunterlagen', 'Zertifikate', 'Rechnung', 'sonstige Dokumente'];
 
   const fieldLabel = (text, required) => (
     <label style={{ display: 'block', fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--fg-3)', marginBottom: 5 }}>
@@ -421,7 +559,7 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(20,20,19,0.5)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 34 }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: 760, borderRadius: 16, background: 'var(--color-ivory)', boxShadow: '0 20px 80px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', animation: 'fadeInScale 180ms cubic-bezier(0.4,0,0.2,1)', maxHeight: '88vh', overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: 'min(980px, 96vw)', borderRadius: 16, background: 'var(--color-ivory)', boxShadow: '0 20px 80px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', animation: 'fadeInScale 180ms cubic-bezier(0.4,0,0.2,1)', maxHeight: '88vh', overflowY: 'auto' }}>
         <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid var(--border-1)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--color-near-black)', color: '#fff' }}>
           <div>
             <div style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 500 }}>Termin eintragen</div>
@@ -484,7 +622,12 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
 
             {form.type === 'schulung' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div style={{ marginBottom: 16 }} />
+                <div style={{ marginBottom: 16 }}>
+                  {fieldLabel('Firma')}
+                  <select value={form.company} onChange={e => set('company', e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
+                    {companies.map(company => <option key={company}>{company}</option>)}
+                  </select>
+                </div>
                 <div style={{ marginBottom: 16 }}>
                   {fieldLabel('Anbieter aus Liste')}
                   <select value={selectedProviderId} onChange={e => set('provider', e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
@@ -494,6 +637,12 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
                 </div>
               </div>
             )}
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+              <div>{fieldLabel('Verantwortlich')}<select value={form.responsible} onChange={e => set('responsible', e.target.value)} style={{ ...inp, cursor: 'pointer' }}>{responsibleOptions.map(item => <option key={item}>{item}</option>)}</select></div>
+              <div>{fieldLabel('Max. Teilnehmerzahl')}<input type="number" value={form.maxParticipants} onChange={e => set('maxParticipants', e.target.value)} style={inp} /></div>
+              <div>{fieldLabel('Anmeldefrist')}<input type="date" value={form.registrationDeadline} onChange={e => set('registrationDeadline', e.target.value)} style={inp} /></div>
+            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
               <div>
@@ -523,13 +672,20 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
                 <input value={form.location} onChange={e => set('location', e.target.value)} placeholder="z. B. Nordhorn, Schulungsraum B" style={inp} />
               </div>
               <div>
+                {fieldLabel('Raum / Treffpunkt')}
+                <input value={form.room} onChange={e => set('room', e.target.value)} placeholder="z. B. Schulungsraum B, Treffpunkt Lager" style={inp} />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+              <div>
+                {fieldLabel('Referent / Ausbilder')}
+                <input value={form.trainer} onChange={e => set('trainer', e.target.value)} placeholder="z. B. Herr Mueller oder wird vom Anbieter gestellt" style={inp} />
+              </div>
+              <div>
                 {fieldLabel('Status')}
                 <select value={form.status} onChange={e => set('status', e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
-                  <option value="geplant">Geplant</option>
-                  <option value="angemeldet">Angemeldet</option>
-                  <option value="bestaetigt">Bestaetigt</option>
-                  <option value="abgeschlossen">Abgeschlossen</option>
-                  <option value="abgesagt">Abgesagt</option>
+                  {appointmentStatuses.map(status => <option key={status} value={status}>{status}</option>)}
                 </select>
               </div>
             </div>
@@ -537,7 +693,7 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 10 }}>
                 <label style={{ display:'flex', alignItems:'center', gap:8, fontSize: 13, fontWeight: 700, color: 'var(--fg-2)' }}>Teilnehmer <span style={{ color:'var(--color-accent)' }}>*</span></label>
-                <span className="small muted">{form.participants.length} ausgewaehlt</span>
+                <span className="small muted">{form.participants.length} von {form.maxParticipants || 0} Teilnehmern ausgewaehlt</span>
               </div>
 
               <div style={{ border: '1px solid ' + (participantPickerOpen ? '#26324a' : 'var(--border-1)'), borderRadius: 2, background: 'var(--color-white)', overflow: 'hidden', marginBottom: 10, boxShadow: participantPickerOpen ? '0 0 0 1px #26324a' : 'none' }}>
@@ -580,16 +736,20 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
 
               {selectedParticipants.length > 0 && (
                 <div style={{ border: '1px solid var(--border-1)', borderRadius: 8, background: 'var(--color-white)', overflow: 'hidden' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 180px', gap: 12, padding: '8px 10px', background: 'var(--color-parchment)', fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: 'var(--fg-3)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 170px 180px', gap: 12, padding: '8px 10px', background: 'var(--color-parchment)', fontSize: 11, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', color: 'var(--fg-3)' }}>
                     <span>Ausgewaehlte Teilnehmer</span>
+                    <span>Teilnehmerstatus</span>
                     <span>Freigabe fuer Mitarbeiter</span>
                   </div>
                   {selectedParticipants.map(emp => (
-                    <div key={emp.id} style={{ display: 'grid', gridTemplateColumns: '1fr 180px', gap: 12, alignItems: 'center', padding: '9px 10px', borderTop: '1px solid var(--border-1)' }}>
+                    <div key={emp.id} style={{ display: 'grid', gridTemplateColumns: '1fr 170px 180px', gap: 12, alignItems: 'center', padding: '9px 10px', borderTop: '1px solid var(--border-1)' }}>
                       <div>
                         <strong>{emp.firstName} {emp.lastName}</strong>
                         <div className="small muted">{emp.company} · {emp.position}</div>
                       </div>
+                      <select value={form.participantStatus?.[emp.id] || 'Vorgemerkt'} onChange={e => setParticipantStatus(emp.id, e.target.value)} style={{ ...inp, padding:'6px 8px' }}>
+                        {participantStatuses.map(status => <option key={status}>{status}</option>)}
+                      </select>
                       <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                         <input type="checkbox" checked={!!form.participantRelease?.[emp.id]} onChange={e => setParticipantRelease(emp.id, e.target.checked)} style={{ accentColor: 'var(--color-green)' }} />
                         Freigeben
@@ -604,6 +764,7 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
               {[
                 ['hotel', 'Hotelbuchung'],
                 ['academyConfirmed', 'Anmeldung bestaetigt von Akademie'],
+                ['billingReceived', 'Rechnung erhalten'],
                 ['billingPaid', 'Rechnung bezahlt'],
               ].map(([key, label]) => (
                 <div key={key} style={{ padding: 12, borderRadius: 10, background: 'var(--color-parchment)', border: '1px solid var(--border-1)' }}>
@@ -615,6 +776,26 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
               ))}
             </div>
 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 16 }}>
+              <div>{fieldLabel('Kosten pro Person')}<input value={form.costPerPerson} onChange={e => set('costPerPerson', e.target.value)} placeholder="z. B. 120 EUR" style={inp} /></div>
+              <div>{fieldLabel('Gesamtkosten')}<input value={form.totalCost} onChange={e => set('totalCost', e.target.value)} placeholder="z. B. 1.440 EUR" style={inp} /></div>
+              <div>{fieldLabel('Wiederholungsintervall')}<select value={form.repeatInterval} onChange={e => set('repeatInterval', e.target.value)} style={{ ...inp, cursor:'pointer' }}>{['jaehrlich','alle 2 Jahre','alle 3 Jahre','alle 4 Jahre','alle 5 Jahre','alle 10 Jahre'].map(item => <option key={item}>{item}</option>)}</select></div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+              <div>{fieldLabel('Gueltigkeit des Nachweises')}<input value={form.validity} onChange={e => set('validity', e.target.value)} placeholder="z. B. 24 Monate" style={inp} /></div>
+              <div>{fieldLabel('Naechste Wiederholung')}<input type="date" value={form.nextRepeat} onChange={e => set('nextRepeat', e.target.value)} style={inp} /></div>
+            </div>
+
+            {['Durchgefuehrt', 'Durchgeführt', 'Abschluss unvollstaendig', 'Abschluss unvollständig', 'Abschluss vollstaendig', 'Abschluss vollständig', 'Archiviert'].includes(form.status) && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16, padding:12, border:'1px solid var(--border-1)', borderRadius:10, background:'var(--color-parchment)' }}>
+                <div>{fieldLabel('Zertifikate erhalten')}<select value={form.certificatesReceived} onChange={e => set('certificatesReceived', e.target.value)} style={{ ...inp, cursor:'pointer' }}>{triState.map(([val, text]) => <option key={val} value={val}>{text}</option>)}</select></div>
+                <div>{fieldLabel('Zertifikate hochgeladen')}<select value={form.certificatesUploaded} onChange={e => set('certificatesUploaded', e.target.value)} style={{ ...inp, cursor:'pointer' }}>{triState.map(([val, text]) => <option key={val} value={val}>{text}</option>)}</select></div>
+                <div>{fieldLabel('Sicherheitspass-Aufkleber')}<select value={form.passportSticker} onChange={e => set('passportSticker', e.target.value)} style={{ ...inp, cursor:'pointer' }}>{triState.map(([val, text]) => <option key={val} value={val}>{text}</option>)}</select></div>
+                <div style={{ gridColumn:'1/-1' }}>{fieldLabel('Bemerkung zur Durchfuehrung')}<input value={form.completionNote} onChange={e => set('completionNote', e.target.value)} style={inp} /></div>
+              </div>
+            )}
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, marginBottom: 16 }}>
               <div>
                 {fieldLabel('Notiz')}
@@ -625,15 +806,20 @@ function NewEventModal({ onClose, selectedTraining, selectedInstruction, selecte
             <div style={{ marginBottom: 20, padding: 12, borderRadius: 10, background: 'var(--color-white)', border: '1px solid var(--border-1)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', color: 'var(--fg-3)' }}>Dokumente</label>
-                <button onClick={addDocument} type="button" className="btn btn--ghost" style={{ padding: '6px 10px', fontSize: 12 }}>
-                  <Icon name="plus" size={13} /> Dokument anlegen
-                </button>
+                <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+                  <select value={form.documentKind} onChange={e => set('documentKind', e.target.value)} style={{ ...inp, width:190, padding:'6px 8px' }}>
+                    {documentKinds.map(kind => <option key={kind}>{kind}</option>)}
+                  </select>
+                  <button onClick={addDocument} type="button" className="btn btn--ghost" style={{ padding: '6px 10px', fontSize: 12 }}>
+                    <Icon name="plus" size={13} /> Dokument anlegen
+                  </button>
+                </div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {form.documents.map((doc, idx) => (
                   <span key={doc + idx} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '7px 10px', borderRadius: 999, background: '#c7eff0', color: '#08787b', fontWeight: 600, maxWidth: 230 }}>
                     <button type="button" title="Vorschau" style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 0 }}><Icon name="eye" size={13} /></button>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc}</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{typeof doc === 'string' ? doc : `${doc.type}: ${doc.name}`}</span>
                     <button type="button" title="Entfernen" onClick={() => removeDocument(idx)} style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer', padding: 0, fontSize: 18, lineHeight: 1 }}>x</button>
                   </span>
                 ))}

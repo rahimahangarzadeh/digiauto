@@ -16,9 +16,9 @@ function BauleiterbesprechungView() {
       agenda:'Baustellenstart Kanalsanierung, Personalplanung, Verkehrssicherung',
       responsible:['e1001','e-me'],
       tasks:[
-        { id:'t1', text:'MVAS-Beschilderung fuer Kanalsanierung pruefen', owner:['e-me'], due:'2026-05-11', status:'offen' },
-        { id:'t2', text:'SCC 017 fuer Bauleiter-Team nachplanen', owner:['e1002'], due:'2026-05-18', status:'offen' },
-        { id:'t3', text:'Materialliste Schachtbau freigeben', owner:['e1003'], due:'2026-05-06', status:'erledigt' },
+        { id:'t1', text:'MVAS-Beschilderung für Kanalsanierung prüfen', description:'Verkehrssicherung vor Baustellenstart prüfen und Nachweis ablegen.', owner:['e-me','e1002','e1001'], mainOwner:'e-me', due:'2026-05-11', priority:'Hoch', status:'offen', agenda:'Verkehrssicherung', comment:'Beschilderungsplan mit Polier abstimmen.', file:'MVAS_Pruefung_Kanalsanierung.pdf' },
+        { id:'t2', text:'SCC 017 für Bauleiter-Team nachplanen', owner:['e1002','e1004'], mainOwner:'e1002', due:'2026-05-18', priority:'Normal', status:'rueckfrage', agenda:'Personalplanung' },
+        { id:'t3', text:'Materialliste Schachtbau freigeben', owner:['e1003'], mainOwner:'e1003', due:'2026-05-06', priority:'Normal', status:'erledigt', completedAt:'2026-05-06', completedBy:'e1003' },
       ],
       assigned:['e-me','e1002'],
       deadline:'2026-05-11',
@@ -37,9 +37,9 @@ function BauleiterbesprechungView() {
       agenda:'Offene Punkte aus 04.05.2026, Nachschulung SCC, Personal Engpass Rohrbau',
       responsible:['e1001','e1004'],
       tasks:[
-        { id:'t4', text:'MVAS-Beschilderung fuer Kanalsanierung pruefen', owner:['e-me'], due:'2026-05-18', status:'erledigt', carried:true },
-        { id:'t5', text:'SCC 017 fuer Bauleiter-Team nachplanen', owner:['e1002'], due:'2026-05-24', status:'offen', carried:true },
-        { id:'t6', text:'Ersatzpersonal fuer Rohrbau KW 22 klaeren', owner:['e1004'], due:'2026-05-22', status:'offen' },
+        { id:'t4', text:'MVAS-Beschilderung für Kanalsanierung prüfen', owner:['e-me','e1002'], mainOwner:'e-me', due:'2026-05-18', priority:'Hoch', status:'erledigt', completedAt:'2026-05-18', completedBy:'e-me', carried:true },
+        { id:'t5', text:'SCC 017 für Bauleiter-Team nachplanen', owner:['e1002'], mainOwner:'e1002', due:'2026-05-24', priority:'Normal', status:'offen', carried:true },
+        { id:'t6', text:'Ersatzpersonal für Rohrbau KW 22 klären', owner:['e1004','e1005'], mainOwner:'e1004', due:'2026-05-22', priority:'Kritisch', status:'in_bearbeitung' },
       ],
       assigned:['e1002','e1004'],
       deadline:'2026-05-24',
@@ -58,9 +58,9 @@ function BauleiterbesprechungView() {
       agenda:'Offene Punkte aus 18.05.2026, Einsatzplanung Juni, BGBAU Aushang',
       responsible:['e1002','e1004','e1006'],
       tasks:[
-        { id:'t7', text:'SCC 017 fuer Bauleiter-Team nachplanen', owner:['e1002'], due:'2026-06-07', status:'offen', carried:true },
-        { id:'t8', text:'Ersatzpersonal fuer Rohrbau KW 22 klaeren', owner:['e1004'], due:'2026-06-03', status:'offen', carried:true },
-        { id:'t9', text:'BGBAU-Aushang fuer neue Baustelle hochladen', owner:['e1006'], due:'2026-06-05', status:'offen' },
+        { id:'t7', text:'SCC 017 für Bauleiter-Team nachplanen', owner:['e1002'], mainOwner:'e1002', due:'2026-06-07', priority:'Normal', status:'offen', carried:true },
+        { id:'t8', text:'Ersatzpersonal für Rohrbau KW 22 klären', owner:['e1004'], mainOwner:'e1004', due:'2026-06-03', priority:'Hoch', status:'verschoben', carried:true },
+        { id:'t9', text:'BGBAU-Aushang für neue Baustelle hochladen', owner:['e1006','e-me'], mainOwner:'e1006', due:'2026-06-05', priority:'Normal', status:'offen' },
       ],
       assigned:['e1002','e1004','e1006'],
       deadline:'2026-06-07',
@@ -77,6 +77,9 @@ function BauleiterbesprechungView() {
   const [selectedId, setSelectedId] = React.useState(null);
   const [viewMode, setViewMode] = React.useState('list');
   const [calendarView, setCalendarView] = React.useState('month');
+  const [taskDialogOpen, setTaskDialogOpen] = React.useState(false);
+  const [taskView, setTaskView] = React.useState('table');
+  const [taskStatusFilter, setTaskStatusFilter] = React.useState('all');
   const selected = meetings.find(item => item.id === selectedId) || null;
 
   React.useEffect(() => {
@@ -91,6 +94,20 @@ function BauleiterbesprechungView() {
   const personName = (id) => people.find(p => p.id === id)?.name || id;
   const names = (ids) => (ids || []).map(personName).join(', ') || '-';
   const openTasks = (meeting) => (meeting.tasks || []).filter(task => task.status !== 'erledigt');
+  const taskStatuses = ['offen', 'in_bearbeitung', 'rueckfrage', 'erledigt', 'ueberfaellig', 'verschoben'];
+  const taskPriorities = ['Niedrig', 'Normal', 'Hoch', 'Kritisch'];
+  const taskStatusLabel = status => ({
+    offen:'Offen',
+    in_bearbeitung:'In Bearbeitung',
+    rueckfrage:'Rückfrage',
+    erledigt:'Erledigt',
+    ueberfaellig:'Überfällig',
+    verschoben:'Verschoben',
+  }[status] || status || 'Offen');
+  const taskMainOwner = task => task.mainOwner || task.owner?.[0] || '';
+  const taskSupporters = task => task.supporters || task.owner?.filter(id => id !== taskMainOwner(task)) || [];
+  const isTaskOverdue = task => task.due && task.due < window.SEED.today && (task.status || 'offen') !== 'erledigt';
+  const visibleTasks = selected ? (selected.tasks || []).filter(task => taskStatusFilter === 'all' || (taskStatusFilter === 'ueberfaellig' ? isTaskOverdue(task) : (task.status || 'offen') === taskStatusFilter)) : [];
   const calendarBaseDate = meetings[0]?.date || window.SEED.today;
   const calendarBase = new Date(calendarBaseDate + 'T00:00:00');
   const calendarIso = date => date.toISOString().slice(0, 10);
@@ -152,13 +169,12 @@ function BauleiterbesprechungView() {
     if (!selected) return;
     updateSelected({ tasks:selected.tasks.map(task => task.id === taskId ? { ...task, ...patch } : task) });
   };
-  const addTask = () => {
+  const addTask = (task) => {
     if (!selected) return;
-    const text = window.prompt('Neue Aufgabe / offener Punkt');
-    if (!text) return;
     updateSelected({
-      tasks:[...selected.tasks, { id:'t' + Date.now(), text, owner:[], due:selected.nextDate || selected.deadline, status:'offen' }],
+      tasks:[...selected.tasks, { id:'t' + Date.now(), ...task }],
     });
+    setTaskDialogOpen(false);
   };
   const createNextMeeting = () => {
     if (!selected) {
@@ -180,9 +196,7 @@ function BauleiterbesprechungView() {
       participants:selected.participants,
       leaders:selected.leaders,
       agenda:'Offene Punkte aus ' + fmt(selected.date),
-      responsible:selected.responsible,
       tasks:carried,
-      assigned:selected.assigned,
       deadline:selected.nextDate || '',
       conclusions:'',
       nextDate:'',
@@ -270,6 +284,51 @@ function BauleiterbesprechungView() {
       )}
     </label>
   );
+  const TaskCreateDialog = ({ onClose, onSave }) => {
+    const [draft, setDraft] = React.useState({
+      text:'MVAS-Beschilderung für Kanalsanierung prüfen',
+      description:'',
+      owner:['e-me','e1002','e1001'],
+      mainOwner:'e-me',
+      due:selected?.nextDate || selected?.deadline || '',
+      priority:'Hoch',
+      status:'offen',
+      agenda:selected?.agenda || '',
+      comment:'',
+      file:'',
+    });
+    const set = (key, value) => setDraft(current => ({ ...current, [key]:value }));
+    return <div className="meeting-task-dialog-backdrop" onClick={onClose}>
+      <section className="meeting-task-dialog" onClick={event => event.stopPropagation()}>
+        <header><div><span>Aufgabenverwaltung</span><h2>Neue Aufgabe</h2></div><button onClick={onClose}><Icon name="x" size={18} /></button></header>
+        <div className="meeting-task-dialog__grid">
+          <Field label="Aufgabenbezeichnung" value={draft.text} onChange={value => set('text', value)} wide />
+          <Field label="Beschreibung" value={draft.description} onChange={value => set('description', value)} wide textarea />
+          <MultiPeople label="Zuständige Personen" value={draft.owner} onChange={value => set('owner', value)} />
+          <label style={{ display:'grid', gap:6 }}>
+            <span className="form-label">Hauptverantwortlicher</span>
+            <select value={draft.mainOwner} onChange={event => set('mainOwner', event.target.value)} style={{ minHeight:40, border:'1px solid var(--border-1)', borderRadius:8, padding:'0 12px', background:'var(--color-white)', font:'inherit' }}>
+              <option value="">Bitte auswählen</option>
+              {draft.owner.map(id => <option key={id} value={id}>{personName(id)}</option>)}
+            </select>
+          </label>
+          <Field label="Fälligkeitsdatum" type="date" value={draft.due} onChange={value => set('due', value)} />
+          <label style={{ display:'grid', gap:6 }}>
+            <span className="form-label">Priorität</span>
+            <select value={draft.priority} onChange={event => set('priority', event.target.value)} style={{ minHeight:40, border:'1px solid var(--border-1)', borderRadius:8, padding:'0 12px', background:'var(--color-white)', font:'inherit' }}>{taskPriorities.map(priority => <option key={priority}>{priority}</option>)}</select>
+          </label>
+          <label style={{ display:'grid', gap:6 }}>
+            <span className="form-label">Status</span>
+            <select value={draft.status} onChange={event => set('status', event.target.value)} style={{ minHeight:40, border:'1px solid var(--border-1)', borderRadius:8, padding:'0 12px', background:'var(--color-white)', font:'inherit' }}>{taskStatuses.map(status => <option key={status} value={status}>{taskStatusLabel(status)}</option>)}</select>
+          </label>
+          <Field label="Zugehöriger Tagesordnungspunkt" value={draft.agenda} onChange={value => set('agenda', value)} />
+          <Field label="Kommentar" value={draft.comment} onChange={value => set('comment', value)} wide textarea />
+          <label className="meeting-task-upload"><span className="form-label">Datei oder Nachweis hochladen</span><div><Icon name="upload" size={16} /><strong>{draft.file || 'Datei hochladen'}</strong><small>PDF, JPG oder PNG</small><input type="file" onChange={event => set('file', event.target.files?.[0]?.name || '')} /></div></label>
+        </div>
+        <footer><button className="btn btn--ghost" onClick={onClose}>Abbrechen</button><button className="btn btn--primary" onClick={() => onSave({ ...draft, mainOwner:draft.mainOwner || draft.owner[0] || '', completedAt:draft.status === 'erledigt' ? window.SEED.today : '', completedBy:draft.status === 'erledigt' ? 'e-me' : '' })}>Aufgabe speichern</button></footer>
+      </section>
+    </div>;
+  };
 
   return (
     <div>
@@ -364,6 +423,50 @@ function BauleiterbesprechungView() {
         .meeting-detail-card { border:1px solid var(--border-1); border-radius:10px; background:var(--color-ivory); padding:18px; }
         .meeting-detail-form { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:14px; }
         .meeting-detail-tasks { display:grid; gap:8px; }
+        .meeting-task-toolbar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+        .meeting-task-toolbar h2 { margin:0; font-family:var(--font-serif); font-size:22px; font-weight:500; }
+        .meeting-task-tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+        .meeting-task-tools select { min-height:34px; border:1px solid var(--border-1); border-radius:7px; background:#fff; padding:0 10px; font:inherit; font-size:12px; }
+        .meeting-task-view { display:inline-flex; gap:2px; border:1px solid var(--border-1); border-radius:8px; background:#fff; padding:3px; }
+        .meeting-task-view button { min-height:28px; border:0; border-radius:6px; background:transparent; padding:0 9px; font:inherit; font-size:11px; font-weight:750; cursor:pointer; }
+        .meeting-task-view button.is-active { background:#111; color:#fff; }
+        .meeting-task-table-wrap { overflow:auto; border:1px solid var(--border-1); border-radius:8px; background:#fff; }
+        .meeting-task-table { width:100%; min-width:820px; border-collapse:collapse; }
+        .meeting-task-table th { height:38px; background:#f7f6f2; border-bottom:1px solid var(--border-1); padding:0 10px; text-align:left; color:var(--fg-3); font-size:10px; text-transform:uppercase; letter-spacing:.04em; }
+        .meeting-task-table td { border-bottom:1px solid var(--border-1); padding:10px; color:var(--fg-2); font-size:12px; vertical-align:top; }
+        .meeting-task-table tr:last-child td { border-bottom:0; }
+        .meeting-task-table strong { color:var(--fg-1); }
+        .meeting-task-table small { display:block; margin-top:3px; color:var(--fg-3); }
+        .meeting-task-table tr.is-overdue td { background:#fff3f1; }
+        .meeting-task-status { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:4px 9px; font-size:11px; font-weight:800; white-space:nowrap; }
+        .meeting-task-status::before { content:""; width:6px; height:6px; border-radius:50%; background:currentColor; }
+        .meeting-task-status.is-offen { background:#fff7df; color:#9a6b12; }
+        .meeting-task-status.is-in_bearbeitung { background:#e9f1ff; color:#2259a8; }
+        .meeting-task-status.is-rueckfrage { background:#f1e9ff; color:#6841a5; }
+        .meeting-task-status.is-erledigt { background:#e7f5ed; color:#2f7a45; }
+        .meeting-task-status.is-ueberfaellig { background:#fde7e4; color:#a13232; }
+        .meeting-task-status.is-verschoben { background:#efede8; color:#6d6760; }
+        .meeting-task-cards { display:grid; gap:10px; }
+        .meeting-task-card { border:1px solid var(--border-1); border-radius:10px; background:#fff; padding:12px; display:grid; gap:9px; }
+        .meeting-task-card.is-carried { background:#fff8e4; }
+        .meeting-task-card.is-overdue { border-color:#efcbc5; background:#fff3f1; }
+        .meeting-task-card header { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+        .meeting-task-card h3 { margin:0; font-size:14px; }
+        .meeting-task-meta { display:flex; flex-wrap:wrap; gap:8px; color:var(--fg-3); font-size:11px; }
+        .meeting-task-dialog-backdrop { position:fixed; inset:0; z-index:2500; display:grid; place-items:center; background:rgba(24,22,20,.36); padding:22px; }
+        .meeting-task-dialog { width:min(820px,96vw); max-height:92vh; display:grid; grid-template-rows:auto minmax(0,1fr) auto; overflow:hidden; border:1px solid var(--border-1); border-radius:10px; background:#fbfaf6; box-shadow:0 24px 80px rgba(20,18,16,.22); }
+        .meeting-task-dialog > header { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; padding:22px 24px 16px; border-bottom:1px solid var(--border-1); background:#111; color:#fff; }
+        .meeting-task-dialog > header span { color:#b8c1c9; font-size:11px; font-weight:750; text-transform:uppercase; letter-spacing:.04em; }
+        .meeting-task-dialog > header h2 { margin:6px 0 0; font-family:var(--font-serif); font-size:29px; font-weight:500; }
+        .meeting-task-dialog > header button { width:34px; height:34px; border:0; border-radius:50%; background:transparent; color:#fff; cursor:pointer; }
+        .meeting-task-dialog__grid { min-height:0; overflow:auto; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; padding:20px 24px; }
+        .meeting-task-dialog__grid label[style*="1 / -1"], .meeting-task-upload { grid-column:1 / -1; }
+        .meeting-task-upload { display:grid; gap:6px; }
+        .meeting-task-upload > div { min-height:68px; position:relative; display:grid; grid-template-columns:34px minmax(0,1fr); align-items:center; gap:10px; border:1px dashed #d8c7c1; border-radius:8px; background:#fff; padding:12px; cursor:pointer; }
+        .meeting-task-upload small { display:block; margin-top:3px; color:var(--fg-3); font-size:11px; font-weight:500; }
+        .meeting-task-upload input { position:absolute; inset:0; opacity:0; cursor:pointer; }
+        .meeting-task-dialog > footer { display:flex; justify-content:flex-end; gap:10px; padding:14px 24px; border-top:1px solid var(--border-1); background:#fff; }
+        @media(max-width:980px){ .meeting-detail-body{grid-template-columns:1fr}.meeting-task-dialog__grid{grid-template-columns:1fr} }
       `}</style>
       {selected ? (
         <div className="meeting-detail-page">
@@ -381,39 +484,58 @@ function BauleiterbesprechungView() {
                 <Field label="Datum" type="date" value={selected.date} onChange={value => updateSelected({ date:value })} />
                 <Field label="Beginn" type="time" value={selected.start || selected.time || ''} onChange={value => updateSelected({ start:value })} />
                 <Field label="Ende" type="time" value={selected.end || ''} onChange={value => updateSelected({ end:value })} />
-                <Field label="Termin" type="date" value={selected.deadline} onChange={value => updateSelected({ deadline:value })} />
                 <Field label="Naechster Termin" type="date" value={selected.nextDate} onChange={value => updateSelected({ nextDate:value })} />
                 <MultiPeople label="Teilnehmer" value={selected.participants} onChange={value => updateSelected({ participants:value })} />
                 <MultiPeople label="Besprechungsleiter" value={selected.leaders} onChange={value => updateSelected({ leaders:value })} />
-                <MultiPeople label="Verantwortlich" value={selected.responsible} onChange={value => updateSelected({ responsible:value })} />
-                <MultiPeople label="Zustaendige Person" value={selected.assigned} onChange={value => updateSelected({ assigned:value })} />
                 <Field label="Tagungsordnungspunkt" value={selected.agenda} onChange={value => updateSelected({ agenda:value })} wide textarea />
-                <Field label="Schlussfolgerungen" value={selected.conclusions} onChange={value => updateSelected({ conclusions:value })} wide textarea />
                 <Field label="Beschreibung" value={selected.description} onChange={value => updateSelected({ description:value })} wide textarea />
               </div>
             </section>
 
             <section className="meeting-detail-card">
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-                <h2 style={{ margin:0, fontFamily:'var(--font-serif)', fontSize:22, fontWeight:500 }}>Aufgaben / offene Punkte</h2>
-                <button className="btn btn--ghost" onClick={addTask}><Icon name="plus" size={14} />Aufgabe</button>
-              </div>
-              <div className="meeting-detail-tasks">
-                {selected.tasks.map(task => (
-                  <div key={task.id} style={{ border:'1px solid var(--border-1)', borderRadius:10, padding:10, background:task.carried ? '#fff8e4' : 'var(--color-white)' }}>
-                    <label style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
-                      <input type="checkbox" checked={task.status === 'erledigt'} onChange={event => updateTask(task.id, { status:event.target.checked ? 'erledigt' : 'offen' })} />
-                      <span style={{ display:'grid', gap:4 }}>
-                        <strong>{task.text}</strong>
-                        <span className="small muted">{task.carried ? 'Aus vorherigem Termin uebernommen - ' : ''}Zustaendig: {names(task.owner)} - Termin: {fmt(task.due)}</span>
-                      </span>
-                    </label>
+              <div className="meeting-task-toolbar">
+                <h2>Aufgaben / offene Punkte</h2>
+                <div className="meeting-task-tools">
+                  <select value={taskStatusFilter} onChange={event => setTaskStatusFilter(event.target.value)}>
+                    <option value="all">Alle Status</option>
+                    {taskStatuses.map(status => <option key={status} value={status}>{taskStatusLabel(status)}</option>)}
+                  </select>
+                  <div className="meeting-task-view">
+                    <button className={taskView === 'table' ? 'is-active' : ''} onClick={() => setTaskView('table')}>Tabelle</button>
+                    <button className={taskView === 'cards' ? 'is-active' : ''} onClick={() => setTaskView('cards')}>Karten</button>
                   </div>
-                ))}
-                {!selected.tasks.length && <div className="small muted">Keine Aufgaben hinterlegt.</div>}
+                  <button className="btn btn--ghost" onClick={() => setTaskDialogOpen(true)}><Icon name="plus" size={14} />Aufgabe</button>
+                </div>
               </div>
+              {taskView === 'table' ? <div className="meeting-task-table-wrap"><table className="meeting-task-table">
+                <thead><tr><th>Status</th><th>Aufgabe</th><th>Hauptverantwortlicher</th><th>Weitere Personen</th><th>Termin</th><th>Priorität</th></tr></thead>
+                <tbody>{visibleTasks.map(task => {
+                  const status = task.status || 'offen';
+                  const isOverdue = isTaskOverdue(task);
+                  return <tr key={task.id} className={isOverdue ? 'is-overdue' : ''}>
+                    <td><label style={{ display:'flex', alignItems:'center', gap:8 }}><input type="checkbox" checked={status === 'erledigt'} onChange={event => updateTask(task.id, { status:event.target.checked ? 'erledigt' : 'offen', completedAt:event.target.checked ? window.SEED.today : '', completedBy:event.target.checked ? 'e-me' : '' })} /><span className={'meeting-task-status is-' + (isOverdue ? 'ueberfaellig' : status)}>{isOverdue ? 'Überfällig' : taskStatusLabel(status)}</span></label></td>
+                    <td><strong>{task.text}</strong><small>{task.description || task.comment || (task.carried ? 'Aus vorherigem Termin übernommen' : '')}</small></td>
+                    <td>{personName(taskMainOwner(task))}</td>
+                    <td>{names(taskSupporters(task))}</td>
+                    <td>{fmt(task.due)}</td>
+                    <td>{task.priority || 'Normal'}</td>
+                  </tr>;
+                })}</tbody>
+              </table></div> : <div className="meeting-task-cards">
+                {visibleTasks.map(task => {
+                  const status = task.status || 'offen';
+                  const isOverdue = isTaskOverdue(task);
+                  return <article key={task.id} className={'meeting-task-card' + (task.carried ? ' is-carried' : '') + (isOverdue ? ' is-overdue' : '')}>
+                    <header><h3>{task.text}</h3><span className={'meeting-task-status is-' + (isOverdue ? 'ueberfaellig' : status)}>{isOverdue ? 'Überfällig' : taskStatusLabel(status)}</span></header>
+                    <div className="meeting-task-meta"><span>Haupt: {personName(taskMainOwner(task))}</span><span>Weitere: {names(taskSupporters(task))}</span><span>Termin: {fmt(task.due)}</span><span>Priorität: {task.priority || 'Normal'}</span></div>
+                    {(task.description || task.comment) && <p className="small muted">{task.description || task.comment}</p>}
+                  </article>;
+                })}
+              </div>}
+              {!visibleTasks.length && <div className="meeting-cal__empty">Keine Aufgaben in dieser Ansicht.</div>}
             </section>
           </div>
+          {taskDialogOpen && <TaskCreateDialog onClose={() => setTaskDialogOpen(false)} onSave={addTask} />}
         </div>
       ) : (
       <>
@@ -532,9 +654,7 @@ function BauleiterbesprechungView() {
                 <th>Teilnehmer</th>
                 <th>Besprechungsleiter</th>
                 <th>Tagungsordnungspunkt</th>
-                <th>Verantwortlich</th>
                 <th>Aufgaben</th>
-                <th>Zustaendige Person</th>
                 <th>Termin</th>
                 <th>Schlussfolgerungen</th>
                 <th>Naechster Termin</th>
@@ -551,9 +671,7 @@ function BauleiterbesprechungView() {
                   <td>{meeting.participants.length} TN</td>
                   <td>{names(meeting.leaders)}</td>
                   <td>{meeting.agenda}</td>
-                  <td>{names(meeting.responsible)}</td>
                   <td><span className={'badge ' + (openTasks(meeting).length ? 'badge--warn' : 'badge--valid')}><span className="badge__dot" />{openTasks(meeting).length} offen</span></td>
-                  <td>{names(meeting.assigned)}</td>
                   <td>{fmt(meeting.deadline)}</td>
                   <td>{meeting.conclusions}</td>
                   <td>{fmt(meeting.nextDate)}</td>

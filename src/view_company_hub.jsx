@@ -415,14 +415,11 @@ function CompanyAccidentDetail({ row, onBack }) {
 
 function CompanyOrganizationPage({ company, onBack }) {
   const [showAllCompanies, setShowAllCompanies] = React.useState(false);
-  const [selected, setSelected] = React.useState(null);
   const OrgView = window.OrganigrammView;
-  if (selected) return <CompanyOrganizationDetail row={selected} onBack={() => setSelected(null)} />;
   return <div className="emp-full company-organization-page">
     <CompanyPageTitle title={`Organigramm (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} />
     <OrgView
       activeCompany={showAllCompanies ? 'all' : company.id}
-      onOpenDoc={setSelected}
       extraAction={showAllCompanies
         ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
         : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}

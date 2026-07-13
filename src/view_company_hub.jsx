@@ -364,29 +364,16 @@ function companySupervisorRows() {
 
 function CompanySupervisorsPage({ company, onBack }) {
   const [showAllCompanies, setShowAllCompanies] = React.useState(false);
-  const [selected, setSelected] = React.useState(null);
-  const rows = companySupervisorRows().filter(row => showAllCompanies || row.company === company.id);
-  if (selected) return <CompanySupervisorDetail row={selected} onBack={() => setSelected(null)} />;
-  const activeCount = rows.filter(row => row.status === 'Aktiv').length;
-  const preparingCount = rows.filter(row => row.status !== 'Aktiv').length;
   return <div className="emp-full company-supervisors-page">
-    <CompanyPageTitle title={`Fachaufsichten (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={showAllCompanies ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button> : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>} />
-    <div className="company-site-kpis">
-      <div className="company-site-kpi"><span>Fachaufsichten</span><strong>{rows.length}</strong><small>in Ansicht</small></div>
-      <div className="company-site-kpi"><span>Aktiv</span><strong style={{ color:'#3f7a4a' }}>{activeCount}</strong><small>freigegeben</small></div>
-      <div className="company-site-kpi"><span>In Vorbereitung</span><strong style={{ color:'#8a6a1f' }}>{preparingCount}</strong><small>offen</small></div>
-      <div className="company-site-kpi"><span>Dokumente</span><strong>{rows.length}</strong><small>hinterlegt</small></div>
-    </div>
-    <div className="fachaufsichten-grid company-supervisors-grid">
-      {rows.map(row => <article key={row.id} className="fachaufsicht-card company-supervisor-card" onClick={() => setSelected(row)}>
-        <div className="card-header"><h3 className="card-title">{row.name}</h3><span className={'badge ' + (row.status === 'Aktiv' ? 'badge--valid' : 'badge--warn')}>{row.status}</span></div>
-        <p className="card-description">{row.description}</p>
-        <div className="card-content"><div className="verantwortliche-list">
-          {row.people.map(person => <div key={person.name} className="person-item"><div className="person-name"><strong>{person.name}</strong></div><div className="zertifikate-tags">{person.certificates.map(cert => <span key={cert} className="tag">{cert}</span>)}</div></div>)}
-        </div></div>
-        <div className="card-footer"><span className="person-count">{row.people.length} {row.people.length === 1 ? 'Person' : 'Personen'}</span><span className="click-hint">→</span></div>
-      </article>)}
-    </div>
+    <FachaufsichtenView
+      activeCompany={showAllCompanies ? 'all' : company.id}
+      title={`Fachaufsichten (${showAllCompanies ? 'Alle Firmen' : company.name})`}
+      subtitle="Fachaufsichten, Personen, Nachweise und Gültigkeiten für die ausgewählte Firma."
+      onBack={onBack}
+      extraAction={showAllCompanies
+        ? <button className="btn btn--ghost" onClick={() => setShowAllCompanies(false)}><Icon name="building" size={14} />{company.name}</button>
+        : <button className="btn btn--ghost" onClick={() => setShowAllCompanies(true)}><Icon name="building" size={14} />Alle Firmen</button>}
+    />
   </div>;
 }
 

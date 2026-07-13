@@ -1,486 +1,509 @@
-﻿function BefaehigtePersonenView({ activeCompany }) {
-  const employees = window.SEED.employees
-    .filter(e => e.status === 'aktiv')
-    .filter(e => activeCompany === 'all' || e.company === activeCompany);
-  const allEmployees = window.SEED.employees.filter(e => e.status === 'aktiv');
-  const emp = id => allEmployees.find(e => e.id === id) || allEmployees[0];
-  const today = new Date(window.SEED.today || '2026-04-21');
-  const areas = [
-    'Erdbaumaschinen',
-    'Verbaugeräte',
-    'Straßenbaumaschinen',
-    'Gleisbaumaschinen',
-    'Rammen und Bohrgeräte',
-    'Fahrzeuge',
-    'Hubarbeitsbühnen',
-    'schwimmende Geräte incl. Maschinenanl.',
-    'Flurförderzeuge / Gabelstapler',
-    'Teleskoplader /-stapler',
-    'elektrische Anlagen und Betriebsmittel',
-    'Lastaufnahmeeinrichtungen',
-    'Personenaufnahmemittel (PAM)',
-    'Gerüste',
-    'Leitern',
-    'PSA gegen Absturz',
-    'Holzbearbeitungsmaschinen',
-    'Kleinmaschinen / -geräte',
+function BefaehigtePersonenView({ activeCompany = 'all', title = 'Befähigte Personen', onBack = null }) {
+  const companies = window.SEED?.companies || [];
+  const allEmployees = (window.SEED?.employees || []).filter(employee => employee.status === 'aktiv');
+  const today = new Date(window.SEED?.today || '2026-04-21');
+  const employeeById = id => allEmployees.find(employee => employee.id === id) || allEmployees[0] || {};
+  const companyById = id => companies.find(company => company.id === id) || {};
+  const companyName = id => companyById(id).name || id || '-';
+  const companyOptions = activeCompany === 'all' ? companies : companies.filter(company => company.id === activeCompany);
+  const employeeOptions = allEmployees.filter(employee => activeCompany === 'all' || employee.company === activeCompany);
+  const workAreas = [
+    'Leitern und Tritte', 'Gerüste', 'Anschlagmittel', 'Hebezeuge', 'Erdbaumaschinen',
+    'Straßenbaumaschinen', 'Kleingeräte', 'elektrische Betriebsmittel', 'Druckgeräte',
+    'Fahrzeuge', 'Verbaugeräte', 'persönliche Schutzausrüstung', 'weitere Arbeitsmittel',
   ];
-  const areaLabelMap = {
-    Verbaugeraete: 'Verbaugeräte',
-    Strassenbaumaschinen: 'Straßenbaumaschinen',
-    'Rammen und Bohrgeraete': 'Rammen und Bohrgeräte',
-    Hubarbeitsbuehnen: 'Hubarbeitsbühnen',
-    'Schwimmende Geraete inkl. Maschinenanlagen': 'schwimmende Geräte incl. Maschinenanl.',
-    'Flurfoerderzeuge / Gabelstapler': 'Flurförderzeuge / Gabelstapler',
-    'Teleskoplader / -stapler': 'Teleskoplader /-stapler',
-    'Elektrische Anlagen und Betriebsmittel': 'elektrische Anlagen und Betriebsmittel',
-    Gerueste: 'Gerüste',
-    'Kleinmaschinen / -geraete': 'Kleinmaschinen / -geräte',
+  const statuses = ['Entwurf', 'In Prüfung', 'Gültig', 'Läuft bald ab', 'Abgelaufen', 'Widerrufen', 'Nachweis fehlt', 'Archiviert'];
+  const releaseOptions = ['sichtbar', 'nicht sichtbar', 'nur für Führungskräfte', 'nur für ausgewählte Personen'];
+
+  const seedRows = () => {
+    const pick = index => employeeOptions[index % Math.max(employeeOptions.length, 1)] || allEmployees[index % Math.max(allEmployees.length, 1)] || {};
+    return [
+      makeQualifiedRow('bp-1', pick(0), 'Leitern und Tritte', 'Beauftragung zur Prüfung von Leitern und Tritten', '2025-02-01', '2027-02-01', 'Sabine Janning', 'Dirk Jürgens', 'BP_Leitern_Markus_Brinker.pdf', 'Sichtprüfung auf Baustellen.'),
+      makeQualifiedRow('bp-2', pick(2), 'Gerüste', 'Befähigte Person für Gerüstfreigabe', '2025-05-12', '2027-05-12', 'Michael Janning', 'Alexander Petersen', 'BP_Gerueste_Dirk_Juergens.pdf', 'Kontrolle und Dokumentation Gerüstfreigabe.'),
+      makeQualifiedRow('bp-3', pick(3), 'persönliche Schutzausrüstung', 'Prüfung PSA gegen Absturz', '2024-11-20', '2026-11-20', 'QSGU', 'Ralf Kowalski', 'BP_PSAgA_Tobias_Nowak.pdf', 'Kontrolle von PSA und Rettungssets.'),
+      makeQualifiedRow('bp-4', pick(4), 'elektrische Betriebsmittel', 'Befähigte Person nach DGUV V3', '2024-04-01', '2026-03-31', 'QSGU', '', 'BP_Elektro_Ralf_Kowalski.pdf', 'DGUV V3 Sicht- und Funktionsprüfung.'),
+      makeQualifiedRow('bp-5', pick(5), 'Fahrzeuge', 'Fuhrpark-Prüfung', '2024-06-01', '2026-06-20', 'Fuhrpark', 'Maik Wiegmann', '', 'Beauftragungsdokument fehlt.'),
+      makeQualifiedRow('bp-6', pick(6), 'Erdbaumaschinen', 'Befähigte Person für Baumaschinenprüfung', '2023-03-10', '2026-03-10', 'Michael Janning', 'Thomas Lange', 'BP_Erdbaumaschinen_Thomas_Lange.pdf', 'Beauftragung abgelaufen, Nachweis erneuern.'),
+    ];
   };
-  const normalizeArea = value => areaLabelMap[value] || value;
-  const areaList = value => Array.isArray(value)
-    ? value.map(normalizeArea).filter(Boolean)
-    : String(value || '').split(',').map(item => normalizeArea(item.trim())).filter(Boolean);
-  const areaText = value => areaList(value).join(', ');
-  const normalizeRows = list => list.map(row => ({ ...row, area: areaList(row.area) }));
-  const make = (id, empIndex, area, validFrom, validUntil, responsible, document, note) => {
-    const person = allEmployees[empIndex % allEmployees.length];
-    return {
-      id,
-      employeeId: person.id,
-      company: window.company(person.company)?.name || person.company,
-      area,
-      authorization: 'Beauftragung zur Pruefung befaehigte Person',
-      validFrom,
-      validUntil,
-      responsible,
-      document,
-      note,
-      releasedToEmployee: false,
-    };
-  };
-  const initialRows = [
-    make('bp-1', 0, 'Leitern', '2025-02-01', '2027-02-01', 'Sabine Janning', 'BP_Leitern_Markus_Brinker.pdf', 'Pruefung von Leitern und Tritten auf Baustellen.'),
-    make('bp-2', 2, 'Gerüste', '2025-05-12', '2027-05-12', 'Michael Janning', 'BP_Gerueste_Dirk_Juergens.pdf', 'Sichtpruefung und Dokumentation Geruestfreigabe.'),
-    make('bp-3', 3, 'PSA gegen Absturz', '2024-11-20', '2026-11-20', 'QSGU', 'BP_PSAgA_Tobias_Nowak.pdf', 'Kontrolle von PSA gegen Absturz und Rettungssets.'),
-    make('bp-4', 4, 'Elektrische Anlagen und Betriebsmittel', '2024-04-01', '2026-03-31', 'QSGU', 'BP_Elektro_Ralf_Kowalski.pdf', 'DGUV V3 Sicht- und Funktionspruefung, bald neu beauftragen.'),
-    make('bp-5', 5, 'Flurförderzeuge / Gabelstapler', '2025-09-15', '2027-09-15', 'Sabine Janning', 'BP_Stapler_Maik_Wiegmann.pdf', 'Pruefung Anbaugeraete und Staplerzubehoer.'),
-    make('bp-6', 6, 'Erdbaumaschinen', '2023-03-10', '2026-03-10', 'Michael Janning', 'BP_Erdbaumaschinen_Thomas_Lange.pdf', 'Beauftragung abgelaufen, Nachweis erneuern.'),
-    make('bp-7', 7, 'Lastaufnahmeeinrichtungen', '2025-06-18', '2027-06-18', 'QSGU', 'BP_Lastaufnahme_Daniel_Vogt.pdf', 'Ketten, Hebebaender und Anschlagpunkte.'),
-    make('bp-8', 8, 'Hubarbeitsbühnen', '2025-10-02', '2027-10-02', 'Sabine Janning', 'BP_Hubarbeitsbuehnen_Lukas_Schroeder.pdf', 'Sichtpruefung vor Einsatz und Dokumentation.'),
-    make('bp-9', 9, 'Kleinmaschinen / -geräte', '2025-01-22', '2027-01-22', 'QSGU', 'BP_Kleinmaschinen_Andreas_Oezdemir.pdf', 'Rüttelplatten, Trennschleifer, Pumpen, Kompressoren.'),
-    make('bp-10', 10, 'Teleskoplader / -stapler', '2025-08-05', '2027-08-05', 'Michael Janning', 'BP_Teleskoplader_Mustafa_Kempers.pdf', 'Pruefung von Anbaugeraeten und Sicherheitsfunktionen.'),
-    make('bp-11', 11, 'Verbaugeräte', '2025-04-16', '2027-04-16', 'Sabine Janning', 'BP_Verbau_Heiko_Lammers.pdf', 'Verbauplatten und Spreizen, Zustand und Vollstaendigkeit.'),
-    make('bp-12', 12, 'Fahrzeuge', '2024-06-01', '2026-06-20', 'Fuhrpark', 'BP_Fahrzeuge_Bernd_Wittke.pdf', 'Interne Fuhrpark-Pruefung, laeuft bald ab.'),
-  ];
+
   const [rows, setRows] = React.useState(() => {
-    try { return normalizeRows(JSON.parse(localStorage.getItem('befaehigte_personen_rows_v1') || 'null') || initialRows); }
-    catch { return normalizeRows(initialRows); }
+    try {
+      const saved = JSON.parse(localStorage.getItem('befaehigte_personen_rows_v2') || 'null');
+      return saved || seedRows();
+    } catch {
+      return seedRows();
+    }
   });
-  const [sort, setSort] = React.useState({ col: 'employee', dir: 'asc' });
-  const [filters, setFilters] = React.useState({});
-  const [groupBy, setGroupBy] = React.useState('');
-  const [menuCol, setMenuCol] = React.useState(null);
-  const [filterPanel, setFilterPanel] = React.useState(null);
-  const [filterSearch, setFilterSearch] = React.useState('');
+  const [viewMode, setViewMode] = React.useState('list');
   const [selectedIds, setSelectedIds] = React.useState([]);
-  const [detail, setDetail] = React.useState(null);
-  const [areaPickerId, setAreaPickerId] = React.useState(null);
+  const [sortBy, setSortBy] = React.useState({ key: 'employee', dir: 'asc' });
+  const [filters, setFilters] = React.useState({ status: 'all', company: activeCompany, area: 'all', release: 'all' });
+  const [groupBy, setGroupBy] = React.useState('');
+  const [columnMenu, setColumnMenu] = React.useState(null);
+  const [dialog, setDialog] = React.useState(null);
+  const [form, setForm] = React.useState(null);
+  const [detailId, setDetailId] = React.useState(null);
 
   React.useEffect(() => {
-    try { localStorage.setItem('befaehigte_personen_rows_v1', JSON.stringify(rows)); } catch {}
+    try { localStorage.setItem('befaehigte_personen_rows_v2', JSON.stringify(rows)); } catch {}
   }, [rows]);
 
-  const fmt = iso => {
-    if (!iso) return '-';
-    const [y, m, d] = iso.split('-');
-    return `${d}.${m}.${y}`;
-  };
-  const statusOf = row => {
-    if (!row.document) return 'Kein Nachweis';
-    const days = Math.ceil((new Date(row.validUntil) - today) / (1000 * 60 * 60 * 24));
-    if (days < 0) return 'Abgelaufen';
-    if (days <= 60) return 'Laeuft bald ab';
-    return 'Gueltig';
-  };
-  const statusBadgeClass = status => status === 'Gueltig' ? 'badge--valid' : status === 'Laeuft bald ab' ? 'badge--warn' : 'badge--expired';
-  const columns = [
-    { key: 'employee', label: 'Mitarbeiter', value: r => emp(r.employeeId)?.name || '-' },
-    { key: 'area', label: 'Arbeitsmittel-Bereiche', value: r => areaText(r.area) },
-    { key: 'authorization', label: 'Befähigung / Beauftragung', value: r => r.authorization },
-    { key: 'validFrom', label: 'Gültig ab', type: 'date', value: r => r.validFrom, display: r => fmt(r.validFrom) },
-    { key: 'validUntil', label: 'Gültig bis', type: 'date', value: r => r.validUntil, display: r => fmt(r.validUntil) },
-    { key: 'status', label: 'Status', value: r => statusOf(r) },
-    { key: 'note', label: 'Bemerkung', value: r => r.note },
-  ];
-  const colValue = (row, key) => columns.find(c => c.key === key)?.value(row) ?? row[key];
-  const colLabel = key => columns.find(c => c.key === key)?.label || key;
-  const scopedRows = rows.filter(row => activeCompany === 'all' || emp(row.employeeId)?.company === activeCompany);
-  const filtered = scopedRows
-    .filter(row => Object.entries(filters).every(([col, values]) => values.includes(colValue(row, col))))
-    .sort((a, b) => {
-      const col = columns.find(c => c.key === sort.col);
-      const av = colValue(a, sort.col);
-      const bv = colValue(b, sort.col);
-      if (col?.type === 'date') {
-        const result = new Date(av) - new Date(bv);
-        return sort.dir === 'asc' ? result : -result;
-      }
-      const result = String(av || '').localeCompare(String(bv || ''), 'de');
-      return sort.dir === 'asc' ? result : -result;
-    });
-  const grouped = groupBy ? filtered.reduce((acc, row) => {
-    const value = colValue(row, groupBy) || 'Leer';
-    if (!acc[value]) acc[value] = [];
-    acc[value].push(row);
-    return acc;
-  }, {}) : null;
-  const filterValues = filterPanel
-    ? Array.from(new Set(scopedRows.map(row => colValue(row, filterPanel))))
-      .filter(value => String(value || '').toLowerCase().includes(filterSearch.toLowerCase()))
-      .sort((a, b) => String(a).localeCompare(String(b), 'de'))
-    : [];
-  const visibleIds = filtered.map(row => row.id);
-  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
-  const toggleRow = id => setSelectedIds(ids => ids.includes(id) ? ids.filter(item => item !== id) : [...ids, id]);
-  const toggleAllVisible = () => setSelectedIds(ids => allVisibleSelected ? ids.filter(id => !visibleIds.includes(id)) : Array.from(new Set([...ids, ...visibleIds])));
-  const setColumnSort = (col, dir) => { setSort({ col, dir }); setMenuCol(null); };
-  const toggleFilterValue = (col, value) => {
-    setFilters(current => {
-      const selected = current[col] || [];
-      const nextValues = selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value];
-      const next = { ...current };
-      if (nextValues.length) next[col] = nextValues;
-      else delete next[col];
-      return next;
-    });
-  };
-  const clearFilterValue = (col, value) => {
-    setFilters(current => {
-      const nextValues = (current[col] || []).filter(item => item !== value);
-      const next = { ...current };
-      if (nextValues.length) next[col] = nextValues;
-      else delete next[col];
-      return next;
-    });
-  };
-  const deleteRow = row => setRows(current => current.filter(item => item.id !== row.id));
-  const toggleEmployeeRelease = (rowId) => setRows(current => current.map(row => row.id === rowId ? { ...row, releasedToEmployee: !row.releasedToEmployee } : row));
-  const toggleRowArea = (rowId, area) => setRows(current => current.map(row => {
-    if (row.id !== rowId) return row;
-    const selected = areaList(row.area);
-    const next = selected.includes(area) ? selected.filter(item => item !== area) : [...selected, area];
-    return { ...row, area: next.length ? next : [area] };
-  }));
-  const toggleDetailArea = area => setDetail(current => {
-    const selected = areaList(current.area);
-    const next = selected.includes(area) ? selected.filter(item => item !== area) : [...selected, area];
-    return { ...current, area: next.length ? next : [area] };
-  });
-  const deleteSelected = () => {
-    setRows(current => current.filter(row => !selectedIds.includes(row.id)));
+  React.useEffect(() => {
+    setFilters(current => ({ ...current, company: activeCompany }));
     setSelectedIds([]);
-  };
-  const changeSelectedStatus = (status) => {
-    setRows(current => current.map(row => selectedIds.includes(row.id)
-      ? { ...row, validUntil: status === 'Abgelaufen' ? '2026-01-01' : status === 'Laeuft bald ab' ? '2026-06-20' : '2027-12-31' }
-      : row));
-  };
-  const addRow = () => {
-    const person = employees[0] || allEmployees[0];
-    const next = {
-      id: 'bp-' + Date.now(),
-      employeeId: person.id,
-      company: window.company(person.company)?.name || person.company,
-      area: [areas[0]],
-      authorization: 'Beauftragung zur Pruefung befaehigte Person',
-      validFrom: '2026-06-01',
-      validUntil: '2028-06-01',
-      responsible: 'QSGU',
-      document: 'Neue_Beauftragung.pdf',
-      note: 'Neue Beauftragung erfassen.',
-      releasedToEmployee: false,
-    };
-    setRows(current => [next, ...current]);
-    setDetail(next);
-  };
-  const saveDetail = () => {
-    const selectedEmp = emp(detail.employeeId);
-    const next = { ...detail, company: window.company(selectedEmp.company)?.name || selectedEmp.company };
-    setRows(current => current.map(row => row.id === next.id ? next : row));
-    setDetail(null);
-  };
-  const kpis = [
-    { label: 'Befähigte Personen', value: new Set(scopedRows.map(r => r.employeeId)).size, color: '#3f7a4a' },
-    { label: 'Gültig', value: scopedRows.filter(r => statusOf(r) === 'Gueltig').length, color: '#3f7a4a', filter: 'Gueltig' },
-    { label: 'Läuft bald ab', value: scopedRows.filter(r => statusOf(r) === 'Laeuft bald ab').length, color: '#8a6a1f', filter: 'Laeuft bald ab' },
-    { label: 'Abgelaufen / fehlt', value: scopedRows.filter(r => statusOf(r) === 'Abgelaufen' || statusOf(r) === 'Kein Nachweis').length, color: '#a13232' },
-  ];
-  const ColumnHeader = ({ col }) => {
-    const active = sort.col === col.key || filters[col.key]?.length || groupBy === col.key;
-    return (
-      <th style={{ position: 'relative', whiteSpace: 'nowrap' }}>
-        <button type="button" onClick={() => { setMenuCol(menuCol === col.key ? null : col.key); setFilterSearch(''); }}
-          style={{ border: 0, background: active ? 'var(--color-parchment)' : 'transparent', borderRadius: 6, padding: '7px 8px', cursor: 'pointer', font: 'inherit', color: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-          {col.label}{sort.col === col.key ? <span>{sort.dir === 'asc' ? '^' : 'v'}</span> : <span style={{ opacity: .55 }}>v</span>}
-        </button>
-        {menuCol === col.key && (
-          <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 100, minWidth: 260, background: 'white', border: '1px solid var(--border-1)', boxShadow: '0 16px 40px rgba(0,0,0,0.14)', borderRadius: 4, padding: '6px 0', textTransform: 'none', fontSize: 14, color: 'var(--fg-1)', letterSpacing: 0 }}>
-            <button type="button" onClick={() => setColumnSort(col.key, 'asc')} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '11px 18px', border: 0, background: 'white', cursor: 'pointer', font: 'inherit' }}>A bis Z</button>
-            <button type="button" onClick={() => setColumnSort(col.key, 'desc')} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '11px 18px', border: 0, background: 'white', cursor: 'pointer', font: 'inherit' }}>Z bis A</button>
-            <button type="button" onClick={() => { setFilterPanel(col.key); setFilterSearch(''); setMenuCol(null); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '11px 18px', border: 0, borderTop: '1px solid var(--border-1)', background: '#f3f2f1', cursor: 'pointer', font: 'inherit' }}>Filtern nach</button>
-            <button type="button" onClick={() => { setGroupBy(groupBy === col.key ? '' : col.key); setColumnSort(col.key, 'asc'); }} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '11px 18px', border: 0, background: 'white', cursor: 'pointer', font: 'inherit' }}>Gruppieren nach "{col.label}"</button>
-          </div>
-        )}
-      </th>
-    );
-  };
-  const Row = ({ row }) => {
-    const person = emp(row.employeeId);
-    const status = statusOf(row);
-    return (
-      <tr className={'job-row' + (selectedIds.includes(row.id) ? ' is-selected' : '')} onClick={() => setDetail({ ...row })}>
-        <td onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleRow(row.id)} /></td>
-        <td><strong>{person.name}</strong><div className="small muted">{person.position}</div></td>
-        <td onClick={e => e.stopPropagation()}>
-          <div className="bp-area-picker">
-            <button type="button" className="bp-area-button" onClick={() => setAreaPickerId(areaPickerId === row.id ? null : row.id)}>
-              {areaList(row.area).slice(0, 2).map(area => <span className="bp-area-chip" key={area}>{area}</span>)}
-              {areaList(row.area).length > 2 && <span className="bp-area-chip">+{areaList(row.area).length - 2}</span>}
-            </button>
-            {areaPickerId === row.id && (
-              <div className="bp-area-menu">
-                {areas.map(area => (
-                  <label key={area}>
-                    <input type="checkbox" checked={areaList(row.area).includes(area)} onChange={() => toggleRowArea(row.id, area)} />
-                    <span>{area}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-        </td>
-        <td>{row.authorization}</td>
-        <td>{fmt(row.validFrom)}</td>
-        <td>{fmt(row.validUntil)}</td>
-        <td><span className={'badge ' + statusBadgeClass(status)}><span className="badge__dot" />{status}</span></td>
-        <td style={{ minWidth: 240, whiteSpace: 'normal' }}>{row.note}</td>
-        <td onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
-          <label className="release-toggle" title="Im Mitarbeiterportal anzeigen">
-            <input type="checkbox" checked={!!row.releasedToEmployee} onChange={() => toggleEmployeeRelease(row.id)} />
-            <span></span>
-          </label>
-        </td>
-        <td onClick={e => e.stopPropagation()} style={{ textAlign: 'center' }}>
-          <div style={{ display: 'inline-flex', gap: 6 }}>
-            <button className="job-icon-btn" title="Vorschau"><Icon name="eye" size={15} /></button>
-            <button className="job-icon-btn" title="Bearbeiten" onClick={() => setDetail({ ...row })}><Icon name="edit" size={15} /></button>
-            <button className="job-icon-btn" title="Loeschen" style={{ color: '#a13232' }} onClick={() => deleteRow(row)}><Icon name="trash" size={15} /></button>
-          </div>
-        </td>
-      </tr>
-    );
-  };
-  const renderRows = list => list.map(row => <Row key={row.id} row={row} />);
+  }, [activeCompany]);
 
-  return (
-    <div>
-      <style>{`
-        .bp-table { min-width: 1320px; }
-        .bp-area-picker { position: relative; min-width: 300px; max-width: 420px; }
-        .bp-area-button { width: 100%; min-height: 40px; border: 1px solid var(--border-1); border-radius: 8px; background: white; padding: 7px 10px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; cursor: pointer; text-align: left; }
-        .bp-area-chip { display: inline-flex; align-items: center; max-width: 175px; border-radius: 999px; background: var(--color-parchment); padding: 4px 8px; font-size: 12px; color: var(--fg-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .bp-area-menu { position: absolute; z-index: 80; top: calc(100% + 6px); left: 0; width: min(380px, 72vw); max-height: 310px; overflow: auto; background: white; border: 1px solid var(--border-1); border-radius: 8px; box-shadow: 0 18px 45px rgba(0,0,0,.16); padding: 8px; display: grid; gap: 4px; }
-        .bp-area-menu label { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 6px; cursor: pointer; }
-        .bp-area-menu label:hover { background: var(--color-parchment); }
-        .bp-filter-panel { position: fixed; right: 0; top: 64px; bottom: 0; width: 390px; z-index: 120; background: white; box-shadow: -18px 0 50px rgba(0,0,0,.16); display: flex; flex-direction: column; }
-        .bp-drawer { position: fixed; top: 64px; right: 0; bottom: 0; width: min(760px, 96vw); z-index: 120; background: var(--color-ivory); border-left: 1px solid var(--border-1); box-shadow: -18px 0 42px rgba(0,0,0,.18); display: flex; flex-direction: column; }
-        .bp-hero { background: #10100f; color: white; padding: 24px; display: flex; gap: 16px; align-items: flex-start; position: relative; }
-        .bp-hero h2 { margin: 0 0 6px; font-family: var(--font-serif); font-size: 25px; font-weight: 500; }
-        .bp-close { position: absolute; top: 18px; right: 18px; border: 0; background: transparent; color: rgba(255,255,255,.7); cursor: pointer; }
-        .bp-body { overflow: auto; padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-        .bp-body label { display: grid; gap: 7px; margin: 0; min-width: 0; }
-        .bp-body .form-label { font-size: 11px; line-height: 1; font-weight: 800; color: var(--fg-3); text-transform: uppercase; }
-        .bp-body .input { width: 100%; min-height: 44px; border: 1px solid var(--border-1); border-radius: 8px; background: white; padding: 0 12px; font: inherit; box-sizing: border-box; }
-        .bp-body textarea.input { min-height: 96px; padding: 10px 12px; resize: vertical; }
-      `}</style>
-      <div className="view__header">
-        <div>
-          <h1 className="view__title">Befähigte Personen</h1>
-          <div className="view__subtitle">Beauftragungen zur Prüfung von Arbeitsmitteln, Geräten und Maschinen.</div>
-        </div>
-        <div className="view__actions">
-          <button className="btn btn--primary" onClick={addRow}><Icon name="plus" size={14} />Beauftragung erstellen</button>
-        </div>
+  const enrichedRows = rows
+    .map(row => enrichQualifiedRow(row, today, employeeById, companyName))
+    .filter(row => activeCompany === 'all' || row.companyId === activeCompany)
+    .filter(row => filters.company === 'all' || row.companyId === filters.company)
+    .filter(row => filters.status === 'all' || row.status === filters.status)
+    .filter(row => filters.area === 'all' || row.area === filters.area)
+    .filter(row => filters.release === 'all' || row.release === filters.release)
+    .sort((a, b) => compareQualifiedRows(a, b, sortBy));
+  const groupedRows = groupBy ? groupQualifiedRows(enrichedRows, groupBy) : [['Alle Beauftragungen', enrichedRows]];
+  const detailRow = rows.map(row => enrichQualifiedRow(row, today, employeeById, companyName)).find(row => row.id === detailId);
+  const visibleIds = enrichedRows.map(row => row.id);
+  const allSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+  const kpis = getQualifiedKpis(rows.map(row => enrichQualifiedRow(row, today, employeeById, companyName)).filter(row => activeCompany === 'all' || row.companyId === activeCompany));
+
+  const openDialog = (mode, row = null) => {
+    const target = row || {};
+    const fallbackEmployee = employeeOptions[0] || allEmployees[0] || {};
+    const employee = target.employeeId ? employeeById(target.employeeId) : fallbackEmployee;
+    setDialog({ mode, id: target.id });
+    setForm({
+      employeeId: target.employeeId || employee.id || '',
+      companyId: target.companyId || employee.company || activeCompany || 'all',
+      area: target.area || workAreas[0],
+      competenceType: target.competenceType || 'Befähigte Person',
+      authorizationType: target.authorizationType || 'schriftliche Beauftragung',
+      authorization: target.authorization || 'Beauftragung zur Prüfung befähigte Person',
+      validFrom: target.validFrom || '2026-06-01',
+      validUntil: target.validUntil || '2028-06-01',
+      issuer: target.issuer || 'Sabine Janning',
+      manager: target.manager || 'Christian Janning',
+      substitute: target.substitute || '',
+      qualification: target.qualification || 'Sachkundenachweis',
+      trainingProof: target.trainingProof || 'Schulungsnachweis.pdf',
+      document: target.document || 'Beauftragung.pdf',
+      note: target.note || '',
+      status: target.status || 'Gültig',
+      release: target.release || 'nicht sichtbar',
+    });
+  };
+  const saveDialog = event => {
+    event.preventDefault();
+    const next = { ...form, id: dialog.id || `bp-${Date.now()}` };
+    setRows(current => dialog.mode === 'edit'
+      ? current.map(row => row.id === next.id ? { ...row, ...next } : row)
+      : [next, ...current]);
+    setDialog(null);
+  };
+  const openExtendDialog = row => {
+    setDialog({ mode: 'extend', id: row.id });
+    setForm({
+      oldValidUntil: row.validUntil,
+      validUntil: '2028-12-31',
+      extensionDate: window.SEED?.today || '2026-04-21',
+      checkedBy: row.manager || 'Christian Janning',
+      newProof: 'Verlaengerungsnachweis.pdf',
+      note: 'Verlängerung vorbereitet.',
+    });
+  };
+  const saveExtension = event => {
+    event.preventDefault();
+    setRows(current => current.map(row => row.id === dialog.id ? {
+      ...row,
+      validUntil: form.validUntil,
+      status: 'Gültig',
+      document: form.newProof || row.document,
+      history: [...(row.history || []), `Verlängert am ${fmtDate(form.extensionDate)} durch ${form.checkedBy}`],
+    } : row));
+    setDialog(null);
+  };
+  const deleteRow = id => setRows(current => current.filter(row => row.id !== id));
+  const archiveRow = id => setRows(current => current.map(row => row.id === id ? { ...row, status: 'Archiviert' } : row));
+  const toggleSelected = id => setSelectedIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
+  const toggleAll = () => setSelectedIds(current => allSelected ? current.filter(id => !visibleIds.includes(id)) : Array.from(new Set([...current, ...visibleIds])));
+  const bulkStatus = status => setRows(current => current.map(row => selectedIds.includes(row.id) ? { ...row, status } : row));
+  const bulkArchive = () => { bulkStatus('Archiviert'); setSelectedIds([]); };
+  const bulkDelete = () => { setRows(current => current.filter(row => !selectedIds.includes(row.id))); setSelectedIds([]); };
+
+  if (detailRow) {
+    return <QualifiedDetailPage
+      row={detailRow}
+      onBack={() => setDetailId(null)}
+      onEdit={() => openDialog('edit', detailRow)}
+      onExtend={() => openExtendDialog(detailRow)}
+    />;
+  }
+
+  return <div className="qualified-page">
+    <div className="qualified-head">
+      <div className="qualified-title-row">
+        {onBack && <button className="round-back" type="button" onClick={onBack}><Icon name="chevL" size={18} /></button>}
+        <h1>{title}</h1>
       </div>
-
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:18 }}>
-        {kpis.map(kpi => (
-          <button
-            key={kpi.label}
-            type="button"
-            onClick={() => kpi.filter && setFilters({ status: [kpi.filter] })}
-            style={{
-              padding:'10px 14px',
-              background: 'var(--color-ivory)',
-              border: '1px solid var(--border-1)',
-              borderRadius:10,
-              cursor: kpi.filter ? 'pointer' : 'default',
-              display: 'grid',
-              gridTemplateColumns: 'auto 1fr auto',
-              gap: 16,
-              alignItems: 'center',
-              boxShadow: '0 2px 5px rgba(0,0,0,0.048)',
-              transition:'all 150ms ease',
-            }}
-            onMouseEnter={e => {
-              if (kpi.filter) {
-                e.currentTarget.style.background = 'var(--color-white)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }
-            }}
-            onMouseLeave={e => {
-              if (kpi.filter) {
-                e.currentTarget.style.background = 'var(--color-ivory)';
-                e.currentTarget.style.boxShadow = '0 2px 5px rgba(0,0,0,0.048)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }
-            }}
-          >
-            <div style={{ fontSize:10, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color:'var(--fg-3)' }}>{kpi.label}</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center', textAlign:'center' }}>
-              <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:500, color: kpi.color, lineHeight:1 }}>{kpi.value}</div>
-            </div>
-            <div style={{ fontSize:11, fontWeight:600, color:'var(--fg-3)', textAlign:'right' }}>{kpi.filter ? 'Klicken' : ''}</div>
-          </button>
-        ))}
+      <div className="qualified-actions">
+        <div className="segmented">
+          <button type="button" className={viewMode === 'cards' ? 'is-active' : ''} onClick={() => setViewMode('cards')}><Icon name="dashboard" size={15} />Kacheln</button>
+          <button type="button" className={viewMode === 'list' ? 'is-active' : ''} onClick={() => setViewMode('list')}><Icon name="matrix" size={15} />Liste</button>
+        </div>
+        {activeCompany === 'all' && <select value={filters.company} onChange={event => setFilters(current => ({ ...current, company: event.target.value }))}>
+          <option value="all">Alle Firmen</option>
+          {companyOptions.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}
+        </select>}
+        <select value={filters.status} onChange={event => setFilters(current => ({ ...current, status: event.target.value }))}>
+          <option value="all">Alle Status</option>
+          {statuses.map(status => <option key={status}>{status}</option>)}
+        </select>
+        <button className="btn btn--primary" type="button" onClick={() => openDialog('add')}><Icon name="plus" size={15} />Beauftragung erstellen</button>
       </div>
-
-      {(Object.entries(filters).some(([, values]) => values.length) || groupBy) && (
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 12 }}>
-          {Object.entries(filters).map(([col, values]) => values.map(value => (
-            <span key={col + value} style={{ display: 'inline-flex', gap: 8, alignItems: 'center', background: 'var(--color-parchment)', borderRadius: 999, padding: '6px 10px' }}>
-              <span style={{ color: 'var(--fg-2)' }}>{colLabel(col)}:</span>{String(value)}
-              <button onClick={() => clearFilterValue(col, value)} style={{ border: 0, background: 'transparent', cursor: 'pointer' }}>x</button>
-            </span>
-          )))}
-          {groupBy && <span style={{ background: 'var(--color-parchment)', borderRadius: 999, padding: '6px 10px' }}>Gruppiert nach: {colLabel(groupBy)}</span>}
-          <button className="btn btn--ghost" onClick={() => { setFilters({}); setGroupBy(''); }}>Filter zurücksetzen</button>
-        </div>
-      )}
-
-      {selectedIds.length > 0 && (
-        <div className="job-bulkbar">
-          <strong>{selectedIds.length} ausgewählt</strong>
-          <button className="btn btn--ghost"><Icon name="download" size={14} />PDF export</button>
-          <select className="input" style={{ width: 190 }} onChange={event => event.target.value && changeSelectedStatus(event.target.value)} defaultValue="">
-            <option value="" disabled>Status ändern</option>
-            <option value="Gueltig">Gültig</option>
-            <option value="Laeuft bald ab">Läuft bald ab</option>
-            <option value="Abgelaufen">Abgelaufen</option>
-          </select>
-          <button className="btn btn--danger" onClick={deleteSelected}>Löschen</button>
-        </div>
-      )}
-
-      <div className="tbl-wrap">
-        <table className="tbl bp-table">
-          <thead>
-            <tr>
-              <th style={{ width: 44 }}><input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} /></th>
-              {columns.map(col => <ColumnHeader key={col.key} col={col} />)}
-              <th>Freigabe f&uuml;r Mitarbeiter</th>
-              <th>Aktionen</th>
-            </tr>
-          </thead>
-          <tbody>
-            {grouped
-              ? Object.entries(grouped).map(([group, groupRows]) => (
-                <React.Fragment key={group}>
-                  <tr><td colSpan={columns.length + 3} style={{ background: 'var(--color-parchment)', fontWeight: 800 }}>{colLabel(groupBy)}: {group} ({groupRows.length})</td></tr>
-                  {renderRows(groupRows)}
-                </React.Fragment>
-              ))
-              : renderRows(filtered)}
-          </tbody>
-        </table>
-      </div>
-
-      {filterPanel && (
-        <div className="bp-filter-panel">
-          <div style={{ padding: 22, borderBottom: '1px solid var(--border-1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 style={{ margin: 0, fontFamily: 'var(--font-serif)' }}>Filtern nach "{colLabel(filterPanel)}"</h2>
-            <button className="icon-btn" onClick={() => setFilterPanel(null)}><Icon name="x" size={18} /></button>
-          </div>
-          <div style={{ padding: 18 }}>
-            <input className="input" placeholder="Text eingeben, um Filter zu finden" value={filterSearch} onChange={e => setFilterSearch(e.target.value)} />
-          </div>
-          <div style={{ overflow: 'auto', padding: '0 18px 18px', display: 'grid', gap: 12 }}>
-            {filterValues.map(value => (
-              <label key={String(value)} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                <input type="checkbox" checked={(filters[filterPanel] || []).includes(value)} onChange={() => toggleFilterValue(filterPanel, value)} />
-                <span>{String(value)}</span>
-              </label>
-            ))}
-          </div>
-          <div style={{ marginTop: 'auto', padding: 18, borderTop: '1px solid var(--border-1)', display: 'flex', gap: 10 }}>
-            <button className="btn btn--primary" onClick={() => setFilterPanel(null)}>Anwenden</button>
-            <button className="btn btn--ghost" onClick={() => setFilters(current => { const next = { ...current }; delete next[filterPanel]; return next; })}>Auswahl aufheben</button>
-          </div>
-        </div>
-      )}
-
-      {detail && (
-        <aside className="bp-drawer">
-          <div className="bp-hero">
-            <div className="avatar avatar--2">{emp(detail.employeeId)?.initials}</div>
-            <div>
-              <h2>{emp(detail.employeeId)?.name}</h2>
-              <div style={{ color: 'rgba(255,255,255,.68)' }}>{areaText(detail.area)} · {detail.company}</div>
-              <span className={'badge ' + statusBadgeClass(statusOf(detail))} style={{ marginTop: 12 }}><span className="badge__dot" />{statusOf(detail)}</span>
-            </div>
-            <button className="bp-close" onClick={() => setDetail(null)}>x</button>
-          </div>
-          <div className="bp-body">
-            <label><span className="form-label">Mitarbeiter</span><select className="input" value={detail.employeeId} onChange={e => setDetail(d => ({ ...d, employeeId: e.target.value }))}>{allEmployees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}</select></label>
-            <label><span className="form-label">Firma</span><input className="input" value={detail.company} onChange={e => setDetail(d => ({ ...d, company: e.target.value }))} /></label>
-            <div style={{ gridColumn: '1 / -1' }}>
-              <span className="form-label">Arbeitsmittel-Bereiche</span>
-              <div style={{ marginTop: 8, background: 'white', border: '1px solid var(--border-1)', borderRadius: 10, padding: 10, display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 6 }}>
-                {areas.map(area => (
-                  <label key={area} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 7, borderRadius: 6, background: areaList(detail.area).includes(area) ? 'var(--color-parchment)' : 'transparent' }}>
-                    <input type="checkbox" checked={areaList(detail.area).includes(area)} onChange={() => toggleDetailArea(area)} />
-                    <span>{area}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <label style={{ gridColumn: '1 / -1' }}><span className="form-label">Befähigung / Beauftragung</span><input className="input" value={detail.authorization} onChange={e => setDetail(d => ({ ...d, authorization: e.target.value }))} /></label>
-            <label><span className="form-label">Gültig ab</span><input className="input" type="date" value={detail.validFrom} onChange={e => setDetail(d => ({ ...d, validFrom: e.target.value }))} /></label>
-            <label><span className="form-label">Gültig bis</span><input className="input" type="date" value={detail.validUntil} onChange={e => setDetail(d => ({ ...d, validUntil: e.target.value }))} /></label>
-            <label><span className="form-label">Verantwortlich für Prüfung</span><input className="input" value={detail.responsible} onChange={e => setDetail(d => ({ ...d, responsible: e.target.value }))} /></label>
-            <label><span className="form-label">Dokument</span><input className="input" value={detail.document} onChange={e => setDetail(d => ({ ...d, document: e.target.value }))} /></label>
-            <label style={{ gridColumn: '1 / -1' }}><span className="form-label">Bemerkung</span><textarea className="input" value={detail.note} onChange={e => setDetail(d => ({ ...d, note: e.target.value }))} /></label>
-            <label style={{ gridColumn: '1 / -1', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, background:'white', border:'1px solid var(--border-1)', borderRadius:10, padding:14 }}>
-              <span><span className="form-label">Freigabe f&uuml;r Mitarbeiter</span><span className="small muted" style={{ display:'block', marginTop:4 }}>Im Mitarbeiterportal unter Ger&auml;tepr&uuml;fung anzeigen</span></span>
-              <span className="release-toggle"><input type="checkbox" checked={!!detail.releasedToEmployee} onChange={e => setDetail(d => ({ ...d, releasedToEmployee: e.target.checked }))} /><span></span></span>
-            </label>
-            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, flexWrap: 'wrap', padding: 14, background: 'white', border: '1px solid var(--border-1)', borderRadius: 10 }}>
-              <button className="job-small-btn"><Icon name="eye" size={12} />Dokument Vorschau</button>
-              <button className="job-small-btn"><Icon name="download" size={12} />Download</button>
-              <button className="job-small-btn"><Icon name="upload" size={12} />Neues Dokument</button>
-              <button className="job-small-btn" style={{ color: '#a13232' }}><Icon name="trash" size={12} />Dokument löschen</button>
-            </div>
-          </div>
-          <div style={{ marginTop: 'auto', padding: 18, borderTop: '1px solid var(--border-1)', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-            <button className="btn btn--ghost" onClick={() => setDetail(null)}>Abbrechen</button>
-            <button className="btn btn--primary" onClick={saveDetail}>Speichern</button>
-          </div>
-        </aside>
-      )}
     </div>
-  );
+
+    <section className="qualified-kpis">
+      {kpis.map(kpi => <button key={kpi.label} type="button" className={`qualified-kpi ${filters.status === kpi.filter ? 'is-active' : ''}`} onClick={() => setFilters(current => ({ ...current, status: kpi.filter || 'all' }))}>
+        <span>{kpi.label}</span>
+        <strong className={kpi.tone ? `tone-${kpi.tone}` : ''}>{kpi.value}</strong>
+        <small>{kpi.hint}</small>
+      </button>)}
+    </section>
+
+    {selectedIds.length > 0 && <div className="qualified-bulkbar">
+      <strong>{selectedIds.length} ausgewählt</strong>
+      <button type="button" onClick={() => bulkStatus('Gültig')}>Status ändern</button>
+      <button type="button">Gültigkeit verlängern</button>
+      <button type="button">Freigabe ändern</button>
+      <button type="button">PDF exportieren</button>
+      <button type="button" onClick={bulkArchive}>Archivieren</button>
+      <button type="button" className="is-danger" onClick={bulkDelete}>Löschen</button>
+      <button type="button" className="icon-btn" onClick={() => setSelectedIds([])}><Icon name="x" size={14} /></button>
+    </div>}
+
+    {viewMode === 'cards'
+      ? <div className="qualified-card-grid">{enrichedRows.map(row => <QualifiedCard key={row.id} row={row} onOpen={() => setDetailId(row.id)} onEdit={() => openDialog('edit', row)} onExtend={() => openExtendDialog(row)} onArchive={() => archiveRow(row.id)} onDelete={() => deleteRow(row.id)} />)}</div>
+      : <QualifiedTable
+          groups={groupedRows}
+          selectedIds={selectedIds}
+          allSelected={allSelected}
+          toggleSelected={toggleSelected}
+          toggleAll={toggleAll}
+          columnMenu={columnMenu}
+          setColumnMenu={setColumnMenu}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          groupBy={groupBy}
+          setGroupBy={setGroupBy}
+          onOpen={setDetailId}
+          onEdit={openDialog}
+          onExtend={openExtendDialog}
+          onArchive={archiveRow}
+          onDelete={deleteRow}
+        />}
+
+    {dialog?.mode === 'add' || dialog?.mode === 'edit'
+      ? <QualifiedDialog form={form} setForm={setForm} companies={companyOptions} employees={employeeOptions.length ? employeeOptions : allEmployees} workAreas={workAreas} statuses={statuses} releaseOptions={releaseOptions} onClose={() => setDialog(null)} onSubmit={saveDialog} />
+      : null}
+    {dialog?.mode === 'extend'
+      ? <QualifiedExtendDialog form={form} setForm={setForm} onClose={() => setDialog(null)} onSubmit={saveExtension} />
+      : null}
+  </div>;
+}
+
+function makeQualifiedRow(id, employee, area, authorization, validFrom, validUntil, manager, substitute, document, note) {
+  return {
+    id,
+    employeeId: employee.id,
+    companyId: employee.company,
+    position: employee.position,
+    area,
+    competenceType: 'Befähigte Person',
+    authorizationType: 'schriftliche Beauftragung',
+    authorization,
+    validFrom,
+    validUntil,
+    issuer: manager,
+    manager,
+    substitute,
+    qualification: 'Sachkundenachweis',
+    trainingProof: 'Schulungsnachweis.pdf',
+    document,
+    note,
+    status: 'Gültig',
+    release: document ? 'sichtbar' : 'nicht sichtbar',
+    history: ['Erstellt durch Sabine Janning'],
+  };
+}
+
+function enrichQualifiedRow(row, today, employeeById, companyName) {
+  const employee = employeeById(row.employeeId);
+  const days = Math.ceil((new Date(row.validUntil) - today) / 86400000);
+  const computedStatus = row.status && !['Gültig', 'Läuft bald ab', 'Abgelaufen', 'Nachweis fehlt'].includes(row.status)
+    ? row.status
+    : !row.document ? 'Nachweis fehlt' : days < 0 ? 'Abgelaufen' : days <= 60 ? 'Läuft bald ab' : 'Gültig';
+  const warnings = [
+    days <= 90 && days >= 0 ? `läuft in ${days} Tagen ab` : null,
+    days < 0 ? 'ist abgelaufen' : null,
+    !row.document ? 'Beauftragungsdokument fehlt' : null,
+    !row.trainingProof ? 'Schulungsnachweis fehlt' : null,
+    !row.substitute ? 'Stellvertretung fehlt' : null,
+  ].filter(Boolean);
+  return {
+    ...row,
+    employeeName: employee.name || '-',
+    position: row.position || employee.position || '-',
+    companyName: companyName(row.companyId || employee.company),
+    companyId: row.companyId || employee.company,
+    days,
+    status: computedStatus,
+    warnings,
+  };
+}
+
+function compareQualifiedRows(a, b, sortBy) {
+  const factor = sortBy.dir === 'desc' ? -1 : 1;
+  if (sortBy.key === 'days') return factor * (a.days - b.days);
+  if (['validFrom', 'validUntil'].includes(sortBy.key)) return factor * (new Date(a[sortBy.key]) - new Date(b[sortBy.key]));
+  return factor * String(a[sortBy.key] || '').localeCompare(String(b[sortBy.key] || ''), 'de');
+}
+
+function groupQualifiedRows(rows, key) {
+  const map = new Map();
+  rows.forEach(row => {
+    const value = row[key] || 'Ohne Angabe';
+    if (!map.has(value)) map.set(value, []);
+    map.get(value).push(row);
+  });
+  return Array.from(map.entries());
+}
+
+function getQualifiedKpis(rows) {
+  return [
+    { label: 'Befähigte Personen gesamt', value: new Set(rows.map(row => row.employeeId)).size, hint: 'Personen' },
+    { label: 'Gültig', value: rows.filter(row => row.status === 'Gültig').length, filter: 'Gültig', tone: 'success', hint: 'freigegeben' },
+    { label: 'Läuft bald ab', value: rows.filter(row => row.status === 'Läuft bald ab').length, filter: 'Läuft bald ab', tone: 'warning', hint: '60 Tage' },
+    { label: 'Abgelaufen', value: rows.filter(row => row.status === 'Abgelaufen').length, filter: 'Abgelaufen', tone: 'danger', hint: 'Handlung' },
+    { label: 'Nachweis fehlt', value: rows.filter(row => row.status === 'Nachweis fehlt').length, filter: 'Nachweis fehlt', tone: 'danger', hint: 'nachreichen' },
+    { label: 'Widerrufen', value: rows.filter(row => row.status === 'Widerrufen').length, filter: 'Widerrufen', hint: 'Archiv' },
+  ];
+}
+
+const QUALIFIED_COLUMNS = [
+  ['employeeName', 'Mitarbeiter'],
+  ['companyName', 'Firma'],
+  ['position', 'Position'],
+  ['area', 'Arbeitsmittelbereich'],
+  ['authorization', 'Befähigung / Beauftragung'],
+  ['validFrom', 'gültig ab'],
+  ['validUntil', 'gültig bis'],
+  ['days', 'Restlaufzeit'],
+  ['substitute', 'Stellvertretung'],
+  ['status', 'Status'],
+  ['release', 'Freigabe für Mitarbeiter'],
+  ['document', 'Dokument'],
+  ['note', 'Bemerkung'],
+  ['actions', 'Aktionen'],
+];
+
+function QualifiedTable({ groups, selectedIds, allSelected, toggleSelected, toggleAll, columnMenu, setColumnMenu, sortBy, setSortBy, groupBy, setGroupBy, onOpen, onEdit, onExtend, onArchive, onDelete }) {
+  return <div className="qualified-table-wrap">
+    <table className="qualified-table">
+      <thead><tr>
+        <th><input type="checkbox" checked={allSelected} onChange={toggleAll} /></th>
+        {QUALIFIED_COLUMNS.map(([key, label]) => <th key={key}>
+          <button type="button" className="column-head-btn" onClick={() => setColumnMenu(columnMenu === key ? null : key)}>{label}⌄</button>
+          {columnMenu === key && <QualifiedColumnMenu colKey={key} label={label} sortBy={sortBy} setSortBy={setSortBy} groupBy={groupBy} setGroupBy={setGroupBy} />}
+        </th>)}
+      </tr></thead>
+      {groups.map(([group, rows]) => <tbody key={group}>
+        {groups.length > 1 && <tr className="group-row"><td colSpan={QUALIFIED_COLUMNS.length + 1}>{group} · {rows.length}</td></tr>}
+        {rows.map(row => <tr key={row.id} className={(row.status === 'Abgelaufen' || row.status === 'Nachweis fehlt') ? 'is-danger-row' : ''} onClick={() => onOpen(row.id)}>
+          <td onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleSelected(row.id)} /></td>
+          <td><strong>{row.employeeName}</strong><small>{row.position}</small></td>
+          <td>{row.companyName}</td>
+          <td>{row.position}</td>
+          <td>{row.area}</td>
+          <td className="wide-cell">{row.authorization}</td>
+          <td>{fmtDate(row.validFrom)}</td>
+          <td>{fmtDate(row.validUntil)}</td>
+          <td>{row.days < 0 ? `${Math.abs(row.days)} Tage abgelaufen` : `${row.days} Tage`}</td>
+          <td>{row.substitute || <span className="tone-danger">fehlt</span>}</td>
+          <td><QualifiedStatus status={row.status} /></td>
+          <td><QualifiedRelease release={row.release} /></td>
+          <td>{row.document ? <button className="file-chip" type="button"><Icon name="file" size={13} />{row.document}</button> : <span className="tone-danger">fehlt</span>}</td>
+          <td className="wide-cell">{row.note || '-'}</td>
+          <td onClick={event => event.stopPropagation()}><QualifiedActions row={row} onEdit={onEdit} onExtend={onExtend} onArchive={onArchive} onDelete={onDelete} /></td>
+        </tr>)}
+      </tbody>)}
+    </table>
+  </div>;
+}
+
+function QualifiedColumnMenu({ colKey, label, setSortBy, groupBy, setGroupBy }) {
+  return <div className="column-menu">
+    <button type="button" onClick={() => setSortBy({ key: colKey, dir: 'asc' })}>A bis Z</button>
+    <button type="button" onClick={() => setSortBy({ key: colKey, dir: 'desc' })}>Z bis A</button>
+    <button type="button">Filtern nach</button>
+    <button type="button" onClick={() => setGroupBy(groupBy === colKey ? '' : colKey)}>Gruppieren nach "{label}"</button>
+    <button type="button">Spalte ausblenden</button>
+  </div>;
+}
+
+function QualifiedCard({ row, onOpen, onEdit, onExtend, onArchive, onDelete }) {
+  return <article className="qualified-card" onClick={onOpen}>
+    <div className="qualified-card-top">
+      <QualifiedStatus status={row.status} />
+      <QualifiedActions row={row} onEdit={onEdit} onExtend={onExtend} onArchive={onArchive} onDelete={onDelete} />
+    </div>
+    <h3>{row.employeeName}</h3>
+    <p>{row.area}</p>
+    <div className="qualified-card-meta">
+      <span><b>Firma</b>{row.companyName}</span>
+      <span><b>Gültig bis</b>{fmtDate(row.validUntil)}</span>
+      <span><b>Stellvertretung</b>{row.substitute || 'fehlt'}</span>
+      <span><b>Freigabe</b>{row.release}</span>
+    </div>
+    <div className="qualified-warning">{row.warnings[0] || 'Keine Warnung'}</div>
+  </article>;
+}
+
+function QualifiedActions({ row, onEdit, onExtend, onArchive, onDelete }) {
+  const [open, setOpen] = React.useState(false);
+  return <div className="qualified-menu" onClick={event => event.stopPropagation()}>
+    <button type="button" className="dots-btn" onClick={() => setOpen(!open)}>⋮</button>
+    {open && <div className="cert-context-menu">
+      <button type="button">Details anzeigen</button>
+      <button type="button" onClick={() => onEdit('edit', row)}>Bearbeiten</button>
+      <button type="button">PDF-Dokument öffnen</button>
+      <button type="button" onClick={() => onEdit('add', { ...row, id: null })}>neue Beauftragung erstellen</button>
+      <button type="button" onClick={() => onExtend(row)}>Verlängern</button>
+      <button type="button">Nachweis ersetzen</button>
+      <button type="button">Stellvertretung festlegen</button>
+      <button type="button">Freigabe ändern</button>
+      <button type="button">Widerrufen</button>
+      <button type="button" onClick={() => onArchive(row.id)}>Archivieren</button>
+      <button type="button" onClick={() => onDelete(row.id)}>Löschen</button>
+    </div>}
+  </div>;
+}
+
+function QualifiedStatus({ status }) {
+  const cls = status === 'Gültig' ? 'current' : status === 'Läuft bald ab' ? 'due' : status === 'In Prüfung' ? 'review' : status === 'Abgelaufen' || status === 'Nachweis fehlt' ? 'old' : 'archived';
+  return <span className={`norm-status-pill norm-status-${cls}`}>{status}</span>;
+}
+
+function QualifiedRelease({ release }) {
+  const visible = release === 'sichtbar';
+  return <span className={`qualified-release ${visible ? 'is-visible' : ''}`}><span />{release}</span>;
+}
+
+function QualifiedDialog({ form, setForm, companies, employees, workAreas, statuses, releaseOptions, onClose, onSubmit }) {
+  const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
+  return <QualifiedModal title="Beauftragung erstellen" eyebrow="Befähigte Personen" onClose={onClose} onSubmit={onSubmit}>
+    <div className="form-grid form-grid--three">
+      <QualifiedField label="Mitarbeiter"><select value={form.employeeId} onChange={event => set('employeeId', event.target.value)}>{employees.map(employee => <option key={employee.id} value={employee.id}>{employee.name}</option>)}</select></QualifiedField>
+      <QualifiedField label="Firma"><select value={form.companyId} onChange={event => set('companyId', event.target.value)}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></QualifiedField>
+      <QualifiedField label="Tätigkeit oder Prüfbereich"><input value={form.area} onChange={event => set('area', event.target.value)} /></QualifiedField>
+      <QualifiedField label="Arbeitsmittelbereich"><select value={form.area} onChange={event => set('area', event.target.value)}>{workAreas.map(area => <option key={area}>{area}</option>)}</select></QualifiedField>
+      <QualifiedField label="Art der Befähigung"><input value={form.competenceType} onChange={event => set('competenceType', event.target.value)} /></QualifiedField>
+      <QualifiedField label="Art der Beauftragung"><input value={form.authorizationType} onChange={event => set('authorizationType', event.target.value)} /></QualifiedField>
+      <QualifiedField label="gültig ab"><input type="date" value={form.validFrom} onChange={event => set('validFrom', event.target.value)} /></QualifiedField>
+      <QualifiedField label="gültig bis"><input type="date" value={form.validUntil} onChange={event => set('validUntil', event.target.value)} /></QualifiedField>
+      <QualifiedField label="ausstellende Person"><input value={form.issuer} onChange={event => set('issuer', event.target.value)} /></QualifiedField>
+      <QualifiedField label="verantwortliche Führungskraft"><input value={form.manager} onChange={event => set('manager', event.target.value)} /></QualifiedField>
+      <QualifiedField label="Stellvertretung"><input value={form.substitute} onChange={event => set('substitute', event.target.value)} /></QualifiedField>
+      <QualifiedField label="erforderliche Qualifikation"><input value={form.qualification} onChange={event => set('qualification', event.target.value)} /></QualifiedField>
+      <QualifiedField label="Schulungsnachweis"><input value={form.trainingProof} onChange={event => set('trainingProof', event.target.value)} /></QualifiedField>
+      <QualifiedDocumentField value={form.document} onChange={value => set('document', value)} />
+      <QualifiedField label="Status"><select value={form.status} onChange={event => set('status', event.target.value)}>{statuses.map(status => <option key={status}>{status}</option>)}</select></QualifiedField>
+      <QualifiedField label="Freigabe für Mitarbeiter"><select value={form.release} onChange={event => set('release', event.target.value)}>{releaseOptions.map(option => <option key={option}>{option}</option>)}</select></QualifiedField>
+      <QualifiedField label="Befähigung / Beauftragung"><textarea value={form.authorization} onChange={event => set('authorization', event.target.value)} /></QualifiedField>
+      <QualifiedField label="Bemerkung"><textarea value={form.note} onChange={event => set('note', event.target.value)} /></QualifiedField>
+    </div>
+  </QualifiedModal>;
+}
+
+function QualifiedExtendDialog({ form, setForm, onClose, onSubmit }) {
+  const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
+  return <QualifiedModal title="Beauftragung verlängern" eyebrow="Verlängerung" onClose={onClose} onSubmit={onSubmit}>
+    <div className="form-grid form-grid--three">
+      <QualifiedField label="bisher gültig bis"><input value={form.oldValidUntil} readOnly /></QualifiedField>
+      <QualifiedField label="neu gültig bis"><input type="date" value={form.validUntil} onChange={event => set('validUntil', event.target.value)} /></QualifiedField>
+      <QualifiedField label="Verlängerungsdatum"><input type="date" value={form.extensionDate} onChange={event => set('extensionDate', event.target.value)} /></QualifiedField>
+      <QualifiedField label="neue Prüfung oder Unterweisung"><input value={form.newTraining || ''} onChange={event => set('newTraining', event.target.value)} /></QualifiedField>
+      <QualifiedField label="geprüft von"><input value={form.checkedBy} onChange={event => set('checkedBy', event.target.value)} /></QualifiedField>
+      <QualifiedField label="neue PDF-Datei"><input value={form.newProof} onChange={event => set('newProof', event.target.value)} /></QualifiedField>
+      <QualifiedField label="Bemerkung"><textarea value={form.note} onChange={event => set('note', event.target.value)} /></QualifiedField>
+    </div>
+  </QualifiedModal>;
+}
+
+function QualifiedModal({ title, eyebrow, children, onClose, onSubmit }) {
+  return <div className="cert-modal-backdrop" onMouseDown={onClose}>
+    <form className="cert-modal-card cert-modal-card--wide" onMouseDown={event => event.stopPropagation()} onSubmit={onSubmit}>
+      <div className="cert-modal-card__head"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2></div><button className="icon-btn" type="button" onClick={onClose}><Icon name="x" size={18} /></button></div>
+      {children}
+      <div className="modal-actions"><button className="btn btn--ghost" type="button" onClick={onClose}>Abbrechen</button><button className="btn btn--primary" type="submit">Speichern</button></div>
+    </form>
+  </div>;
+}
+
+function QualifiedField({ label, children }) {
+  return <label className="form-field"><span>{label}</span>{children}</label>;
+}
+
+function QualifiedDocumentField({ value, onChange }) {
+  const fileName = value || 'Noch kein Dokument hinterlegt';
+  return <div className="form-field qualified-doc-field">
+    <span>PDF-Dokument hochladen</span>
+    <div className="qualified-doc-box">
+      {value
+        ? <div className="qualified-doc-chip"><Icon name="file" size={14} /><span>{fileName}</span><button type="button" onClick={() => onChange('')}><Icon name="x" size={12} /></button></div>
+        : <div className="qualified-doc-empty"><Icon name="file" size={16} />Kein Dokument hinterlegt</div>}
+      <label className="qualified-doc-upload">
+        <Icon name="upload" size={14} />Dokument hinzufügen
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={event => onChange(event.target.files?.[0]?.name || value || '')} />
+      </label>
+    </div>
+  </div>;
+}
+
+function QualifiedDetailPage({ row, onBack, onEdit, onExtend }) {
+  return <div className="qualified-detail-page">
+    <div className="emp-page-title">
+      <button className="round-back" type="button" onClick={onBack}><Icon name="chevL" size={18} /></button>
+      <h1>{row.employeeName}</h1>
+      <div className="page-actions"><button className="btn btn--ghost" onClick={onEdit}><Icon name="edit" size={14} />Bearbeiten</button><button className="btn btn--primary" onClick={onExtend}><Icon name="history" size={14} />Verlängern</button></div>
+    </div>
+    <section className="qualified-detail-hero">
+      <div><QualifiedStatus status={row.status} /><h2>{row.area}</h2><p>{row.authorization}</p></div>
+      <div><strong>{row.warnings[0] || 'Keine Warnung'}</strong><span>Gültig bis: {fmtDate(row.validUntil)}</span></div>
+    </section>
+    <div className="cert-detail-grid">
+      <QualifiedInfoCard title="Mitarbeiterdaten" rows={[['Mitarbeiter', row.employeeName], ['Firma', row.companyName], ['Position', row.position]]} />
+      <QualifiedInfoCard title="Beauftragung" rows={[['Arbeitsmittelbereich', row.area], ['Art der Befähigung', row.competenceType], ['Art der Beauftragung', row.authorizationType], ['Status', row.status], ['Freigabe', row.release]]} />
+      <QualifiedInfoCard title="Gültigkeit" rows={[['gültig ab', fmtDate(row.validFrom)], ['gültig bis', fmtDate(row.validUntil)], ['Restlaufzeit', row.days < 0 ? `${Math.abs(row.days)} Tage abgelaufen` : `${row.days} Tage`]]} />
+      <QualifiedInfoCard title="Verantwortung" rows={[['beauftragende Person', row.issuer], ['Führungskraft', row.manager], ['Stellvertretung', row.substitute || 'fehlt']]} />
+      <QualifiedInfoCard title="Dokumente" rows={[['Beauftragungsschreiben', row.document || 'fehlt'], ['Schulungsnachweis', row.trainingProof || 'fehlt'], ['Zertifikat', row.qualification || '-']]} />
+      <QualifiedInfoCard title="Historie" rows={(row.history || ['Erstellt']).map((entry, index) => [`Eintrag ${index + 1}`, entry])} />
+      <QualifiedInfoCard title="Bemerkung" rows={[['Notiz', row.note || '-']]} />
+    </div>
+  </div>;
+}
+
+function QualifiedInfoCard({ title, rows }) {
+  return <section className="info-card">
+    <h2>{title}</h2>
+    {rows.map(([label, value]) => <div key={`${title}-${label}`} className="info-row"><span>{label}</span><strong>{value}</strong></div>)}
+  </section>;
+}
+
+function fmtDate(iso) {
+  if (!iso || !String(iso).includes('-')) return iso || '-';
+  const [year, month, day] = iso.split('-');
+  return `${day}.${month}.${year}`;
 }
 
 Object.assign(window, { BefaehigtePersonenView });

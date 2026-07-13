@@ -786,11 +786,11 @@ function CompanyCalendarPage({ company, onBack, initialTrainingId = null }) {
 }
 
 function CompanyAuthorizedPeoplePage({ company, onBack }) {
-  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   return <div className="emp-full company-authorized-page">
-    <CompanyPageTitle title={`Befähigte Personen (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
     <BefaehigtePersonenView
-      activeCompany={showAllCompanies ? 'all' : company.id}
+      activeCompany={company.id}
+      title={`Befähigte Personen (${company.name})`}
+      onBack={onBack}
     />
   </div>;
 }

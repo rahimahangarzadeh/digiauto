@@ -468,7 +468,7 @@ function CompanyNormsPage({ company, onBack }) {
   const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   return <div className="emp-full company-norms-page">
     <CompanyPageTitle title={`Normenmatrix (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
-    <NormenmatrixView />
+    <NormenmatrixView activeCompany={showAllCompanies ? 'all' : company.id} />
   </div>;
 }
 

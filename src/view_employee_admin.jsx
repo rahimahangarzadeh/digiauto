@@ -489,49 +489,126 @@ function employeeTrainingRecords(emp) {
   return window.SEED.trainings.slice(0, 8).map((training, index) => {
     const cert = certs[training.id] || {};
     const status = index === 3 ? 'expired' : index === 1 ? 'warn' : (['expired','warn'].includes(cert.status) ? cert.status : 'valid');
+    const provider = window.provider(cert.provider || training.provider);
     return {
-      id:training.id, name:training.name, issued:cert.issuedAt ? window.fmtDE(cert.issuedAt) : '21.05.2024',
+      id:`${emp.id}-${training.id}`,
+      trainingId:training.id,
+      employeeId:emp.id,
+      employee:emp,
+      employeeName:`${emp.lastName}, ${emp.firstName}`,
+      company:window.company(emp.company)?.name || emp.company,
+      companyShort:window.company(emp.company)?.short || emp.company,
+      department:emp.department,
+      position:emp.position,
+      name:training.name,
+      category:training.cat,
+      mandatory:training.mandatory ? 'Pflicht' : 'Optional',
+      provider:provider?.name || '-',
+      responsible:index % 2 ? 'Michael Janning' : 'Sabine Janning',
+      issued:cert.issuedAt ? window.fmtDE(cert.issuedAt) : '21.05.2024',
       expires:cert.expiresAt ? window.fmtDE(cert.expiresAt) : '21.05.2027',
       days:status === 'expired' ? -21 : status === 'warn' ? 37 : 412 + index * 29,
       status, released:index !== 3, changed:index === 0 ? '03.06.2026 · Sabine Janning' : `${String(28-index).padStart(2,'0')}.05.2026 · Michael Janning`,
-      description:training.desc, documents:index % 3 === 0 ? 2 : 1,
+      description:training.desc,
+      documents:index % 3 === 0 ? 2 : 1,
+      documentMissing:index === 5,
+      noExpiry:index === 6,
+      planned:index === 1,
+      history:index === 0 ? '2 frühere Nachweise' : '1 frühere Version',
+      appointment:index === 1 ? 'Termin 22.04.2026 geplant' : '-',
     };
   });
 }
 
 function EmployeeTrainingArea({ emp, onBack, onOpen }) {
-  const records = React.useMemo(() => employeeTrainingRecords(emp), [emp.id]);
+  const [scope, setScope] = React.useState(emp.id);
+  const sourceEmployees = React.useMemo(() => window.SEED.employees, []);
+  const activeEmployees = React.useMemo(() => {
+    if (scope === 'all') return sourceEmployees;
+    if (scope === 'active') return sourceEmployees.filter(item => item.status === 'aktiv');
+    if (scope === 'inactive') return sourceEmployees.filter(item => item.status !== 'aktiv');
+    if (scope.startsWith('company:')) return sourceEmployees.filter(item => item.company === scope.replace('company:',''));
+    return sourceEmployees.filter(item => item.id === scope);
+  }, [scope, sourceEmployees]);
+  const isAllView = scope !== emp.id;
+  const currentEmployee = activeEmployees.length === 1 ? activeEmployees[0] : emp;
+  const records = React.useMemo(() => activeEmployees.flatMap(employeeTrainingRecords), [activeEmployees]);
   const [selected, setSelected] = React.useState(new Set());
   const [sort, setSort] = React.useState({ key:'name', dir:'asc' });
   const [menu, setMenu] = React.useState(null);
   const [filter, setFilter] = React.useState('all');
   const [group, setGroup] = React.useState('');
-  const labels = { valid:'Gültig', warn:'Läuft bald ab', expired:'Abgelaufen' };
+  const [hiddenColumns, setHiddenColumns] = React.useState(new Set());
+  const labels = { valid:'Gültig', warn:'Läuft bald ab', expired:'Abgelaufen', planned:'Geplant', archived:'Archiviert' };
   const value = (row, key) => key === 'status' ? labels[row.status] : row[key];
-  let rows = filter === 'all' ? records : records.filter(row => row.status === filter);
+  const filterRow = row => {
+    if (filter === 'all') return true;
+    if (filter === 'documentMissing') return row.documentMissing;
+    if (filter === 'noExpiry') return row.noExpiry;
+    if (filter === 'archived') return row.status === 'archived';
+    return row.status === filter;
+  };
+  let rows = records.filter(filterRow);
   rows = [...rows].sort((a,b) => (sort.dir === 'asc' ? 1 : -1) * String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
   const toggle = id => setSelected(current => { const next = new Set(current); next.has(id) ? next.delete(id) : next.add(id); return next; });
-  const columns = [['name','Zertifikat / Schulung'],['issued','Ausstellungsdatum'],['expires','Ablaufdatum'],['days','Restlaufzeit'],['status','Status'],['released','Freigabe für Mitarbeiter'],['changed','Geändert'],['description','Beschreibung'],['documents','Dokumente']];
+  const baseColumns = [
+    ...(isAllView ? [['employeeName','Mitarbeiter'],['companyShort','Firma'],['department','Abteilung'],['position','Position']] : []),
+    ['name','Zertifikat / Schulung'],['issued','Ausstellungsdatum'],['expires','Ablaufdatum'],['days','Restlaufzeit'],['status','Status'],['released','Freigabe für Mitarbeiter'],['changed','Zuletzt geändert'],['description','Beschreibung'],['documents','Dokumente'],['actions','Aktionen']
+  ];
+  const columns = baseColumns.filter(([key]) => !hiddenColumns.has(key));
+  const kpi = [
+    ['Mitarbeiter mit Schulungen', new Set(records.map(row => row.employeeId)).size, 'all'],
+    ['Gültige Nachweise', records.filter(row => row.status === 'valid').length, 'valid'],
+    ['Laufen bald ab', records.filter(row => row.status === 'warn').length, 'warn'],
+    ['Abgelaufen', records.filter(row => row.status === 'expired').length, 'expired'],
+    ['Dokumente fehlen', records.filter(row => row.documentMissing).length, 'documentMissing'],
+    ['Verlängerungen geplant', records.filter(row => row.planned).length, 'warn'],
+  ];
+  const tabLabels = { all:`Alle ${records.length}`, valid:'Gültig', warn:'Läuft bald ab', expired:'Abgelaufen', documentMissing:'Dokument fehlt', noExpiry:'Ohne Ablaufdatum', archived:'Archiviert' };
+  const columnValue = (row, key) => {
+    if (key === 'days') return row.noExpiry ? 'ohne Ablaufdatum' : row.days < 0 ? `${Math.abs(row.days)} Tage überfällig` : `in ${row.days} Tagen`;
+    if (key === 'status') return <span className={'emp-status is-' + row.status}>{labels[row.status]}</span>;
+    if (key === 'released') return <span className="emp-release">{row.released ? <Icon name="check" size={17} stroke={2.4} /> : '-'}</span>;
+    if (key === 'documents') return <span className={'emp-doc-count ' + (row.documentMissing ? 'is-missing' : '')}><Icon name="doc" size={13} />{row.documentMissing ? 'fehlt' : row.documents}</span>;
+    if (key === 'actions') return <button className="emp-row-menu-btn" onClick={event => event.stopPropagation()}>⋮</button>;
+    if (key === 'employeeName') return <strong>{row.employeeName}</strong>;
+    if (key === 'name') return <strong>{row.name}</strong>;
+    return row[key];
+  };
 
   return (
     <div className="emp-full">
-      <EmpPageTitle title={`Schulungen (${emp.name})`} onBack={onBack} />
+      <EmpPageTitle title={isAllView ? 'Schulungen - alle Mitarbeiter' : `Schulungen (${currentEmployee.name})`} onBack={onBack} action={
+        <div className="emp-training-toolbar">
+          <label>Mitarbeiter auswählen<select value={scope} onChange={event => { setScope(event.target.value); setSelected(new Set()); }}>
+            <option value={emp.id}>{emp.name}</option>
+            <option value="all">Alle Mitarbeiter</option>
+            <option value="active">Nur aktive Mitarbeiter</option>
+            <option value="inactive">Ausgeschiedene Mitarbeiter</option>
+            {window.SEED.companies.map(company => <option key={company.id} value={`company:${company.id}`}>{company.name}</option>)}
+            {sourceEmployees.filter(item => item.id !== emp.id).slice().sort((a,b)=>a.lastName.localeCompare(b.lastName,'de')).map(item => <option key={item.id} value={item.id}>{item.lastName}, {item.firstName}</option>)}
+          </select></label>
+          <button><Icon name="settings" size={14}/>Filter</button>
+          <button><Icon name="plus" size={14}/>Schulung zuordnen</button>
+        </div>
+      } />
+      <div className="emp-training-kpis">{kpi.map(item => <button key={item[0]} className={filter === item[2] ? 'is-active' : ''} onClick={() => setFilter(item[2])}><span>{item[0]}</span><strong>{item[1]}</strong><small>Klicken zum Filtern</small></button>)}</div>
       <div className="emp-training-tabs">
-        {['all','valid','warn','expired'].map(id => <button key={id} className={filter === id ? 'is-active' : ''} onClick={() => setFilter(id)}>{id === 'all' ? `Alle ${records.length}` : labels[id]}</button>)}
+        {['all','valid','warn','expired','documentMissing','noExpiry','archived'].map(id => <button key={id} className={filter === id ? 'is-active' : ''} onClick={() => setFilter(id)}>{tabLabels[id]}</button>)}
         {group && <button className="emp-clear-group" onClick={() => setGroup('')}>Gruppierung aufheben</button>}
+        {hiddenColumns.size > 0 && <button className="emp-clear-group" onClick={() => setHiddenColumns(new Set())}>Alle Spalten anzeigen</button>}
       </div>
-      {selected.size > 0 && <div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14} />Als Excel exportieren</button><button><Icon name="edit" size={14} />Status ändern</button><button className="is-danger"><Icon name="trash" size={14} />Löschen</button></div>}
+      {selected.size > 0 && <div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14} />Dokumente herunterladen</button><button><Icon name="edit" size={14} />Freigabe ändern</button><button><Icon name="cal" size={14} />Schulungstermin erstellen</button><button><Icon name="clock" size={14} />Verlängerung planen</button><button className="is-danger"><Icon name="trash" size={14} />Löschen</button></div>}
       <div className="emp-table-wrap"><table className="emp-training-table">
-        <thead><tr><th className="emp-check"><input type="checkbox" checked={selected.size === records.length} onChange={() => setSelected(selected.size === records.length ? new Set() : new Set(records.map(row => row.id)))} /></th>
+        <thead><tr><th className="emp-check"><input type="checkbox" checked={rows.length > 0 && selected.size === rows.length} onChange={() => setSelected(selected.size === rows.length ? new Set() : new Set(rows.map(row => row.id)))} /></th>
           {columns.map(([key,label]) => <th key={key}><button onClick={() => setMenu(menu === key ? null : key)}>{label}<span>{sort.key === key ? (sort.dir === 'asc' ? '↑' : '↓') : '⌄'}</span></button>
-            {menu === key && <div className="emp-column-menu"><button onClick={() => {setSort({key,dir:'asc'});setMenu(null);}}>Aufsteigend sortieren</button><button onClick={() => {setSort({key,dir:'desc'});setMenu(null);}}>Absteigend sortieren</button><button onClick={() => {setGroup(key);setMenu(null);}}>Nach „{label}“ gruppieren</button><button onClick={() => setMenu(null)}>Spaltenfilter öffnen</button></div>}
+            {menu === key && <div className="emp-column-menu"><button onClick={() => {setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={() => {setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={() => setMenu(null)}>Filtern nach</button><button onClick={() => {setGroup(key);setMenu(null);}}>Gruppieren nach &quot;{label}&quot;</button><button onClick={() => {setHiddenColumns(old => new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button></div>}
           </th>)}</tr></thead>
         <tbody>{rows.map((row,index) => <React.Fragment key={row.id}>
-          {group && (index === 0 || value(rows[index-1],group) !== value(row,group)) && <tr className="emp-group-row"><td colSpan="10">{columns.find(col => col[0] === group)?.[1]}: {String(value(row,group))}</td></tr>}
+          {group && (index === 0 || value(rows[index-1],group) !== value(row,group)) && <tr className="emp-group-row"><td colSpan={columns.length + 1}>{columns.find(col => col[0] === group)?.[1]}: {String(value(row,group))}</td></tr>}
           <tr className={row.status === 'expired' ? 'is-expired' : ''} onClick={() => onOpen(row)}>
             <td className="emp-check" onClick={event => event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={() => toggle(row.id)} /></td>
-            <td><strong>{row.name}</strong></td><td>{row.issued}</td><td>{row.expires}</td><td className={row.days < 0 ? 'is-overdue' : ''}>{row.days < 0 ? `${Math.abs(row.days)} Tage überzogen` : `in ${row.days} Tagen`}</td>
-            <td><span className={'emp-status is-' + row.status}>{labels[row.status]}</span></td><td className="emp-release">{row.released ? <Icon name="check" size={17} stroke={2.4} /> : '-'}</td><td>{row.changed}</td><td className="emp-ellipsis">{row.description}</td><td><span className="emp-doc-count"><Icon name="doc" size={13} />{row.documents}</span></td>
+            {columns.map(([key]) => <td key={key} className={(key === 'description' ? 'emp-ellipsis ' : '') + (key === 'days' && row.days < 0 ? 'is-overdue' : '')}>{columnValue(row,key)}</td>)}
           </tr></React.Fragment>)}</tbody>
       </table></div>
     </div>
@@ -543,9 +620,10 @@ function EmployeeTrainingRecord({ emp, record, onBack }) {
   const [docs, setDocs] = React.useState([`${record.name.replace(/\s+/g,'_')}_Zertifikat.pdf`,'Teilnahmebescheinigung_Janning_Tiefbau_GmbH.pdf'].slice(0,record.documents));
   const [form, setForm] = React.useState({...record, validity:'09.09.2026 – Nächste Schulung'});
   const set = (key,val) => setForm(old => ({...old,[key]:val}));
+  const displayEmp = form.employee || emp;
   const statusName = form.status === 'valid' ? 'Gültig' : form.status === 'warn' ? 'Läuft bald ab' : 'Abgelaufen';
   return <div className="emp-full emp-training-record-page">
-    <EmpPageTitle title={`${record.name} (${emp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>} />
+    <EmpPageTitle title={`${record.name} (${displayEmp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>} />
     <section className="emp-training-record-card">
       <header className="emp-training-record-hero">
         <span className="emp-training-record-icon"><Icon name="cap" size={27} stroke={1.8}/></span>
@@ -553,13 +631,23 @@ function EmployeeTrainingRecord({ emp, record, onBack }) {
         <span className={'emp-status is-' + form.status}>{statusName}</span>
       </header>
       <div className="emp-training-record-grid">
+        <TrainingRecordField label="Mitarbeiter" icon="users" value={displayEmp.name}/>
+        <TrainingRecordField label="Firma" icon="building" value={window.company(displayEmp.company)?.name || displayEmp.company}/>
+        <TrainingRecordField label="Abteilung / Position" icon="flag" value={`${displayEmp.department} · ${displayEmp.position}`}/>
         <TrainingRecordField label="Zertifikat / Schulung" icon="cap" editing={editing} value={form.name}><input value={form.name} onChange={e=>set('name',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Kategorie" icon="doc" editing={editing} value={form.category || '-'}><input value={form.category || ''} onChange={e=>set('category',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Pflicht / Optional" icon="shield" editing={editing} value={form.mandatory || '-'}><select value={form.mandatory || 'Pflicht'} onChange={e=>set('mandatory',e.target.value)}><option>Pflicht</option><option>Optional</option></select></TrainingRecordField>
         <TrainingRecordField label="Ausstellungsdatum" icon="cal" editing={editing} value={form.issued}><input value={form.issued} onChange={e=>set('issued',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Ablaufdatum" icon="cal" editing={editing} value={form.expires}><input value={form.expires} onChange={e=>set('expires',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Restlaufzeit" icon="clock" value={form.days<0?`${Math.abs(form.days)} Tage überzogen`:`in ${form.days} Tagen`}/>
         <TrainingRecordField label="Status" icon="flag" editing={editing} value={statusName}><select value={form.status} onChange={e=>set('status',e.target.value)}><option value="valid">Gültig</option><option value="warn">Läuft bald ab</option><option value="expired">Abgelaufen</option></select></TrainingRecordField>
         <TrainingRecordField label="Freigegeben durch Arbeitgeber" icon="users" editing={editing} value={form.released?'Freigegeben':'Nicht freigegeben'}><label className="emp-check-label"><input type="checkbox" checked={form.released} onChange={e=>set('released',e.target.checked)}/>Freigegeben</label></TrainingRecordField>
+        <TrainingRecordField label="Anbieter" icon="building" editing={editing} value={form.provider || '-'}><input value={form.provider || ''} onChange={e=>set('provider',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Verantwortliche Person" icon="users" editing={editing} value={form.responsible || '-'}><input value={form.responsible || ''} onChange={e=>set('responsible',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Gültigkeit" icon="cal" editing={editing} value={form.validity} wide><input value={form.validity} onChange={e=>set('validity',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Frühere Nachweise" icon="history" value={form.history || '-'} />
+        <TrainingRecordField label="Zugehöriger Schulungstermin" icon="cal" value={form.appointment || '-'} />
+        <TrainingRecordField label="Änderungshistorie" icon="clock" value={form.changed || '-'} wide />
         <TrainingRecordField label="Beschreibung" icon="doc" editing={editing} value={form.description} wide><textarea rows="3" value={form.description} onChange={e=>set('description',e.target.value)}/></TrainingRecordField>
         <div className="emp-training-record-field is-wide emp-training-record-docs"><Icon name="link" size={20}/><div><label>Dokumente</label><div className="emp-file-list">{docs.map(doc=><span className="emp-file-chip" key={doc} title={doc}><Icon name="doc" size={14}/><span>{doc}</span><button onClick={()=>setDocs(list=>list.filter(item=>item!==doc))}><Icon name="x" size={13}/></button></span>)}</div>
           <label className="emp-training-add-file"><Icon name="plus" size={15}/>Dokument hinzufügen<input type="file" multiple onChange={e=>setDocs(old=>[...old,...Array.from(e.target.files||[]).map(file=>file.name)])}/></label></div>
@@ -574,59 +662,123 @@ function TrainingRecordField({label,icon,editing=false,value,wide=false,children
   return <div className={'emp-training-record-field'+(wide?' is-wide':'')}><Icon name={icon} size={20}/><div><label>{label}</label>{editing?children:<strong>{value}</strong>}</div></div>;
 }
 
-function employeeInstructionRecords() {
-  return window.SEED.instructions.map((instruction, index) => ({
-    id:instruction.id,
-    name:instruction.title,
-    company:window.company(instruction.company)?.name || '-',
-    date:window.fmtDE(instruction.date),
-    instructor:instruction.instructor,
-    group:instruction.group,
-    participants:instruction.participants.length,
-    status:instruction.status === 'archiviert' ? 'archived' : index === 1 ? 'open' : 'done',
-    released:index !== 1,
-    version:instruction.version,
-    history:instruction.history,
-    description:instruction.description,
-    explanation:instruction.explanation,
-    document:instruction.document,
-    documents:instruction.document ? 1 : 0,
-  }));
+function employeeInstructionRecords(emp) {
+  const personalStatuses = ['Bestätigt','Offen','Eingeladen','Teilgenommen','Nicht teilgenommen','Wiederholung erforderlich','Vorgemerkt'];
+  return window.SEED.instructions.map((instruction, index) => {
+    const participant = instruction.participants?.find(item => item.emp === emp.id);
+    const personalStatus = participant?.signed ? 'Bestätigt' : personalStatuses[index % personalStatuses.length];
+    const status = instruction.status === 'archiviert' ? 'archived' : ['Offen','Nicht teilgenommen','Wiederholung erforderlich'].includes(personalStatus) ? 'open' : 'done';
+    return {
+      id:`${emp.id}-${instruction.id}`,
+      instructionId:instruction.id,
+      employeeId:emp.id,
+      employee:emp,
+      employeeName:`${emp.lastName}, ${emp.firstName}`,
+      employeeStatus:personalStatus,
+      confirmation:personalStatus === 'Bestätigt' ? `bestätigt am ${participant?.date ? window.fmtDE(participant.date) : window.fmtDE(instruction.date)}` : index === 1 ? 'Unterschrift fehlt' : 'Nachweis offen',
+      remark:status === 'open' ? 'Offen seit ' + window.fmtDE(instruction.date) : 'Teilnahme vollständig dokumentiert',
+      company:window.company(instruction.company)?.name || '-',
+      companyShort:window.company(emp.company)?.short || emp.company,
+      department:emp.department,
+      position:emp.position,
+      date:window.fmtDE(instruction.date),
+      instructor:instruction.instructor,
+      group:instruction.group,
+      participants:instruction.participants.length,
+      status,
+      released:index !== 1,
+      releaseScope:index === 2 ? 'nur für Teilnehmer' : index === 3 ? 'nur für Führungskräfte' : (index !== 1 ? 'freigegeben' : 'nicht freigegeben'),
+      version:instruction.version,
+      history:instruction.history,
+      description:instruction.description,
+      explanation:instruction.explanation,
+      document:instruction.document,
+      documents:instruction.document ? 1 : 0,
+      documentMissing:index === 4,
+      name:instruction.title,
+    };
+  });
 }
 
 function EmployeeInstructionArea({ emp, onBack, onOpen }) {
-  const records = React.useMemo(() => employeeInstructionRecords(), []);
+  const [scope,setScope]=React.useState(emp.id);
+  const sourceEmployees=React.useMemo(()=>window.SEED.employees,[]);
+  const activeEmployees=React.useMemo(()=>{
+    if(scope==='all') return sourceEmployees;
+    if(scope==='active') return sourceEmployees.filter(item=>item.status==='aktiv');
+    if(scope==='inactive') return sourceEmployees.filter(item=>item.status!=='aktiv');
+    if(scope.startsWith('company:')) return sourceEmployees.filter(item=>item.company===scope.replace('company:',''));
+    return sourceEmployees.filter(item=>item.id===scope);
+  },[scope,sourceEmployees]);
+  const isAllView=scope!==emp.id;
+  const currentEmployee=activeEmployees.length===1?activeEmployees[0]:emp;
+  const records = React.useMemo(() => activeEmployees.flatMap(employeeInstructionRecords), [activeEmployees]);
   const [selected, setSelected] = React.useState(new Set());
   const [sort, setSort] = React.useState({key:'name',dir:'asc'});
   const [menu, setMenu] = React.useState(null);
   const [filter, setFilter] = React.useState('all');
   const [group, setGroup] = React.useState('');
-  const labels = {done:'Durchgeführt',open:'Offen',archived:'Archiviert'};
+  const [hiddenColumns,setHiddenColumns]=React.useState(new Set());
+  const labels = {done:'Durchgeführt',open:'Offen',archived:'Archiviert',documentMissing:'Dokument fehlt'};
   const value = (row,key) => key === 'status' ? labels[row.status] : key === 'history' ? row.version : row[key];
-  let rows = filter === 'all' ? records : records.filter(row => row.status === filter);
+  let rows = filter === 'all' ? records : filter === 'documentMissing' ? records.filter(row=>row.documentMissing) : records.filter(row => row.status === filter);
   rows = [...rows].sort((a,b) => (sort.dir === 'asc' ? 1 : -1) * String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
   const toggle = id => setSelected(current => { const next=new Set(current); next.has(id)?next.delete(id):next.add(id); return next; });
-  const columns = [['name','Name Unterweisung'],['company','Firma'],['date','Durchgeführt'],['instructor','Unterweisender'],['group','Gruppe / Abteilung'],['participants','Zahl Teilnehmer'],['status','Status'],['released','Freigabe für Mitarbeiter'],['history','Versionshistorie'],['description','Beschreibung'],['documents','Dokument']];
+  const baseColumns = [
+    ...(isAllView ? [['employeeName','Mitarbeiter'],['companyShort','Firma'],['department','Abteilung'],['position','Position']] : []),
+    ['name','Name Unterweisung'],['company','Firma'],['date','Unterweisungsdatum'],['instructor','Unterwiesen von'],['group','Gruppe / Abteilung'],[isAllView?'participants':'employeeStatus',isAllView?'Zahl Teilnehmer':'Teilnahmestatus'],['confirmation','Ergebnis / Bestätigung'],['status','Status'],['released','Freigabe für Mitarbeiter'],['history','Versionshistorie'],['description','Beschreibung'],['documents','Dokument'],['actions','Aktionen']
+  ];
+  const columns=baseColumns.filter(([key])=>!hiddenColumns.has(key));
+  const tabLabels={ all:`Alle ${records.length}`, done:'Durchgeführt', open:'Offen', archived:'Archiviert', documentMissing:'Dokument fehlt' };
+  const kpi=[
+    ['Teilnahmen', records.length, 'all'],
+    ['Durchgeführt', records.filter(row=>row.status==='done').length, 'done'],
+    ['Offen', records.filter(row=>row.status==='open').length, 'open'],
+    ['Dokument fehlt', records.filter(row=>row.documentMissing).length, 'documentMissing'],
+    ['Archiviert', records.filter(row=>row.status==='archived').length, 'archived'],
+  ];
+  const cellValue=(row,key)=>{
+    if(key==='status') return <span className={'emp-status is-'+row.status}>{labels[row.status]}</span>;
+    if(key==='released') return <span className="emp-release" title={row.releaseScope}>{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</span>;
+    if(key==='history') return <span className="emp-version-chip"><Icon name="history" size={13}/>{row.version}</span>;
+    if(key==='documents') return <span className={'emp-doc-count '+(row.documentMissing?'is-missing':'')}><Icon name="doc" size={13}/>{row.documentMissing?'fehlt':row.documents}</span>;
+    if(key==='actions') return <button className="emp-row-menu-btn" onClick={event=>event.stopPropagation()}>⋮</button>;
+    if(key==='employeeName'||key==='name') return <strong>{row[key]}</strong>;
+    return row[key];
+  };
 
   return <div className="emp-full">
-    <EmpPageTitle title={`Unterweisungen (${emp.name})`} onBack={onBack} />
+    <EmpPageTitle title={isAllView?'Unterweisungen - alle Mitarbeiter':`Unterweisungen (${currentEmployee.name})`} onBack={onBack} action={
+      <div className="emp-training-toolbar">
+        <label>Mitarbeiter auswählen<select value={scope} onChange={event=>{setScope(event.target.value);setSelected(new Set());}}>
+          <option value={emp.id}>{emp.name}</option>
+          <option value="all">Alle Mitarbeiter</option>
+          <option value="active">Nur aktive Mitarbeiter</option>
+          <option value="inactive">Ausgeschiedene Mitarbeiter</option>
+          {window.SEED.companies.map(company => <option key={company.id} value={`company:${company.id}`}>{company.name}</option>)}
+          {sourceEmployees.filter(item=>item.id!==emp.id).slice().sort((a,b)=>a.lastName.localeCompare(b.lastName,'de')).map(item=><option key={item.id} value={item.id}>{item.lastName}, {item.firstName}</option>)}
+        </select></label>
+        <button><Icon name="settings" size={14}/>Filter</button>
+        <button><Icon name="plus" size={14}/>Unterweisung</button>
+      </div>
+    } />
+    <div className="emp-training-kpis">{kpi.map(item=><button key={item[0]} className={filter===item[2]?'is-active':''} onClick={()=>setFilter(item[2])}><span>{item[0]}</span><strong>{item[1]}</strong><small>Klicken zum Filtern</small></button>)}</div>
     <div className="emp-training-tabs">
-      {['all','done','open','archived'].map(id => <button key={id} className={filter===id?'is-active':''} onClick={() => setFilter(id)}>{id==='all'?`Alle ${records.length}`:labels[id]}</button>)}
+      {['all','done','open','archived','documentMissing'].map(id => <button key={id} className={filter===id?'is-active':''} onClick={() => setFilter(id)}>{tabLabels[id]}</button>)}
       {group && <button className="emp-clear-group" onClick={() => setGroup('')}>Gruppierung aufheben</button>}
+      {hiddenColumns.size>0 && <button className="emp-clear-group" onClick={()=>setHiddenColumns(new Set())}>Alle Spalten anzeigen</button>}
     </div>
-    {selected.size>0 && <div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14}/>Als Excel exportieren</button><button><Icon name="edit" size={14}/>Status ändern</button><button className="is-danger"><Icon name="trash" size={14}/>Löschen</button></div>}
+    {selected.size>0 && <div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="check" size={14}/>Als durchgeführt markieren</button><button><Icon name="edit" size={14}/>Teilnehmer bestätigen</button><button><Icon name="download" size={14}/>Dokumente herunterladen</button><button><Icon name="mail" size={14}/>Erinnerung senden</button><button className="is-danger"><Icon name="trash" size={14}/>Löschen</button></div>}
     <div className="emp-table-wrap"><table className="emp-instruction-table">
-      <thead><tr><th className="emp-check"><input type="checkbox" checked={selected.size===records.length} onChange={() => setSelected(selected.size===records.length?new Set():new Set(records.map(row=>row.id)))}/></th>
+      <thead><tr><th className="emp-check"><input type="checkbox" checked={rows.length>0 && selected.size===rows.length} onChange={() => setSelected(selected.size===rows.length?new Set():new Set(rows.map(row=>row.id)))}/></th>
         {columns.map(([key,label]) => <th key={key}><button onClick={() => setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>
-          {menu===key && <div className="emp-column-menu"><button onClick={() => {setSort({key,dir:'asc'});setMenu(null);}}>Aufsteigend sortieren</button><button onClick={() => {setSort({key,dir:'desc'});setMenu(null);}}>Absteigend sortieren</button><button onClick={() => {setGroup(key);setMenu(null);}}>Nach „{label}“ gruppieren</button><button onClick={() => setMenu(null)}>Spaltenfilter öffnen</button></div>}
+          {menu===key && <div className="emp-column-menu"><button onClick={() => {setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={() => {setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={() => setMenu(null)}>Filtern nach</button><button onClick={() => {setGroup(key);setMenu(null);}}>Gruppieren nach &quot;{label}&quot;</button><button onClick={() => {setHiddenColumns(old=>new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button></div>}
         </th>)}</tr></thead>
       <tbody>{rows.map((row,index) => <React.Fragment key={row.id}>
-        {group && (index===0 || value(rows[index-1],group)!==value(row,group)) && <tr className="emp-group-row"><td colSpan="12">{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
+        {group && (index===0 || value(rows[index-1],group)!==value(row,group)) && <tr className="emp-group-row"><td colSpan={columns.length+1}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
         <tr className={row.status==='open'?'is-open':''} onClick={() => onOpen(row)}>
           <td className="emp-check" onClick={event=>event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={() => toggle(row.id)}/></td>
-          <td><strong>{row.name}</strong></td><td>{row.company}</td><td>{row.date}</td><td>{row.instructor}</td><td>{row.group}</td><td>{row.participants}</td>
-          <td><span className={'emp-status is-'+row.status}>{labels[row.status]}</span></td><td className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</td>
-          <td><span className="emp-version-chip"><Icon name="history" size={13}/>{row.version}</span></td><td className="emp-ellipsis">{row.description}</td><td><span className="emp-doc-count"><Icon name="doc" size={13}/>{row.documents}</span></td>
+          {columns.map(([key])=><td key={key} className={key==='description'?'emp-ellipsis':''}>{cellValue(row,key)}</td>)}
         </tr>
       </React.Fragment>)}</tbody>
     </table></div>
@@ -638,9 +790,10 @@ function EmployeeInstructionRecord({ emp, record, onBack }) {
   const [docs,setDocs]=React.useState(record.document?[record.document]:[]);
   const [form,setForm]=React.useState({...record});
   const set=(key,value)=>setForm(current=>({...current,[key]:value}));
+  const displayEmp=form.employee || emp;
   const statusName=form.status==='done'?'Durchgeführt':form.status==='open'?'Offen':'Archiviert';
   return <div className="emp-full emp-training-record-page">
-    <EmpPageTitle title={`${record.name} (${emp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
+    <EmpPageTitle title={`${record.name} (${displayEmp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
     <section className="emp-training-record-card">
       <header className="emp-training-record-hero">
         <span className="emp-training-record-icon emp-instruction-record-icon"><Icon name="flag" size={27} stroke={1.8}/></span>
@@ -648,15 +801,22 @@ function EmployeeInstructionRecord({ emp, record, onBack }) {
         <span className={'emp-status is-'+form.status}>{statusName}</span>
       </header>
       <div className="emp-training-record-grid">
+        <TrainingRecordField label="Mitarbeiter" icon="users" value={displayEmp.name}/>
+        <TrainingRecordField label="Firma" icon="building" value={window.company(displayEmp.company)?.name || displayEmp.company}/>
+        <TrainingRecordField label="Abteilung / Position" icon="flag" value={`${displayEmp.department} · ${displayEmp.position}`}/>
         <TrainingRecordField label="Name Unterweisung" icon="flag" editing={editing} value={form.name}><input value={form.name} onChange={e=>set('name',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Firma" icon="building" editing={editing} value={form.company}><input value={form.company} onChange={e=>set('company',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Durchgeführt" icon="cal" editing={editing} value={form.date}><input value={form.date} onChange={e=>set('date',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Unterweisender" icon="users" editing={editing} value={form.instructor}><input value={form.instructor} onChange={e=>set('instructor',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Gruppe / Abteilung" icon="users" editing={editing} value={form.group}><input value={form.group} onChange={e=>set('group',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Zahl Teilnehmer" icon="users" editing={editing} value={form.participants}><input type="number" value={form.participants} onChange={e=>set('participants',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Persönlicher Teilnahmestatus" icon="check" editing={editing} value={form.employeeStatus || '-'}><select value={form.employeeStatus || 'Offen'} onChange={e=>set('employeeStatus',e.target.value)}><option>Vorgemerkt</option><option>Offen</option><option>Eingeladen</option><option>Teilgenommen</option><option>Bestätigt</option><option>Nicht teilgenommen</option><option>Wiederholung erforderlich</option><option>Archiviert</option></select></TrainingRecordField>
+        <TrainingRecordField label="Ergebnis / Bestätigung" icon="doc" editing={editing} value={form.confirmation || '-'}><input value={form.confirmation || ''} onChange={e=>set('confirmation',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Status" icon="flag" editing={editing} value={statusName}><select value={form.status} onChange={e=>set('status',e.target.value)}><option value="done">Durchgeführt</option><option value="open">Offen</option><option value="archived">Archiviert</option></select></TrainingRecordField>
         <TrainingRecordField label="Freigegeben durch Arbeitgeber" icon="users" editing={editing} value={form.released?'Freigegeben':'Nicht freigegeben'}><label className="emp-check-label"><input type="checkbox" checked={form.released} onChange={e=>set('released',e.target.checked)}/>Freigegeben</label></TrainingRecordField>
+        <TrainingRecordField label="Freigabeumfang" icon="shield" value={form.releaseScope || '-'}/>
         <TrainingRecordField label="Versionshistorie" icon="history" editing={editing} value={`${form.version} · ${form.history.length} Versionen`} wide><input value={form.version} onChange={e=>set('version',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Bemerkung" icon="doc" editing={editing} value={form.remark || '-'} wide><textarea rows="2" value={form.remark || ''} onChange={e=>set('remark',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Beschreibung" icon="doc" editing={editing} value={form.description} wide><textarea rows="3" value={form.description} onChange={e=>set('description',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Durchführung / Erklärung" icon="doc" editing={editing} value={form.explanation} wide><textarea rows="3" value={form.explanation} onChange={e=>set('explanation',e.target.value)}/></TrainingRecordField>
         <div className="emp-training-record-field is-wide emp-training-record-docs"><Icon name="link" size={20}/><div><label>Dokumente</label><div className="emp-file-list">{docs.map(doc=><span className="emp-file-chip" key={doc}><Icon name="doc" size={14}/><span>{doc}</span><button onClick={()=>setDocs(list=>list.filter(item=>item!==doc))}><Icon name="x" size={13}/></button></span>)}</div><label className="emp-training-add-file"><Icon name="plus" size={15}/>Dokument hinzufügen<input type="file" multiple onChange={e=>setDocs(old=>[...old,...Array.from(e.target.files||[]).map(file=>file.name)])}/></label></div></div>

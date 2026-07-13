@@ -8231,11 +8231,11 @@ a.subtle:hover { text-decoration: underline; }
 .emp-version-chip { min-height:23px; display:inline-flex; align-items:center; gap:5px; border:1px solid var(--border-1); border-radius:999px; background:#fff; padding:0 8px; color:var(--fg-2); font-size:9.5px; font-weight:800; white-space:nowrap; }
 
 /* Employee job description list */
-.emp-job-table { width:100%; min-width:1510px; border-collapse:collapse; table-layout:fixed; }
+.emp-job-table { width:100%; min-width:2480px; border-collapse:collapse; table-layout:fixed; }
 .emp-job-table th,.emp-job-table td { border-bottom:1px solid var(--border-1); padding:10px 11px; color:var(--fg-2); font-size:10.5px; line-height:1.35; text-align:left; vertical-align:middle; }
 .emp-job-table th { position:relative; background:var(--color-parchment); color:var(--fg-3); font-size:9px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; white-space:nowrap; }
 .emp-job-table th > button { display:inline-flex; align-items:center; gap:5px; border:0; background:transparent; padding:0; color:inherit; font:inherit; text-transform:inherit; cursor:pointer; }
-.emp-job-table th:nth-child(2){width:240px}.emp-job-table th:nth-child(3){width:90px}.emp-job-table th:nth-child(4),.emp-job-table th:nth-child(5){width:115px}.emp-job-table th:nth-child(6){width:130px}.emp-job-table th:nth-child(7){width:145px}.emp-job-table th:nth-child(8){width:130px}.emp-job-table th:nth-child(9){width:300px}.emp-job-table th:nth-child(10){width:90px}
+.emp-job-table th:nth-child(2){width:170px}.emp-job-table th:nth-child(3){width:105px}.emp-job-table th:nth-child(4){width:120px}.emp-job-table th:nth-child(5){width:150px}.emp-job-table th:nth-child(6){width:235px}.emp-job-table th:nth-child(7){width:175px}.emp-job-table th:nth-child(8){width:95px}.emp-job-table th:nth-child(9),.emp-job-table th:nth-child(10),.emp-job-table th:nth-child(11),.emp-job-table th:nth-child(12){width:118px}.emp-job-table th:nth-child(13){width:145px}.emp-job-table th:nth-child(14){width:145px}.emp-job-table th:nth-child(15){width:125px}.emp-job-table th:nth-child(16){width:280px}.emp-job-table th:nth-child(17){width:90px}.emp-job-table th:nth-child(18){width:75px}
 .emp-job-table tbody tr:not(.emp-group-row){cursor:pointer}.emp-job-table tbody tr:not(.emp-group-row):hover{background:#faf9f6}.emp-job-table tbody tr.is-open,.emp-job-table tbody tr.is-open:hover{background:#fff9eb}.emp-job-table tbody tr.is-open td{border-color:#eee0b9}.emp-job-table td strong{color:var(--fg-1);font-weight:750}
 
 /* Employee medical precaution list */

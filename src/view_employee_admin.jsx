@@ -828,36 +828,105 @@ function EmployeeInstructionRecord({ emp, record, onBack }) {
 
 function employeeJobRecords(emp) {
   return [
-    {id:'job-1',name:`Stellenbeschreibung ${emp.position}`,version:'v3.1',created:'12.01.2026',signed:'18.01.2026',status:'signed',released:true,history:3,description:`Aufgaben, Befugnisse und Verantwortlichkeiten für die Position ${emp.position}.`,document:`Stellenbeschreibung_${emp.position}_v3.1.pdf`},
-    {id:'job-2',name:'Zusatzfunktion Sicherheitsbeauftragter',version:'v1.2',created:'08.03.2026',signed:'-',status:'open',released:false,history:2,description:'Ergänzende Aufgaben im Arbeits- und Gesundheitsschutz.',document:'Zusatzfunktion_Sicherheitsbeauftragter_v1.2.pdf'},
-    {id:'job-3',name:'Vertretungsregelung Bauleitung',version:'v2.0',created:'14.09.2025',signed:'22.09.2025',status:'signed',released:true,history:4,description:'Regelung zur Vertretung und Freigabe bei Abwesenheit der Bauleitung.',document:'Vertretungsregelung_Bauleitung_v2.0.pdf'},
-  ];
+    {baseId:'job-1',name:`Stellenbeschreibung ${emp.position}`,functionName:emp.position,version:'v3.1',validFrom:'12.01.2026',created:'12.01.2026',handed:'13.01.2026',deadline:'27.01.2026',signed:'18.01.2026',status:'signed',released:true,history:3,description:`Aufgaben, Befugnisse und Verantwortlichkeiten für die Position ${emp.position}.`,document:`Stellenbeschreibung_${emp.position}_v3.1.pdf`},
+    {baseId:'job-2',name:'Zusatzfunktion Sicherheitsbeauftragter',functionName:'Sicherheitsbeauftragter',version:'v1.2',validFrom:'08.03.2026',created:'08.03.2026',handed:'10.03.2026',deadline:'24.03.2026',signed:'-',status:'open',released:false,history:2,description:'Ergänzende Aufgaben im Arbeits- und Gesundheitsschutz.',document:'Zusatzfunktion_Sicherheitsbeauftragter_v1.2.pdf'},
+    {baseId:'job-3',name:'Vertretungsregelung Bauleitung',functionName:'Vertretung Bauleitung',version:'v2.0',validFrom:'14.09.2025',created:'14.09.2025',handed:'16.09.2025',deadline:'30.09.2025',signed:'22.09.2025',status:'signed',released:true,history:4,description:'Regelung zur Vertretung und Freigabe bei Abwesenheit der Bauleitung.',document:'Vertretungsregelung_Bauleitung_v2.0.pdf'},
+  ].map((row,index) => {
+    const status = index === 1 && emp.status === 'aktiv' ? 'open' : row.status;
+    return {
+      ...row,
+      id:`${emp.id}-${row.baseId}`,
+      employeeId:emp.id,
+      employee:emp,
+      employeeName:`${emp.lastName}, ${emp.firstName}`,
+      company:window.company(emp.company)?.name || emp.company,
+      companyShort:window.company(emp.company)?.short || emp.company,
+      department:emp.department,
+      position:emp.position,
+      status,
+      signatureStatus:status === 'signed' ? 'Unterschrieben' : index === 1 ? 'Unterschrift seit 10 Tagen offen' : 'Zugeordnet',
+      confirmation:status === 'signed' ? 'handschriftlich bestätigt' : 'Unterschriftsnachweis fehlt',
+      newVersion:index === 1,
+      overdue:index === 1,
+      remark:status === 'signed' ? 'Persönliche Bestätigung liegt vor.' : 'Unterschrift noch offen.',
+    };
+  });
 }
 
 function EmployeeJobArea({emp,onBack,onOpen}) {
-  const records=React.useMemo(()=>employeeJobRecords(emp),[emp.id]);
+  const [scope,setScope]=React.useState(emp.id);
+  const sourceEmployees=React.useMemo(()=>window.SEED.employees,[]);
+  const activeEmployees=React.useMemo(()=>{
+    if(scope==='all') return sourceEmployees;
+    if(scope==='active') return sourceEmployees.filter(item=>item.status==='aktiv');
+    if(scope==='inactive') return sourceEmployees.filter(item=>item.status!=='aktiv');
+    if(scope.startsWith('company:')) return sourceEmployees.filter(item=>item.company===scope.replace('company:',''));
+    if(scope.startsWith('department:')) return sourceEmployees.filter(item=>item.department===scope.replace('department:',''));
+    return sourceEmployees.filter(item=>item.id===scope);
+  },[scope,sourceEmployees]);
+  const isAllView=scope!==emp.id;
+  const currentEmployee=activeEmployees.length===1?activeEmployees[0]:emp;
+  const records=React.useMemo(()=>activeEmployees.flatMap(employeeJobRecords),[activeEmployees]);
   const [selected,setSelected]=React.useState(new Set());
   const [sort,setSort]=React.useState({key:'name',dir:'asc'});
   const [menu,setMenu]=React.useState(null);
   const [filter,setFilter]=React.useState('all');
   const [group,setGroup]=React.useState('');
-  const labels={signed:'Unterschrieben',open:'Unterschrift offen'};
+  const [hiddenColumns,setHiddenColumns]=React.useState(new Set());
+  const labels={signed:'Unterschrieben',open:'Unterschrift offen',newVersion:'Neue Version erforderlich',overdue:'Frist überschritten',archived:'Archiviert'};
   const value=(row,key)=>key==='status'?labels[row.status]:key==='history'?row.version:row[key];
-  let rows=filter==='all'?records:records.filter(row=>row.status===filter);
+  let rows=filter==='all'?records:filter==='newVersion'?records.filter(row=>row.newVersion):filter==='overdue'?records.filter(row=>row.overdue):records.filter(row=>row.status===filter);
   rows=[...rows].sort((a,b)=>(sort.dir==='asc'?1:-1)*String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
   const toggle=id=>setSelected(current=>{const next=new Set(current);next.has(id)?next.delete(id):next.add(id);return next;});
-  const columns=[['name','Stellenbeschreibung'],['version','Version'],['created','Erstellt am'],['signed','Unterschrieben am'],['status','Status'],['released','Freigabe für Mitarbeiter'],['history','Versionshistorie'],['description','Beschreibung'],['document','Dokument']];
+  const baseColumns=[
+    ...(isAllView?[['employeeName','Mitarbeiter'],['companyShort','Firma'],['department','Abteilung'],['position','Position']]:[]),
+    ['name','Stellenbeschreibung'],['functionName','Position / Zusatzfunktion'],['version','Version'],['validFrom','Gültig ab'],['created','Erstellt am'],['handed','Ausgehändigt am'],['signed','Unterschrieben am'],['signatureStatus','Status der Unterschrift'],['released','Freigabe für Mitarbeiter'],['history','Versionshistorie'],['description','Beschreibung'],['document','Dokument'],['actions','Aktionen']
+  ];
+  const columns=baseColumns.filter(([key])=>!hiddenColumns.has(key));
+  const tabLabels={all:`Alle ${records.length}`,signed:`Unterschrieben ${records.filter(row=>row.status==='signed').length}`,open:`Unterschrift offen ${records.filter(row=>row.status==='open').length}`,newVersion:`Neue Version erforderlich ${records.filter(row=>row.newVersion).length}`,overdue:`Frist überschritten ${records.filter(row=>row.overdue).length}`,archived:'Archiviert'};
+  const kpi=[
+    ['Zuordnungen',records.length,'all'],
+    ['Unterschrieben',records.filter(row=>row.status==='signed').length,'signed'],
+    ['Offen',records.filter(row=>row.status==='open').length,'open'],
+    ['Neue Version',records.filter(row=>row.newVersion).length,'newVersion'],
+    ['Frist überschritten',records.filter(row=>row.overdue).length,'overdue'],
+  ];
+  const cellValue=(row,key)=>{
+    if(key==='employeeName'||key==='name') return <strong>{row[key]}</strong>;
+    if(key==='version') return <span className="emp-version-chip">{row.version}</span>;
+    if(key==='status'||key==='signatureStatus') return <span className={'emp-status is-'+row.status}>{key==='status'?labels[row.status]:row.signatureStatus}</span>;
+    if(key==='released') return <span className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</span>;
+    if(key==='history') return <span className="emp-version-chip"><Icon name="history" size={13}/>{row.history} Versionen</span>;
+    if(key==='document') return <span className="emp-doc-count"><Icon name="doc" size={13}/>1</span>;
+    if(key==='actions') return <button className="emp-row-menu-btn" onClick={event=>event.stopPropagation()}>⋮</button>;
+    return row[key];
+  };
   return <div className="emp-full">
-    <EmpPageTitle title={`Stellenbeschreibungen (${emp.name})`} onBack={onBack}/>
-    <div className="emp-training-tabs">{['all','signed','open'].map(id=><button key={id} className={filter===id?'is-active':''} onClick={()=>setFilter(id)}>{id==='all'?`Alle ${records.length}`:labels[id]}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}</div>
-    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14}/>Als Excel exportieren</button><button><Icon name="edit" size={14}/>Status ändern</button><button className="is-danger"><Icon name="trash" size={14}/>Löschen</button></div>}
+    <EmpPageTitle title={isAllView?'Stellenbeschreibungen - alle Mitarbeiter':`Stellenbeschreibungen (${currentEmployee.name})`} onBack={onBack} action={
+      <div className="emp-training-toolbar">
+        <label>Mitarbeiter auswählen<select value={scope} onChange={event=>{setScope(event.target.value);setSelected(new Set());}}>
+          <option value={emp.id}>{emp.name}</option>
+          <option value="all">Alle Mitarbeiter</option>
+          <option value="active">Nur aktive Mitarbeiter</option>
+          <option value="inactive">Ausgeschiedene Mitarbeiter</option>
+          {window.SEED.companies.map(company=><option key={company.id} value={`company:${company.id}`}>{company.name}</option>)}
+          {window.SEED.departments.map(dept=><option key={dept} value={`department:${dept}`}>Abteilung: {dept}</option>)}
+          {sourceEmployees.filter(item=>item.id!==emp.id).slice().sort((a,b)=>a.lastName.localeCompare(b.lastName,'de')).map(item=><option key={item.id} value={item.id}>{item.lastName}, {item.firstName}</option>)}
+        </select></label>
+        <button><Icon name="settings" size={14}/>Filter</button>
+        <button><Icon name="plus" size={14}/>Stellenbeschreibung zuordnen</button>
+      </div>
+    }/>
+    <div className="emp-training-kpis">{kpi.map(item=><button key={item[0]} className={filter===item[2]?'is-active':''} onClick={()=>setFilter(item[2])}><span>{item[0]}</span><strong>{item[1]}</strong><small>Klicken zum Filtern</small></button>)}</div>
+    <div className="emp-training-tabs">{['all','signed','open','newVersion','overdue','archived'].map(id=><button key={id} className={filter===id?'is-active':''} onClick={()=>setFilter(id)}>{tabLabels[id]}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}{hiddenColumns.size>0&&<button className="emp-clear-group" onClick={()=>setHiddenColumns(new Set())}>Alle Spalten anzeigen</button>}</div>
+    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14}/>Dokumente herunterladen</button><button><Icon name="check" size={14}/>Unterschrift bestätigen</button><button><Icon name="mail" size={14}/>Erinnerung senden</button><button><Icon name="history" size={14}/>Neue Version zuordnen</button><button className="is-danger"><Icon name="trash" size={14}/>Löschen</button></div>}
     <div className="emp-table-wrap"><table className="emp-job-table">
-      <thead><tr><th className="emp-check"><input type="checkbox" checked={selected.size===records.length} onChange={()=>setSelected(selected.size===records.length?new Set():new Set(records.map(row=>row.id)))}/></th>
-        {columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>Aufsteigend sortieren</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Absteigend sortieren</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Nach „{label}“ gruppieren</button><button onClick={()=>setMenu(null)}>Spaltenfilter öffnen</button></div>}</th>)}
+      <thead><tr><th className="emp-check"><input type="checkbox" checked={rows.length>0&&selected.size===rows.length} onChange={()=>setSelected(selected.size===rows.length?new Set():new Set(rows.map(row=>row.id)))}/></th>
+        {columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={()=>setMenu(null)}>Filtern nach</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Gruppieren nach &quot;{label}&quot;</button><button onClick={()=>{setHiddenColumns(old=>new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button></div>}</th>)}
       </tr></thead>
-      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan="10">{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
+      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan={columns.length+1}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
         <tr className={row.status==='open'?'is-open':''} onClick={()=>onOpen(row)}><td className="emp-check" onClick={event=>event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={()=>toggle(row.id)}/></td>
-          <td><strong>{row.name}</strong></td><td><span className="emp-version-chip">{row.version}</span></td><td>{row.created}</td><td>{row.signed}</td><td><span className={'emp-status is-'+row.status}>{labels[row.status]}</span></td><td className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</td><td><span className="emp-version-chip"><Icon name="history" size={13}/>{row.history} Versionen</span></td><td className="emp-ellipsis">{row.description}</td><td><span className="emp-doc-count"><Icon name="doc" size={13}/>1</span></td>
+          {columns.map(([key])=><td key={key} className={key==='description'?'emp-ellipsis':''}>{cellValue(row,key)}</td>)}
         </tr></React.Fragment>)}</tbody>
     </table></div>
   </div>;
@@ -868,18 +937,28 @@ function EmployeeJobRecord({emp,record,onBack}) {
   const [docs,setDocs]=React.useState([record.document]);
   const [form,setForm]=React.useState({...record});
   const set=(key,value)=>setForm(current=>({...current,[key]:value}));
+  const displayEmp=form.employee || emp;
   const statusName=form.status==='signed'?'Unterschrieben':'Unterschrift offen';
   return <div className="emp-full emp-training-record-page">
-    <EmpPageTitle title={`${record.name} (${emp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
+    <EmpPageTitle title={`${record.name} (${displayEmp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
     <section className="emp-training-record-card"><header className="emp-training-record-hero"><span className="emp-training-record-icon emp-job-record-icon"><Icon name="doc" size={27}/></span><div><span>Stellenbeschreibung</span><h2>{form.name}</h2></div><span className={'emp-status is-'+form.status}>{statusName}</span></header>
       <div className="emp-training-record-grid">
+        <TrainingRecordField label="Mitarbeiter" icon="users" value={displayEmp.name}/>
+        <TrainingRecordField label="Firma" icon="building" value={window.company(displayEmp.company)?.name || displayEmp.company}/>
+        <TrainingRecordField label="Position" icon="flag" value={displayEmp.position}/>
         <TrainingRecordField label="Stellenbeschreibung" icon="doc" editing={editing} value={form.name}><input value={form.name} onChange={e=>set('name',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Position / Zusatzfunktion" icon="flag" editing={editing} value={form.functionName || '-'}><input value={form.functionName || ''} onChange={e=>set('functionName',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Version" icon="history" editing={editing} value={form.version}><input value={form.version} onChange={e=>set('version',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Gültig ab" icon="cal" editing={editing} value={form.validFrom || '-'}><input value={form.validFrom || ''} onChange={e=>set('validFrom',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Erstellt am" icon="cal" editing={editing} value={form.created}><input value={form.created} onChange={e=>set('created',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Ausgehändigt am" icon="cal" editing={editing} value={form.handed || '-'}><input value={form.handed || ''} onChange={e=>set('handed',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Unterschriftsfrist" icon="clock" editing={editing} value={form.deadline || '-'}><input value={form.deadline || ''} onChange={e=>set('deadline',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Unterschrieben am" icon="cal" editing={editing} value={form.signed}><input value={form.signed} onChange={e=>set('signed',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Status" icon="flag" editing={editing} value={statusName}><select value={form.status} onChange={e=>set('status',e.target.value)}><option value="signed">Unterschrieben</option><option value="open">Unterschrift offen</option></select></TrainingRecordField>
+        <TrainingRecordField label="Persönliche Bestätigung" icon="check" editing={editing} value={form.confirmation || '-'}><input value={form.confirmation || ''} onChange={e=>set('confirmation',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Freigegeben durch Arbeitgeber" icon="users" editing={editing} value={form.released?'Freigegeben':'Nicht freigegeben'}><label className="emp-check-label"><input type="checkbox" checked={form.released} onChange={e=>set('released',e.target.checked)}/>Freigegeben</label></TrainingRecordField>
         <TrainingRecordField label="Versionshistorie" icon="history" value={`${form.history} Versionen`} wide/>
+        <TrainingRecordField label="Bemerkung" icon="doc" editing={editing} value={form.remark || '-'} wide><textarea rows="2" value={form.remark || ''} onChange={e=>set('remark',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Beschreibung" icon="doc" editing={editing} value={form.description} wide><textarea rows="4" value={form.description} onChange={e=>set('description',e.target.value)}/></TrainingRecordField>
         <div className="emp-training-record-field is-wide emp-training-record-docs"><Icon name="link" size={20}/><div><label>Dokumente</label><div className="emp-file-list">{docs.map(doc=><span className="emp-file-chip" key={doc}><Icon name="doc" size={14}/><span>{doc}</span><button onClick={()=>setDocs(list=>list.filter(item=>item!==doc))}><Icon name="x" size={13}/></button></span>)}</div><label className="emp-training-add-file"><Icon name="plus" size={15}/>Dokument hinzufügen<input type="file" multiple onChange={e=>setDocs(old=>[...old,...Array.from(e.target.files||[]).map(file=>file.name)])}/></label></div></div>
       </div>{editing&&<footer className="emp-training-record-footer"><button className="btn btn--ghost" onClick={()=>setEditing(false)}>Abbrechen</button><button className="btn btn--primary" onClick={()=>setEditing(false)}>Speichern</button></footer>}

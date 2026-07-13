@@ -9435,12 +9435,18 @@ a.subtle:hover { text-decoration: underline; }
 .company-site-doc-table td strong{display:block;color:var(--fg-1);font-weight:800}
 .company-site-doc-table td small{display:block;margin-top:3px;color:var(--fg-3);font-size:11px}
 .company-site-doc-actions{display:flex;gap:7px}
-.company-info-toolbar{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:-6px 0 14px}
+.company-info-matrix-page .emp-page-title{align-items:center;gap:14px}
+.company-info-matrix-page .emp-page-title>div{flex:0 1 auto}
+.company-info-matrix-page .emp-page-title>.company-info-toolbar{flex:1 1 auto;min-width:0}
+.company-info-toolbar{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:0;flex-wrap:nowrap}
 .company-info-toolbar select{height:36px;min-width:210px;border:1px solid var(--border-1);border-radius:7px;background:#fff;padding:0 11px;color:var(--fg-1);font:inherit;font-size:12px;font-weight:700}
 .company-info-toolbar .segmented{height:36px;display:inline-flex;overflow:hidden;border:1px solid var(--border-1);border-radius:7px;background:#fff}
 .company-info-toolbar .segmented button{min-width:86px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-right:1px solid var(--border-1);background:#fff;padding:0 10px;color:var(--fg-2);font:inherit;font-size:12px;font-weight:750;cursor:pointer}
 .company-info-toolbar .segmented button:last-child{border-right:0}
 .company-info-toolbar .segmented button.is-active{background:#111;color:#fff}
+.company-info-kpis{grid-template-columns:repeat(5,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.company-info-kpis .company-site-kpi{border:1px solid var(--border-1);font:inherit;cursor:pointer;transition:border-color .14s ease,box-shadow .14s ease,background .14s ease}
+.company-info-kpis .company-site-kpi:hover,.company-info-kpis .company-site-kpi.is-active{border-color:rgba(201,100,66,.55);background:#fff7f1;box-shadow:0 7px 18px rgba(47,36,25,.075)}
 .company-info-matrix-card{overflow:hidden;padding:0;background:#fffdfa}
 .company-info-matrix-wrap{overflow:auto;border:1px solid var(--border-1);border-radius:8px;background:var(--color-ivory)}
 .company-info-matrix-table{min-width:2200px;width:100%;border-collapse:separate;border-spacing:0}
@@ -9492,7 +9498,7 @@ a.subtle:hover { text-decoration: underline; }
 .info-version-list strong{color:var(--fg-1);font-size:12px}
 .info-version-list span{color:var(--fg-2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .company-info-matrix-detail .emp-master-field textarea{min-height:76px}
-@media(max-width:1100px){.company-info-toolbar{justify-content:flex-start;flex-wrap:wrap}.company-info-card-grid{grid-template-columns:1fr}.info-dialog main{grid-template-columns:1fr}}
+@media(max-width:1100px){.company-info-matrix-page .emp-page-title{align-items:flex-start;flex-direction:column}.company-info-toolbar{justify-content:flex-start;flex-wrap:wrap}.company-info-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.company-info-card-grid{grid-template-columns:1fr}.info-dialog main{grid-template-columns:1fr}}
 
 /* PDF Formularverwaltung */
 .form-pdf-page{background:#f8f5f0;min-height:100%;min-width:0;max-width:100%;overflow-x:hidden;padding-bottom:30px}

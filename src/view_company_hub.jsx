@@ -502,6 +502,7 @@ function CompanyInformationMatrixPage({ company, onBack }) {
   const [columnMenu, setColumnMenu] = React.useState(null);
   const [groupBy, setGroupBy] = React.useState('');
   const [sort, setSort] = React.useState({ key:'bezeichnung', dir:'asc' });
+  const [kpiFilter, setKpiFilter] = React.useState('all');
   const columns = [
     ['bezeichnung', 'Bezeichnung'],
     ['companyName', 'Firma'],
@@ -521,9 +522,24 @@ function CompanyInformationMatrixPage({ company, onBack }) {
     ['status', 'Status'],
     ['document', 'Dokument'],
   ];
-  const rows = companyInformationMatrixRows()
-    .filter(row => showAllCompanies || row.company === company.id)
+  const baseRows = companyInformationMatrixRows().filter(row => showAllCompanies || row.company === company.id);
+  const filteredRows = baseRows.filter(row => {
+    if (kpiFilter === 'all') return true;
+    if (kpiFilter === 'released') return row.status === 'Freigegeben';
+    if (kpiFilter === 'notReleased') return !row.released;
+    if (kpiFilter === 'destroy') return row.status === 'Zur Vernichtung vorgesehen';
+    if (kpiFilter === 'archived') return row.status === 'Archiviert';
+    return true;
+  });
+  const rows = filteredRows
     .sort((a, b) => String(a[sort.key] || '').localeCompare(String(b[sort.key] || ''), 'de', { numeric:true }) * (sort.dir === 'asc' ? 1 : -1));
+  const infoCounts = {
+    all: baseRows.length,
+    released: baseRows.filter(row => row.status === 'Freigegeben').length,
+    notReleased: baseRows.filter(row => !row.released).length,
+    destroy: baseRows.filter(row => row.status === 'Zur Vernichtung vorgesehen').length,
+    archived: baseRows.filter(row => row.status === 'Archiviert').length,
+  };
   const groupedRows = groupBy ? Object.entries(rows.reduce((acc, row) => {
     const key = String(row[groupBy] ?? '-');
     acc[key] = acc[key] || [];
@@ -542,28 +558,28 @@ function CompanyInformationMatrixPage({ company, onBack }) {
     <button onClick={() => setGroupBy('')}>Gruppierung aufheben</button>
   </div>;
   if (selected) return <CompanyInformationMatrixDetail row={selected} onBack={() => setSelected(null)} />;
-  return <div className="emp-full company-info-matrix-page">
-    <CompanyPageTitle title={`Informationslenkungsmatrix (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
-    <div className="company-info-toolbar">
-      <select value={showAllCompanies ? 'all' : company.id} onChange={event => setShowAllCompanies(event.target.value === 'all')}>
-        <option value={company.id}>{company.name}</option>
-        <option value="all">Alle Firmen</option>
-      </select>
-      <div className="segmented">
-        <button className={viewMode === 'cards' ? 'is-active' : ''} onClick={() => setViewMode('cards')}><Icon name="dashboard" size={14} />Kacheln</button>
-        <button className={viewMode === 'list' ? 'is-active' : ''} onClick={() => setViewMode('list')}><Icon name="matrix" size={14} />Liste</button>
-      </div>
-      <button className="btn btn--ghost"><Icon name="filter" size={14} />Filter</button>
-      <button className="btn btn--ghost"><Icon name="download" size={14} />Excel</button>
-      <button className="btn btn--ghost"><Icon name="doc" size={14} />PDF</button>
-      <button className="btn btn--primary" onClick={() => setDialog({ mode:'create' })}><Icon name="plus" size={14} />Eintrag anlegen</button>
+  const titleActions = <div className="company-info-toolbar">
+    <select value={showAllCompanies ? 'all' : company.id} onChange={event => { setShowAllCompanies(event.target.value === 'all'); setSelectedIds([]); }}>
+      <option value={company.id}>{company.name}</option>
+      <option value="all">Alle Firmen</option>
+    </select>
+    <div className="segmented">
+      <button className={viewMode === 'cards' ? 'is-active' : ''} onClick={() => setViewMode('cards')}><Icon name="dashboard" size={14} />Kacheln</button>
+      <button className={viewMode === 'list' ? 'is-active' : ''} onClick={() => setViewMode('list')}><Icon name="matrix" size={14} />Liste</button>
     </div>
-    <div className="company-site-kpis">
-      <div className="company-site-kpi"><span>Eintrage gesamt</span><strong>{rows.length}</strong><small>in Ansicht</small></div>
-      <div className="company-site-kpi"><span>Freigegeben</span><strong>{rows.filter(row => row.status === 'Freigegeben').length}</strong><small>Portal bereit</small></div>
-      <div className="company-site-kpi"><span>Nicht freigegeben</span><strong>{rows.filter(row => !row.released).length}</strong><small>prufen</small></div>
-      <div className="company-site-kpi"><span>Zur Vernichtung</span><strong>{rows.filter(row => row.status === 'Zur Vernichtung vorgesehen').length}</strong><small>offen</small></div>
-      <div className="company-site-kpi"><span>Archiviert</span><strong>{rows.filter(row => row.status === 'Archiviert').length}</strong><small>Ablage</small></div>
+    <button className="btn btn--ghost"><Icon name="filter" size={14} />Filter</button>
+    <button className="btn btn--ghost"><Icon name="download" size={14} />Excel</button>
+    <button className="btn btn--ghost"><Icon name="doc" size={14} />PDF</button>
+    <button className="btn btn--primary" onClick={() => setDialog({ mode:'create' })}><Icon name="plus" size={14} />Eintrag anlegen</button>
+  </div>;
+  return <div className="emp-full company-info-matrix-page">
+    <CompanyPageTitle title={`Informationslenkungsmatrix (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={titleActions} />
+    <div className="company-site-kpis company-info-kpis">
+      <button className={'company-site-kpi ' + (kpiFilter === 'all' ? 'is-active' : '')} onClick={() => setKpiFilter('all')}><span>Eintrage gesamt</span><strong>{infoCounts.all}</strong><small>in Ansicht</small></button>
+      <button className={'company-site-kpi ' + (kpiFilter === 'released' ? 'is-active' : '')} onClick={() => setKpiFilter('released')}><span>Freigegeben</span><strong>{infoCounts.released}</strong><small>Portal bereit</small></button>
+      <button className={'company-site-kpi ' + (kpiFilter === 'notReleased' ? 'is-active' : '')} onClick={() => setKpiFilter('notReleased')}><span>Nicht freigegeben</span><strong>{infoCounts.notReleased}</strong><small>prufen</small></button>
+      <button className={'company-site-kpi ' + (kpiFilter === 'destroy' ? 'is-active' : '')} onClick={() => setKpiFilter('destroy')}><span>Zur Vernichtung</span><strong>{infoCounts.destroy}</strong><small>offen</small></button>
+      <button className={'company-site-kpi ' + (kpiFilter === 'archived' ? 'is-active' : '')} onClick={() => setKpiFilter('archived')}><span>Archiviert</span><strong>{infoCounts.archived}</strong><small>Ablage</small></button>
     </div>
     {selectedIds.length > 0 && <div className="company-bulkbar"><strong>{selectedIds.length} Eintrag(e) ausgewahlt</strong><button>Freigabestatus andern</button><button>Verantwortliche andern</button><button>PDF exportieren</button><button>Excel exportieren</button><button>Archivieren</button><button className="is-danger">Loschen</button></div>}
     {viewMode === 'cards' ? <div className="company-info-card-grid">{rows.map(row => <article key={row.id} className="company-info-entry-card" onClick={() => setSelected(row)}>

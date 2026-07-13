@@ -9435,19 +9435,64 @@ a.subtle:hover { text-decoration: underline; }
 .company-site-doc-table td strong{display:block;color:var(--fg-1);font-weight:800}
 .company-site-doc-table td small{display:block;margin-top:3px;color:var(--fg-3);font-size:11px}
 .company-site-doc-actions{display:flex;gap:7px}
-.company-info-matrix-card{overflow:hidden}
+.company-info-toolbar{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:-6px 0 14px}
+.company-info-toolbar select{height:36px;min-width:210px;border:1px solid var(--border-1);border-radius:7px;background:#fff;padding:0 11px;color:var(--fg-1);font:inherit;font-size:12px;font-weight:700}
+.company-info-toolbar .segmented{height:36px;display:inline-flex;overflow:hidden;border:1px solid var(--border-1);border-radius:7px;background:#fff}
+.company-info-toolbar .segmented button{min-width:86px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-right:1px solid var(--border-1);background:#fff;padding:0 10px;color:var(--fg-2);font:inherit;font-size:12px;font-weight:750;cursor:pointer}
+.company-info-toolbar .segmented button:last-child{border-right:0}
+.company-info-toolbar .segmented button.is-active{background:#111;color:#fff}
+.company-info-matrix-card{overflow:hidden;padding:0;background:#fffdfa}
 .company-info-matrix-wrap{overflow:auto;border:1px solid var(--border-1);border-radius:8px;background:var(--color-ivory)}
-.company-info-matrix-table{min-width:1280px;width:100%;border-collapse:collapse}
-.company-info-matrix-table th{height:44px;border-bottom:1px solid var(--border-1);background:var(--color-parchment);padding:0 13px;text-align:left}
-.company-info-matrix-table th button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;border:0;background:transparent;padding:0;color:var(--fg-3);font:inherit;font-size:10px;font-weight:800;text-align:left;text-transform:uppercase;letter-spacing:.32px;cursor:pointer}
-.company-info-matrix-table td{border-bottom:1px solid var(--border-1);padding:13px;color:var(--fg-2);font-size:12px;line-height:1.45;vertical-align:top}
+.company-info-matrix-table{min-width:2200px;width:100%;border-collapse:separate;border-spacing:0}
+.company-info-matrix-table th{height:44px;border-bottom:1px solid #ded4c8;background:#f2eee7;padding:0 13px;text-align:left;position:relative}
+.company-info-matrix-table th button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;border:0;background:transparent;padding:0;color:#77716b;font:inherit;font-size:10px;font-weight:850;text-align:left;text-transform:uppercase;letter-spacing:.32px;cursor:pointer}
+.company-info-matrix-table td{border-bottom:1px solid #e8ded3;padding:12px 13px;color:var(--fg-2);font-size:12px;line-height:1.45;vertical-align:top}
 .company-info-matrix-table tbody tr{cursor:pointer;transition:background 120ms}
-.company-info-matrix-table tbody tr:hover td{background:rgba(201,100,66,.04)}
+.company-info-matrix-table tbody tr:nth-child(odd):not(.company-group-row) td{background:#fffdfa}
+.company-info-matrix-table tbody tr:nth-child(even):not(.company-group-row) td{background:#f7f2eb}
+.company-info-matrix-table tbody tr:hover td{background:#fff4ec!important}
 .company-info-matrix-table tbody tr:last-child td{border-bottom:0}
-.company-info-matrix-table td:first-child{min-width:240px}
+.company-info-matrix-table td:first-child,.company-info-matrix-table th:first-child{width:42px;text-align:center}
+.company-info-matrix-table td:nth-child(2){min-width:245px}
 .company-info-matrix-table td strong{display:block;color:var(--fg-1);font-size:12px;font-weight:800}
 .company-info-matrix-table td small{display:block;margin-top:4px;color:var(--fg-3);font-size:10.5px}
+.company-info-card-grid{display:grid;grid-template-columns:repeat(3,minmax(240px,1fr));gap:14px}
+.company-info-entry-card{min-height:260px;display:flex;flex-direction:column;border:1px solid var(--border-1);border-radius:8px;background:#fffdfa;padding:18px;box-shadow:0 8px 24px rgba(47,36,25,.045);cursor:pointer}
+.company-info-entry-card:hover{border-color:rgba(201,100,66,.48);box-shadow:0 12px 28px rgba(47,36,25,.08)}
+.company-info-entry-card header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
+.company-info-entry-card header span:first-child{display:block;margin-bottom:7px;color:var(--fg-3);font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.35px}
+.company-info-entry-card h3{margin:0 0 5px;color:var(--fg-1);font-family:var(--font-serif);font-size:19px;font-weight:500}
+.company-info-entry-card p{margin:0;color:var(--fg-2);font-size:12px}
+.company-info-entry-card dl{display:grid;gap:10px;margin:0;padding-top:10px;border-top:1px solid var(--border-1)}
+.company-info-entry-card dt{color:var(--fg-3);font-size:9px;font-weight:850;text-transform:uppercase}
+.company-info-entry-card dd{margin:2px 0 0;color:var(--fg-1);font-size:12px;font-weight:750}
+.company-info-entry-card footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:auto;padding-top:16px;border-top:1px solid var(--border-1)}
+.company-info-entry-card footer span{color:#a35a33;font-size:11px;font-weight:750}
+.company-info-entry-card footer button{border:0;background:transparent;color:var(--color-accent);font:inherit;font-size:12px;font-weight:850;cursor:pointer}
+.info-actions{position:relative;display:inline-flex}
+.info-actions .icon-button{width:30px;height:30px;border:1px solid var(--border-1);border-radius:7px;background:#fff;color:var(--fg-1);font-size:18px;line-height:1;cursor:pointer}
+.info-actions-menu{right:0;left:auto;top:34px;min-width:250px}
+.info-actions-menu .is-danger{color:#a13232!important}
+.info-dialog-backdrop{position:fixed;inset:0;z-index:2600;display:grid;place-items:center;background:rgba(24,22,20,.38);padding:22px}
+.info-dialog{width:min(940px,96vw);max-height:92vh;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden;border:1px solid var(--border-1);border-radius:10px;background:#fbfaf6;box-shadow:0 26px 80px rgba(20,18,16,.25)}
+.info-dialog--small{width:min(620px,96vw)}
+.info-dialog header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;padding:22px 24px 16px;border-bottom:1px solid var(--border-1);background:#111;color:#fff}
+.info-dialog header span{display:block;margin-bottom:8px;color:#b9d6ef;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.45px}
+.info-dialog header h2{margin:0;font-family:var(--font-serif);font-size:30px;font-weight:500}
+.info-dialog header button{width:34px;height:34px;border:0;background:transparent;color:#fff;cursor:pointer}
+.info-dialog main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:20px 24px;overflow:auto}
+.info-dialog--small main{grid-template-columns:1fr}
+.info-dialog label{display:grid;gap:6px;color:var(--fg-3);font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.25px}
+.info-dialog input,.info-dialog select,.info-dialog textarea{width:100%;min-height:38px;border:1px solid var(--border-1);border-radius:7px;background:#fff;padding:0 11px;color:var(--fg-1);font:inherit;font-size:13px;text-transform:none;letter-spacing:0}
+.info-dialog textarea{min-height:84px;padding:10px 11px;resize:vertical}
+.info-upload{min-height:38px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px dashed rgba(201,100,66,.45);border-radius:7px;background:#fffdfa;color:var(--fg-1);font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.info-dialog footer{display:flex;justify-content:flex-end;gap:9px;padding:14px 24px;border-top:1px solid var(--border-1);background:#fffdfa}
+.info-version-list{display:grid;gap:10px}
+.info-version-list>div{display:grid;grid-template-columns:24px 150px minmax(0,1fr) auto;align-items:center;gap:10px;border:1px solid var(--border-1);border-radius:7px;background:#fff;padding:10px 12px}
+.info-version-list strong{color:var(--fg-1);font-size:12px}
+.info-version-list span{color:var(--fg-2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .company-info-matrix-detail .emp-master-field textarea{min-height:76px}
+@media(max-width:1100px){.company-info-toolbar{justify-content:flex-start;flex-wrap:wrap}.company-info-card-grid{grid-template-columns:1fr}.info-dialog main{grid-template-columns:1fr}}
 .company-subcontractor-card{overflow:hidden}
 .company-subcontractor-wrap{overflow:auto;border:1px solid var(--border-1);border-radius:8px;background:var(--color-ivory)}
 .company-subcontractor-table{min-width:1640px;width:100%;border-collapse:collapse}

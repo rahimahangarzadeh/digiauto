@@ -474,70 +474,135 @@ function CompanyNormsPage({ company, onBack }) {
 
 function companyInformationMatrixRows() {
   const baseRows = [
-    { id:'ilm-1', company:'tiefbau', bezeichnung:'Lieferscheine', standort:'Buro / Lager', erstelltVon:'Lieferant', freigabe:'Einkauf / Lager', released:true, archivierung:'digital im Portal', aufbewahrung:'10 Jahre', gesetz:'§147 AO, §257 HGB', vernichtung:'Mario Kostring / Daniel Brouwer' },
-    { id:'ilm-2', company:'tiefbau', bezeichnung:'Bestellscheine', standort:'Buro', erstelltVon:'Einkauf', freigabe:'GF', released:false, archivierung:'digital im Portal', aufbewahrung:'10 Jahre', gesetz:'§147 AO, §257 HGB', vernichtung:'Mario Kostring' },
-    { id:'ilm-3', company:'tiefbau', bezeichnung:'Dienstleistungsvertrage', standort:'Buro', erstelltVon:'GF', freigabe:'GF', released:false, archivierung:'digital + Ordner Vertrag', aufbewahrung:'10 Jahre', gesetz:'§147 AO, §257 HGB', vernichtung:'Christian Janning / Bastian Bothe / Alexander Braun' },
-    { id:'ilm-4', company:'tiefbau', bezeichnung:'Angebote', standort:'Buro Kalkulation', erstelltVon:'Kalkulation', freigabe:'GF', released:true, archivierung:'digital', aufbewahrung:'6 Jahre', gesetz:'§147 Abs. 3 AO, §257 Abs. 2 HGB', vernichtung:'Kathrin Janning' },
-    { id:'ilm-5', company:'tiefbau', bezeichnung:'Auftrage (Kunden)', standort:'Buro', erstelltVon:'Kalkulation / Bauleitung', freigabe:'GF', released:true, archivierung:'digital + Ordner', aufbewahrung:'10 Jahre', gesetz:'§147 AO', vernichtung:'Kathrin Janning' },
-    { id:'ilm-6', company:'bohrtechnik', bezeichnung:'Normvorschriften (DVGW, DIN, TRGS)', standort:'Buro / Portal', erstelltVon:'externe Normstellen', freigabe:'UM-Beauftragter', released:true, archivierung:'digital', aufbewahrung:'gultige Version', gesetz:'ISO 9001 / ISO 14001', vernichtung:'Rahim Ahangarzadeh' },
-    { id:'ilm-7', company:'rohrbau', bezeichnung:'Prufvorschriften', standort:'Buro / Portal', erstelltVon:'Hersteller / Behorden', freigabe:'SiGeKo / UM', released:true, archivierung:'digital', aufbewahrung:'gultige Version', gesetz:'ISO 9001 / SCC', vernichtung:'SiGeKo' },
-    { id:'ilm-8', company:'galabau', bezeichnung:'Qualitatsmanagementunterlagen', standort:'Portal QSGU', erstelltVon:'Geschaftsfuhrung', freigabe:'Geschaftsfuhrung', released:true, archivierung:'digital', aufbewahrung:'gultige Version', gesetz:'ISO 9001 / SCC / ISO 14001', vernichtung:'Rahim Ahangarzadeh' },
-    { id:'ilm-9', company:'transporte', bezeichnung:'Gefahrstoffverzeichnis', standort:'Portal', erstelltVon:'Gefahrstoffbeauftragter', freigabe:'GF', released:false, archivierung:'digital', aufbewahrung:'gultige Version', gesetz:'GefStoffV §6 + TRGS 400', vernichtung:'Mario Kostring' },
-    { id:'ilm-10', company:'tiefbau', bezeichnung:'Betriebsanweisungen', standort:'Portal', erstelltVon:'QSGU / Gefahrstoffbeauftragter', freigabe:'QSGU / Geschaftsfuhrung', released:true, archivierung:'digital', aufbewahrung:'bis neue Version + mindestens 10 Jahre', gesetz:'ISO 9001 / SCC / GefStoffV', vernichtung:'Rahim Ahangarzadeh / Mario Kostring' },
+    { id:'ilm-1', company:'tiefbau', bezeichnung:'Lieferscheine', category:'Lieferschein', standort:'Buro / Lager', abteilung:'Einkauf / Lager', erstelltVon:'Lieferant', geprueftVon:'Daniel Brouwer', freigabe:'Einkauf / Lager', released:true, storage:'Janning Portal / Dokumente', archivierung:'digital im Portal', archiveType:'Digitale Archivierung', retentionYears:10, retentionStart:'2026-12-31', gesetz:'§147 AO, §257 HGB', responsible:'Mario Kostring', vernichtung:'Mario Kostring / Daniel Brouwer', destructionType:'sichere digitale Loschung', protection:'Intern', access:'Einkauf, Lager, GF', status:'Aufbewahrungsfrist lauft', document:'Lieferscheine_2026.pdf', notes:'Eingangsbelege nach Projekt ablegen.' },
+    { id:'ilm-2', company:'tiefbau', bezeichnung:'Bestellscheine', category:'Bestellung', standort:'Buro', abteilung:'Einkauf', erstelltVon:'Einkauf', geprueftVon:'Kathrin Janning', freigabe:'GF', released:false, storage:'Janning Portal / Einkauf', archivierung:'digital im Portal', archiveType:'Digitale Archivierung', retentionYears:10, retentionStart:'2026-12-31', gesetz:'§147 AO, §257 HGB', responsible:'Kathrin Janning', vernichtung:'Mario Kostring', destructionType:'sichere digitale Loschung', protection:'Vertraulich', access:'Einkauf, GF', status:'In Prufung', document:'Bestellscheine_2026.pdf', notes:'Freigabeprozess noch offen.' },
+    { id:'ilm-3', company:'tiefbau', bezeichnung:'Dienstleistungsvertrage', category:'Vertrag', standort:'Buro', abteilung:'Geschaftsfuhrung', erstelltVon:'GF', geprueftVon:'Sabine Janning', freigabe:'GF', released:false, storage:'Vertragsordner / Portal', archivierung:'digital + Ordner Vertrag', archiveType:'Hybrid Archivierung', retentionYears:10, retentionStart:'2026-12-31', gesetz:'§147 AO, §257 HGB', responsible:'Christian Janning', vernichtung:'Christian Janning / Bastian Bothe / Alexander Braun', destructionType:'Aktenvernichter', protection:'Streng vertraulich', access:'GF, Verwaltung', status:'Nicht freigegeben', document:'Dienstleistungsvertraege.pdf', notes:'Nur fur berechtigte Personen.' },
+    { id:'ilm-4', company:'tiefbau', bezeichnung:'Angebote', category:'Angebot', standort:'Buro Kalkulation', abteilung:'Kalkulation', erstelltVon:'Kalkulation', geprueftVon:'Bauleitung', freigabe:'GF', released:true, storage:'Janning Portal / Angebote', archivierung:'digital', archiveType:'Digitale Archivierung', retentionYears:6, retentionStart:'2026-12-31', gesetz:'§147 Abs. 3 AO, §257 Abs. 2 HGB', responsible:'Kathrin Janning', vernichtung:'Kathrin Janning', destructionType:'sichere digitale Loschung', protection:'Intern', access:'Kalkulation, Bauleitung, GF', status:'Freigegeben', document:'Angebote_2026.pdf', notes:'Projektbezogen ablegen.' },
+    { id:'ilm-5', company:'tiefbau', bezeichnung:'Auftrage (Kunden)', category:'Auftrag', standort:'Buro', abteilung:'Kalkulation / Bauleitung', erstelltVon:'Kalkulation / Bauleitung', geprueftVon:'GF', freigabe:'GF', released:true, storage:'Janning Portal / Auftrage', archivierung:'digital + Ordner', archiveType:'Hybrid Archivierung', retentionYears:10, retentionStart:'2026-12-31', gesetz:'§147 AO', responsible:'Kathrin Janning', vernichtung:'Kathrin Janning', destructionType:'Aktenvernichter', protection:'Vertraulich', access:'Bauleitung, GF, Verwaltung', status:'Freigegeben', document:'Kundenauftraege.pdf', notes:'Auftrag und Nachtrage zusammen ablegen.' },
+    { id:'ilm-6', company:'bohrtechnik', bezeichnung:'Normvorschriften (DVGW, DIN, TRGS)', category:'sonstiges Dokument', standort:'Buro / Portal', abteilung:'QSGU', erstelltVon:'externe Normstellen', geprueftVon:'Rahim Ahangarzadeh', freigabe:'UM-Beauftragter', released:true, storage:'Normenmatrix / Portal', archivierung:'digital', archiveType:'Versionierung', retentionYears:0, retentionStart:'2026-01-01', gesetz:'ISO 9001 / ISO 14001', responsible:'Rahim Ahangarzadeh', vernichtung:'Rahim Ahangarzadeh', destructionType:'ersetzt durch neue Version', protection:'Intern', access:'alle Mitarbeiter', status:'Freigegeben', document:'Normvorschriften_Index.pdf', notes:'Immer aktuelle Version sichtbar.' },
+    { id:'ilm-7', company:'rohrbau', bezeichnung:'Prufvorschriften', category:'Prufbericht', standort:'Buro / Portal', abteilung:'QSGU', erstelltVon:'Hersteller / Behorden', geprueftVon:'SiGeKo', freigabe:'SiGeKo / UM', released:true, storage:'Portal / Prufungen', archivierung:'digital', archiveType:'Digitale Archivierung', retentionYears:10, retentionStart:'2026-12-31', gesetz:'ISO 9001 / SCC', responsible:'SiGeKo', vernichtung:'SiGeKo', destructionType:'sichere digitale Loschung', protection:'Intern', access:'QSGU, Bauleitung', status:'Aufbewahrungsfrist lauft', document:'Pruefvorschriften.pdf', notes:'Prufstatus jahrlich kontrollieren.' },
+    { id:'ilm-8', company:'galabau', bezeichnung:'Qualitatsmanagementunterlagen', category:'sonstiges Dokument', standort:'Portal QSGU', abteilung:'QSGU', erstelltVon:'Geschaftsfuhrung', geprueftVon:'QSGU', freigabe:'Geschaftsfuhrung', released:true, storage:'QSGU Portal', archivierung:'digital', archiveType:'Versionierung', retentionYears:0, retentionStart:'2026-01-01', gesetz:'ISO 9001 / SCC / ISO 14001', responsible:'Rahim Ahangarzadeh', vernichtung:'Rahim Ahangarzadeh', destructionType:'ersetzt durch neue Version', protection:'Intern', access:'alle Mitarbeiter', status:'Freigegeben', document:'QM_Unterlagen.pdf', notes:'Freigegebene Fassung im Portal.' },
+    { id:'ilm-9', company:'transporte', bezeichnung:'Gefahrstoffverzeichnis', category:'Betriebsanweisung', standort:'Portal', abteilung:'QSGU / Lager', erstelltVon:'Gefahrstoffbeauftragter', geprueftVon:'Mario Kostring', freigabe:'GF', released:false, storage:'Gefahrstoffe / Portal', archivierung:'digital', archiveType:'Versionierung', retentionYears:0, retentionStart:'2026-01-01', gesetz:'GefStoffV §6 + TRGS 400', responsible:'Mario Kostring', vernichtung:'Mario Kostring', destructionType:'ersetzt durch neue Version', protection:'Intern', access:'Lager, QSGU', status:'In Prufung', document:'', notes:'Dokument fehlt noch.' },
+    { id:'ilm-10', company:'tiefbau', bezeichnung:'Betriebsanweisungen', category:'Betriebsanweisung', standort:'Portal', abteilung:'QSGU', erstelltVon:'QSGU / Gefahrstoffbeauftragter', geprueftVon:'Sabine Janning', freigabe:'QSGU / Geschaftsfuhrung', released:true, storage:'Portal / Unterweisungen', archivierung:'digital', archiveType:'Versionierung', retentionYears:10, retentionStart:'2026-12-31', gesetz:'ISO 9001 / SCC / GefStoffV', responsible:'Rahim Ahangarzadeh', vernichtung:'Rahim Ahangarzadeh / Mario Kostring', destructionType:'sichere digitale Loschung', protection:'Intern', access:'alle Mitarbeiter', status:'Freigegeben', document:'Betriebsanweisungen.pdf', notes:'Mitarbeiterfreigabe aktiv.' },
   ];
-  return baseRows.map(row => ({ ...row, companyName: window.company(row.company)?.name || row.company, source:'SGU_036.pdf', stand:'24.02.2026', version:'001' }));
+  return baseRows.map(row => {
+    const retentionEnd = row.retentionYears ? `${row.retentionStart.slice(0, 4) * 1 + row.retentionYears}${row.retentionStart.slice(4)}` : 'dauerhaft / bis neue Version';
+    const warning = !row.document ? 'Dokument fehlt' : !row.released ? 'Freigabe fehlt' : row.status === 'Zur Vernichtung vorgesehen' ? 'Vernichtung prüfen' : 'Keine Warnung';
+    return { ...row, companyName: window.company(row.company)?.name || row.company, source:'SGU_036.pdf', stand:'24.02.2026', version:'001', retentionEnd, warning, groups: row.released ? 'alle Mitarbeiter' : 'GF, Verwaltung' };
+  });
 }
 
 function CompanyInformationMatrixPage({ company, onBack }) {
   const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   const [selected, setSelected] = React.useState(null);
+  const [viewMode, setViewMode] = React.useState('list');
+  const [dialog, setDialog] = React.useState(null);
+  const [destroyRow, setDestroyRow] = React.useState(null);
+  const [selectedIds, setSelectedIds] = React.useState([]);
+  const [columnMenu, setColumnMenu] = React.useState(null);
+  const [groupBy, setGroupBy] = React.useState('');
   const [sort, setSort] = React.useState({ key:'bezeichnung', dir:'asc' });
   const columns = [
-    ['bezeichnung', 'Bezeichnung Dokument/ Nachweis'],
+    ['bezeichnung', 'Bezeichnung'],
+    ['companyName', 'Firma'],
+    ['category', 'Kategorie'],
     ['standort', 'Standort'],
     ['erstelltVon', 'erstellt von'],
+    ['geprueftVon', 'gepruft von'],
     ['freigabe', 'Freigabe'],
-    ['released', 'Freigabe für Mitarbeiter'],
+    ['released', 'Freigabe fur Mitarbeiter'],
     ['archivierung', 'Archivierung'],
     ['aufbewahrung', 'Aufbewahrungsfrist'],
-    ['gesetz', 'Gesetz'],
+    ['retentionStart', 'Beginn der Frist'],
+    ['retentionEnd', 'Ende der Frist'],
+    ['gesetz', 'gesetzliche Grundlage'],
+    ['responsible', 'verantwortlich'],
     ['vernichtung', 'Verantwortlich fur Vernichtung'],
+    ['status', 'Status'],
+    ['document', 'Dokument'],
   ];
   const rows = companyInformationMatrixRows()
     .filter(row => showAllCompanies || row.company === company.id)
     .sort((a, b) => String(a[sort.key] || '').localeCompare(String(b[sort.key] || ''), 'de', { numeric:true }) * (sort.dir === 'asc' ? 1 : -1));
-  const changeSort = key => setSort(current => current.key === key ? { key, dir:current.dir === 'asc' ? 'desc' : 'asc' } : { key, dir:'asc' });
+  const groupedRows = groupBy ? Object.entries(rows.reduce((acc, row) => {
+    const key = String(row[groupBy] ?? '-');
+    acc[key] = acc[key] || [];
+    acc[key].push(row);
+    return acc;
+  }, {})) : [['', rows]];
+  const allVisibleSelected = rows.length > 0 && rows.every(row => selectedIds.includes(row.id));
+  const changeSort = (key, dir) => { setSort({ key, dir }); setColumnMenu(null); };
+  const toggleSelected = id => setSelectedIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
+  const toggleAll = () => setSelectedIds(current => allVisibleSelected ? current.filter(id => !rows.some(row => row.id === id)) : Array.from(new Set([...current, ...rows.map(row => row.id)])));
+  const menuFor = key => columnMenu === key && <div className="company-column-menu" onClick={event => event.stopPropagation()}>
+    <button onClick={() => changeSort(key, 'asc')}>A bis Z</button>
+    <button onClick={() => changeSort(key, 'desc')}>Z bis A</button>
+    <button onClick={() => setColumnMenu(null)}>Filtern nach</button>
+    <button onClick={() => { setGroupBy(key); setColumnMenu(null); }}>Gruppieren nach "{columns.find(column => column[0] === key)?.[1] || key}"</button>
+    <button onClick={() => setGroupBy('')}>Gruppierung aufheben</button>
+  </div>;
   if (selected) return <CompanyInformationMatrixDetail row={selected} onBack={() => setSelected(null)} />;
   return <div className="emp-full company-info-matrix-page">
     <CompanyPageTitle title={`Informationslenkungsmatrix (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
-    <div className="company-site-kpis">
-      <div className="company-site-kpi"><span>Eintrage</span><strong>{rows.length}</strong><small>in Ansicht</small></div>
-      <div className="company-site-kpi"><span>Vorlage</span><strong>SGU_036</strong><small>Version 001</small></div>
-      <div className="company-site-kpi"><span>Stand</span><strong>24.02.2026</strong><small>aus PDF</small></div>
-      <div className="company-site-kpi"><span>Archivierung</span><strong>{rows.filter(row => row.archivierung.toLowerCase().includes('digital')).length}</strong><small>digital</small></div>
-    </div>
-    <section className="card card--pad company-info-matrix-card">
-      <div className="company-site-card-head">
-        <div />
-        <button className="btn btn--primary"><Icon name="plus" size={14} />Eintrag anlegen</button>
+    <div className="company-info-toolbar">
+      <select value={showAllCompanies ? 'all' : company.id} onChange={event => setShowAllCompanies(event.target.value === 'all')}>
+        <option value={company.id}>{company.name}</option>
+        <option value="all">Alle Firmen</option>
+      </select>
+      <div className="segmented">
+        <button className={viewMode === 'cards' ? 'is-active' : ''} onClick={() => setViewMode('cards')}><Icon name="dashboard" size={14} />Kacheln</button>
+        <button className={viewMode === 'list' ? 'is-active' : ''} onClick={() => setViewMode('list')}><Icon name="matrix" size={14} />Liste</button>
       </div>
+      <button className="btn btn--ghost"><Icon name="filter" size={14} />Filter</button>
+      <button className="btn btn--ghost"><Icon name="download" size={14} />Excel</button>
+      <button className="btn btn--ghost"><Icon name="doc" size={14} />PDF</button>
+      <button className="btn btn--primary" onClick={() => setDialog({ mode:'create' })}><Icon name="plus" size={14} />Eintrag anlegen</button>
+    </div>
+    <div className="company-site-kpis">
+      <div className="company-site-kpi"><span>Eintrage gesamt</span><strong>{rows.length}</strong><small>in Ansicht</small></div>
+      <div className="company-site-kpi"><span>Freigegeben</span><strong>{rows.filter(row => row.status === 'Freigegeben').length}</strong><small>Portal bereit</small></div>
+      <div className="company-site-kpi"><span>Nicht freigegeben</span><strong>{rows.filter(row => !row.released).length}</strong><small>prufen</small></div>
+      <div className="company-site-kpi"><span>Zur Vernichtung</span><strong>{rows.filter(row => row.status === 'Zur Vernichtung vorgesehen').length}</strong><small>offen</small></div>
+      <div className="company-site-kpi"><span>Archiviert</span><strong>{rows.filter(row => row.status === 'Archiviert').length}</strong><small>Ablage</small></div>
+    </div>
+    {selectedIds.length > 0 && <div className="company-bulkbar"><strong>{selectedIds.length} Eintrag(e) ausgewahlt</strong><button>Freigabestatus andern</button><button>Verantwortliche andern</button><button>PDF exportieren</button><button>Excel exportieren</button><button>Archivieren</button><button className="is-danger">Loschen</button></div>}
+    {viewMode === 'cards' ? <div className="company-info-card-grid">{rows.map(row => <article key={row.id} className="company-info-entry-card" onClick={() => setSelected(row)}>
+      <header><div><span>{row.category}</span><h3>{row.bezeichnung}</h3><p>{row.companyName}</p></div><InfoMatrixStatus status={row.status} /></header>
+      <dl><div><dt>Standort</dt><dd>{row.standort}</dd></div><div><dt>Fristende</dt><dd>{row.retentionEnd}</dd></div><div><dt>Verantwortlich</dt><dd>{row.responsible}</dd></div></dl>
+      <footer><span>{row.warning}</span><button onClick={event => { event.stopPropagation(); setDialog({ mode:'edit', row }); }}>Bearbeiten</button></footer>
+    </article>)}</div> : <section className="card company-info-matrix-card">
       <div className="company-info-matrix-wrap">
         <table className="company-info-matrix-table">
-          <thead><tr>{columns.map(([key, label]) => <th key={key}><button onClick={() => changeSort(key)}>{label}<span>{sort.key === key ? (sort.dir === 'asc' ? '↑' : '↓') : '⌄'}</span></button></th>)}</tr></thead>
-          <tbody>{rows.map(row => <tr key={row.id} onClick={() => setSelected(row)}>
-            <td><strong>{row.bezeichnung}</strong><small>{row.companyName}</small></td>
-            <td>{row.standort}</td>
-            <td>{row.erstelltVon}</td>
-            <td>{row.freigabe}</td>
-            <td><span className={'badge ' + (row.released ? 'badge--valid' : '')}><span className="badge__dot" />{row.released ? 'Freigegeben' : 'Nicht frei'}</span></td>
-            <td>{row.archivierung}</td>
-            <td>{row.aufbewahrung}</td>
-            <td>{row.gesetz}</td>
-            <td>{row.vernichtung}</td>
-          </tr>)}</tbody>
+          <thead><tr><th><input type="checkbox" checked={allVisibleSelected} onChange={toggleAll} /></th>{columns.map(([key, label]) => <th key={key}><div className="company-list-th"><button onClick={() => setColumnMenu(columnMenu === key ? null : key)}>{label}<span>{sort.key === key ? (sort.dir === 'asc' ? '↑' : '↓') : '⌄'}</span></button>{menuFor(key)}</div></th>)}<th>Aktionen</th></tr></thead>
+          <tbody>{groupedRows.flatMap(([group, items]) => [
+            groupBy && <tr key={'group-' + group} className="company-group-row"><td colSpan={columns.length + 2}>{columns.find(column => column[0] === groupBy)?.[1]}: {group} <span>{items.length}</span></td></tr>,
+            ...items.map(row => <tr key={row.id} onClick={() => setSelected(row)}>
+              <td onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleSelected(row.id)} /></td>
+              <td><strong>{row.bezeichnung}</strong><small>{row.warning}</small></td>
+              <td>{row.companyName}</td>
+              <td>{row.category}</td>
+              <td>{row.standort}</td>
+              <td>{row.erstelltVon}</td>
+              <td>{row.geprueftVon}</td>
+              <td>{row.freigabe}</td>
+              <td><span className={'badge ' + (row.released ? 'badge--valid' : 'badge--missing')}><span className="badge__dot" />{row.released ? 'Ja' : 'Nein'}</span></td>
+              <td>{row.archivierung}</td>
+              <td>{row.aufbewahrung}</td>
+              <td>{window.fmtDE?.(row.retentionStart) || row.retentionStart}</td>
+              <td>{row.retentionEnd}</td>
+              <td>{row.gesetz}</td>
+              <td>{row.responsible}</td>
+              <td>{row.vernichtung}</td>
+              <td><InfoMatrixStatus status={row.status} /></td>
+              <td>{row.document ? <button className="btn btn--ghost" onClick={event => event.stopPropagation()}><Icon name="doc" size={13} />{row.document}</button> : <span className="muted">fehlt</span>}</td>
+              <td onClick={event => event.stopPropagation()}><InfoMatrixActions row={row} onOpen={() => setSelected(row)} onEdit={() => setDialog({ mode:'edit', row })} onDestroy={() => setDestroyRow(row)} /></td>
+            </tr>)
+          ])}</tbody>
         </table>
       </div>
-    </section>
+    </section>}
+    {dialog && <InformationMatrixEntryDialog company={company} row={dialog.row} onClose={() => setDialog(null)} />}
+    {destroyRow && <InformationMatrixDestroyDialog row={destroyRow} onClose={() => setDestroyRow(null)} />}
   </div>;
 }
 
@@ -547,27 +612,126 @@ function CompanyInformationMatrixDetail({ row, onBack }) {
   const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
   const Field = ({ label, keyName, icon = 'doc', wide }) => <CompanyMasterField label={label} icon={icon} value={form[keyName]} editing={editing}>{wide ? <textarea value={form[keyName]} onChange={event => set(keyName, event.target.value)} /> : <input value={form[keyName]} onChange={event => set(keyName, event.target.value)} />}</CompanyMasterField>;
   return <div className="emp-full emp-master-detail company-info-matrix-detail">
-    <CompanyPageTitle title={`Informationslenkungsmatrix (${form.bezeichnung})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Loschen</button></div>} />
-    <section className="emp-master-hero"><span className="emp-avatar">IL</span><div><div className="emp-master-hero__name"><h2>{form.bezeichnung}</h2><span className="emp-active"><i />SGU_036</span></div><dl><div><dt>Firma</dt><dd>{form.companyName}</dd></div><div><dt>Stand</dt><dd>{form.stand}</dd></div><div><dt>Version</dt><dd>{form.version}</dd></div></dl></div><button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button></section>
+    <CompanyPageTitle title={`Informationslenkungsmatrix (${form.bezeichnung})`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Alle bearbeiten</button><button className="btn btn--ghost"><Icon name="history" size={14} />neue Version</button><button className="btn btn--ghost"><Icon name="trash" size={14} />Archivieren</button></div>} />
     <div className="emp-master-layout"><main className="emp-master-main">
-      <CompanyMasterDataCard title="Dokument / Nachweis" icon="doc"><div className="emp-master-field-grid">
+      <CompanyMasterDataCard title="Stammdaten" icon="doc"><div className="emp-master-field-grid">
         <Field label="Bezeichnung Dokument/ Nachweis" keyName="bezeichnung" icon="doc" />
+        <Field label="Kategorie" keyName="category" icon="matrix" />
+        <Field label="Firma" keyName="companyName" icon="building" />
         <Field label="Standort" keyName="standort" icon="pin" />
+        <Field label="Abteilung" keyName="abteilung" icon="users" />
         <Field label="erstellt von" keyName="erstelltVon" icon="users" />
+        <Field label="gepruft von" keyName="geprueftVon" icon="check" />
         <Field label="Freigabe" keyName="freigabe" icon="shield" />
         <CompanyMasterField label="Freigabe für Mitarbeiter" icon="check" value={form.released ? 'Freigegeben' : 'Nicht frei'} editing={editing}><select value={form.released ? 'ja' : 'nein'} onChange={event => set('released', event.target.value === 'ja')}><option value="ja">Freigegeben</option><option value="nein">Nicht frei</option></select></CompanyMasterField>
+        <Field label="Status" keyName="status" icon="flag" />
       </div></CompanyMasterDataCard>
-      <CompanyMasterDataCard title="Lenkung und Archivierung" icon="history"><div className="emp-master-field-grid">
+      <CompanyMasterDataCard title="Freigabe und Zugriff" icon="shield"><div className="emp-master-field-grid">
+        <Field label="Geltungsbereich / Gruppen" keyName="groups" icon="users" />
+        <Field label="Zugriffsberechtigung" keyName="access" icon="shield" />
+        <Field label="Schutzklasse" keyName="protection" icon="shield" />
+        <Field label="Speicherort" keyName="storage" icon="building" />
+      </div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Aufbewahrungsfrist und Archivierung" icon="history"><div className="emp-master-field-grid">
         <Field label="Archivierung" keyName="archivierung" icon="building" />
+        <Field label="Archivierungsart" keyName="archiveType" icon="history" />
         <Field label="Aufbewahrungsfrist" keyName="aufbewahrung" icon="clock" />
-        <Field label="Gesetz" keyName="gesetz" icon="doc" />
+        <Field label="Fristbeginn" keyName="retentionStart" icon="cal" />
+        <Field label="Fristende" keyName="retentionEnd" icon="cal" />
+        <Field label="gesetzliche Grundlage" keyName="gesetz" icon="doc" />
         <Field label="Verantwortlich fur Vernichtung" keyName="vernichtung" icon="users" />
+        <Field label="Vernichtungsart" keyName="destructionType" icon="trash" />
+      </div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Dokumente und Versionen" icon="doc"><div className="info-version-list">
+        {['Hauptdokument', 'Freigabedokument', 'Archivierungsnachweis', 'Vernichtungsprotokoll'].map((type, index) => <div key={type}><Icon name="doc" size={16} /><strong>{type}</strong><span>{index === 0 ? (form.document || 'Dokument fehlt') : 'noch nicht hinterlegt'}</span><button className="btn btn--ghost">hochladen</button></div>)}
+      </div></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Bemerkungen" icon="doc"><div className="emp-master-field-grid">
+        <Field label="Bemerkungen" keyName="notes" icon="doc" wide />
       </div></CompanyMasterDataCard>
     </main><aside className="emp-master-aside">
-      <CompanyMasterDataCard title="Vorlage" icon="doc"><p className="emp-last-change"><strong>{form.source}</strong><br />Interne Nr.: SGU_036<br />Stand: {form.stand}</p></CompanyMasterDataCard>
-      <CompanyMasterDataCard title="Geandert" icon="history"><p className="emp-last-change">09.06.2026, 11:20 Uhr - von Rahim Ahangarzadeh</p></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Status" icon="flag"><p className="emp-last-change"><InfoMatrixStatus status={form.status} /><br /><br />Warnung: {form.warning}</p></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Vorlage" icon="doc"><p className="emp-last-change"><strong>{form.source}</strong><br />Interne Nr.: SGU_036<br />Stand: {form.stand}<br />Version: {form.version}</p></CompanyMasterDataCard>
+      <CompanyMasterDataCard title="Historie" icon="history"><p className="emp-last-change">Erstellt: 24.02.2026 - Rahim Ahangarzadeh<br />Gepruft: 03.06.2026 - Sabine Janning<br />Freigabe geändert: 09.06.2026</p></CompanyMasterDataCard>
     </aside></div>
     {editing && <div className="emp-master-savebar"><button className="btn btn--ghost" onClick={() => { setForm(row); setEditing(false); }}>Abbrechen</button><button className="btn btn--primary" onClick={() => setEditing(false)}>Speichern</button></div>}
+  </div>;
+}
+
+function InfoMatrixStatus({ status }) {
+  const cls = status === 'Freigegeben' ? 'badge--valid' : status === 'In Prufung' || status === 'Aufbewahrungsfrist lauft' ? 'badge--warn' : status === 'Nicht freigegeben' || status === 'Zur Vernichtung vorgesehen' ? 'badge--expired' : '';
+  return <span className={'badge ' + cls}><span className="badge__dot" />{status}</span>;
+}
+
+function InfoMatrixActions({ row, onOpen, onEdit, onDestroy }) {
+  const [open, setOpen] = React.useState(false);
+  return <div className="info-actions">
+    <button className="icon-button" onClick={() => setOpen(!open)} title="Aktionen">⋮</button>
+    {open && <div className="company-column-menu info-actions-menu">
+      <button onClick={onOpen}>Details anzeigen</button>
+      <button onClick={onEdit}>Bearbeiten</button>
+      <button>Dokument offnen</button>
+      <button>Dokument hochladen</button>
+      <button>neue Version anlegen</button>
+      <button>Freigabe andern</button>
+      <button>Verantwortliche andern</button>
+      <button>Aufbewahrungsfrist andern</button>
+      <button>Archivierung durchfuhren</button>
+      <button onClick={onDestroy}>Vernichtung dokumentieren</button>
+      <button>Duplizieren</button>
+      <button>Archivieren</button>
+      <button className="is-danger">Loschen</button>
+    </div>}
+  </div>;
+}
+
+function InformationMatrixEntryDialog({ company, row, onClose }) {
+  const companies = window.SEED?.companies || [];
+  const categories = ['Angebot', 'Auftrag', 'Vertrag', 'Bestellung', 'Lieferschein', 'Rechnung', 'Betriebsanweisung', 'Personalunterlage', 'Prufbericht', 'Zertifikat', 'Schulungsnachweis', 'sonstiges Dokument'];
+  const statuses = ['Entwurf', 'In Prufung', 'Freigegeben', 'Nicht freigegeben', 'Archiviert', 'Aufbewahrungsfrist lauft', 'Zur Vernichtung vorgesehen', 'Vernichtet'];
+  const [form, setForm] = React.useState(row || { bezeichnung:'', company:company.id, category:'sonstiges Dokument', standort:'', abteilung:'', erstelltVon:'', geprueftVon:'', freigabe:'', released:false, storage:'', archiveType:'Digitale Archivierung', retentionYears:10, retentionStart:'2026-12-31', gesetz:'', responsible:'', vernichtung:'', destructionType:'sichere digitale Loschung', protection:'Intern', access:'', status:'Entwurf', document:'', notes:'' });
+  const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
+  const Field = ({ label, children }) => <label><span>{label}</span>{children}</label>;
+  return <div className="info-dialog-backdrop">
+    <div className="info-dialog">
+      <header><div><span>Informationslenkungsmatrix</span><h2>{row ? 'Eintrag bearbeiten' : 'Eintrag anlegen'}</h2></div><button onClick={onClose}><Icon name="x" size={18} /></button></header>
+      <main>
+        <Field label="Bezeichnung des Dokuments oder Nachweises"><input value={form.bezeichnung} onChange={event => set('bezeichnung', event.target.value)} /></Field>
+        <Field label="Firma oder mehrere Firmen"><select value={form.company} onChange={event => set('company', event.target.value)}>{companies.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}<option value="all">Alle Firmen</option></select></Field>
+        <Field label="Dokumentenkategorie"><select value={form.category} onChange={event => set('category', event.target.value)}>{categories.map(item => <option key={item}>{item}</option>)}</select></Field>
+        <Field label="Standort"><input value={form.standort} onChange={event => set('standort', event.target.value)} /></Field>
+        <Field label="Abteilung"><input value={form.abteilung} onChange={event => set('abteilung', event.target.value)} /></Field>
+        <Field label="erstellt von"><input value={form.erstelltVon} onChange={event => set('erstelltVon', event.target.value)} /></Field>
+        <Field label="gepruft von"><input value={form.geprueftVon} onChange={event => set('geprueftVon', event.target.value)} /></Field>
+        <Field label="freigegeben von"><input value={form.freigabe} onChange={event => set('freigabe', event.target.value)} /></Field>
+        <Field label="Freigabe fur Mitarbeiter"><select value={form.released ? 'ja' : 'nein'} onChange={event => set('released', event.target.value === 'ja')}><option value="ja">Ja</option><option value="nein">Nein</option></select></Field>
+        <Field label="Speicherort"><input value={form.storage} onChange={event => set('storage', event.target.value)} /></Field>
+        <Field label="Archivierungsart"><input value={form.archiveType} onChange={event => set('archiveType', event.target.value)} /></Field>
+        <Field label="Aufbewahrungsfrist"><select value={form.retentionYears} onChange={event => set('retentionYears', event.target.value)}><option value="0">dauerhafte Aufbewahrung</option><option value="6">6 Jahre</option><option value="10">10 Jahre</option><option value="30">30 Jahre</option></select></Field>
+        <Field label="Beginn der Aufbewahrungsfrist"><input type="date" value={form.retentionStart} onChange={event => set('retentionStart', event.target.value)} /></Field>
+        <Field label="gesetzliche Grundlage"><input value={form.gesetz} onChange={event => set('gesetz', event.target.value)} /></Field>
+        <Field label="verantwortliche Person"><input value={form.responsible} onChange={event => set('responsible', event.target.value)} /></Field>
+        <Field label="verantwortlich fur Vernichtung"><input value={form.vernichtung} onChange={event => set('vernichtung', event.target.value)} /></Field>
+        <Field label="Vernichtungsart"><input value={form.destructionType} onChange={event => set('destructionType', event.target.value)} /></Field>
+        <Field label="Schutzklasse"><input value={form.protection} onChange={event => set('protection', event.target.value)} /></Field>
+        <Field label="Zugriffsberechtigung"><input value={form.access} onChange={event => set('access', event.target.value)} /></Field>
+        <Field label="Status"><select value={form.status} onChange={event => set('status', event.target.value)}>{statuses.map(item => <option key={item}>{item}</option>)}</select></Field>
+        <Field label="Dokument oder Nachweis hochladen"><button type="button" className="info-upload"><Icon name="upload" size={15} />Dokument hochladen</button></Field>
+        <Field label="Bemerkungen"><textarea value={form.notes} onChange={event => set('notes', event.target.value)} /></Field>
+      </main>
+      <footer><button className="btn btn--ghost" onClick={onClose}>Abbrechen</button><button className="btn btn--primary" onClick={onClose}>Speichern</button></footer>
+    </div>
+  </div>;
+}
+
+function InformationMatrixDestroyDialog({ row, onClose }) {
+  return <div className="info-dialog-backdrop">
+    <div className="info-dialog info-dialog--small">
+      <header><div><span>Vernichtung dokumentieren</span><h2>{row.bezeichnung}</h2></div><button onClick={onClose}><Icon name="x" size={18} /></button></header>
+      <main>
+        {['Datum der Vernichtung', 'durchgefuhrt von', 'freigegeben durch', 'Vernichtungsart', 'Dienstleister', 'Protokollnummer', 'Nachweis hochladen', 'Bemerkung'].map(label => <label key={label}><span>{label}</span>{label.includes('Bemerkung') ? <textarea /> : label.includes('Datum') ? <input type="date" /> : label.includes('Nachweis') ? <button className="info-upload"><Icon name="upload" size={15} />Nachweis hochladen</button> : <input />}</label>)}
+      </main>
+      <footer><button className="btn btn--ghost" onClick={onClose}>Abbrechen</button><button className="btn btn--primary" onClick={onClose}>Dokumentieren</button></footer>
+    </div>
   </div>;
 }
 

@@ -1,476 +1,186 @@
-function UnfallstatistikView({ activeCompany, extraAction = null, onOpenFirma = null }) {
-  const unfallDaten = [
-    {
-      id: 'rohrbau',
-      firma: 'Janning Rohrbau GmbH',
-      intern: 'SGU_039',
-      jahreData: [
-        { jahr: 2023, unfaelle: 0, stunden: 4560, uh: 0 },
-        { jahr: 2024, unfaelle: 0, stunden: 13680, uh: 0 },
-        { jahr: 2025, unfaelle: 0, stunden: 13680, uh: 0 },
-      ],
-    },
-    {
-      id: 'bohrtechnik',
-      firma: 'Janning Bohrtechnik GmbH',
-      intern: 'SGU_038',
-      jahreData: [
-        { jahr: 2023, unfaelle: 0, stunden: 41500, uh: 0 },
-        { jahr: 2024, unfaelle: 0, stunden: 29264, uh: 0 },
-        { jahr: 2025, unfaelle: 1, stunden: 50160, uh: 8.3 },
-      ],
-    },
-    {
-      id: 'tiefbau',
-      firma: 'Janning Tiefbau GmbH',
-      intern: 'SGU_037',
-      jahreData: [
-        { jahr: 2023, unfaelle: 3, stunden: 160400, uh: 10.91 },
-        { jahr: 2024, unfaelle: 4, stunden: 230000, uh: 13.44 },
-        { jahr: 2025, unfaelle: 3, stunden: 243000, uh: 15.8 },
-      ],
-    },
+function UnfallstatistikView({ activeCompany = 'all', extraAction = null, onOpenFirma = null }) {
+  const companies = [
+    { id:'rohrbau', name:'Janning Rohrbau GmbH', code:'SGU_039', target:8, hours:13680, accidents:0, lostDays:0, prevUh:0 },
+    { id:'bohrtechnik', name:'Janning Bohrtechnik GmbH', code:'SGU_038', target:7, hours:50160, accidents:1, lostDays:4, prevUh:0 },
+    { id:'tiefbau', name:'Janning Tiefbau GmbH', code:'SGU_037', target:10, hours:243000, accidents:3, lostDays:18, prevUh:13.44 },
   ];
+  const accidents = [
+    { id:'u-1', company:'tiefbau', no:'UNF-2025-001', date:'14.02.2025', time:'09:20', person:'Daniel Bert', site:'Kanalsanierung Nordhorn', department:'Tiefbau', activity:'Rohrgraben absichern', type:'Stolpern / Sturz', body:'Knöchel', cause:'Unebene Verkehrsfläche', days:3, reportable:'Ja', status:'Abgeschlossen' },
+    { id:'u-2', company:'tiefbau', no:'UNF-2025-002', date:'18.06.2025', time:'13:10', person:'Dirk Jürgens', site:'Baustelle Alex Barum', department:'Tiefbau', activity:'Material bewegen', type:'Quetschung', body:'Hand', cause:'Unklare Handzeichen', days:8, reportable:'Ja', status:'Maßnahme offen' },
+    { id:'u-3', company:'tiefbau', no:'UNF-2025-003', date:'02.09.2025', time:'07:45', person:'Markus Brinker', site:'Fernwärme Innenstadt', department:'Tiefbau', activity:'Beschilderung aufstellen', type:'Anstoßen', body:'Schulter', cause:'Enger Arbeitsbereich', days:7, reportable:'Ja', status:'In Prüfung' },
+    { id:'u-4', company:'bohrtechnik', no:'UNF-2025-004', date:'22.05.2025', time:'10:05', person:'Tobias Nowak', site:'Horizontalbohrung Gewerbepark', department:'Bohrtechnik', activity:'Bohrgestänge aufnehmen', type:'Schnittverletzung', body:'Finger', cause:'Handschuh beschädigt', days:4, reportable:'Ja', status:'Abgeschlossen' },
+  ];
+  const nearMisses = [
+    { date:'12.03.2025', site:'Kanalsanierung Nordhorn', description:'Beinahe-Kollision mit Radlader', consequence:'Personenschaden möglich', owner:'Alexander Petersen', done:'18.03.2025' },
+    { date:'04.07.2025', site:'Bohrung Gewerbepark', description:'Absperrung durch Dritte verschoben', consequence:'Absturz in Arbeitsbereich', owner:'Dirk Berg', done:'Offen' },
+  ];
+  const actions = [
+    { task:'MVAS-Beschilderung vor Arbeitsbeginn prüfen', owner:'Daniel Bert', due:'11.05.2026', priority:'Hoch', status:'Offen' },
+    { task:'Unterweisung Handzeichen und Anschlagen erneuern', owner:'Dirk Jürgens', due:'20.05.2026', priority:'Mittel', status:'In Bearbeitung' },
+    { task:'Arbeitsbereich bei Bohrgeräten enger absperren', owner:'Mehmet Brinker', due:'24.05.2026', priority:'Hoch', status:'Nachweis fehlt' },
+  ];
+  const [companyFilter, setCompanyFilter] = React.useState(activeCompany === 'all' ? 'all' : activeCompany);
+  const [yearFilter, setYearFilter] = React.useState('2025');
+  const [periodFilter, setPeriodFilter] = React.useState('Aktuelles Jahr');
+  const [dialog, setDialog] = React.useState(null);
+  const [selectedYear, setSelectedYear] = React.useState(null);
+  const [menuOpen, setMenuOpen] = React.useState(null);
+  const [selectedIds, setSelectedIds] = React.useState([]);
 
-  const [selectedFirmaId, setSelectedFirmaId] = React.useState(null);
-  const [detailOpen, setDetailOpen] = React.useState(false);
-  const [editMode, setEditMode] = React.useState(false);
-  const [addFirmaModalOpen, setAddFirmaModalOpen] = React.useState(false);
-  const [editingFirmaId, setEditingFirmaId] = React.useState(null);
-
-  const getCurrentUH = (firma) => {
-    const aktuellesDatum = firma.jahreData[firma.jahreData.length - 1];
-    return aktuellesDatum.uh;
+  const scopedCompanies = companies.filter(company => (activeCompany === 'all' || company.id === activeCompany) && (companyFilter === 'all' || company.id === companyFilter));
+  const scopedAccidents = accidents.filter(accident => scopedCompanies.some(company => company.id === accident.company));
+  const uh = company => company.hours ? company.accidents * 1000000 / company.hours : 0;
+  const risk = value => value === 0 ? ['Niedrig', 'is-low'] : value < 8 ? ['Mittel', 'is-mid'] : value < 12 ? ['Erhöht', 'is-warn'] : value < 18 ? ['Hoch', 'is-high'] : ['Kritisch', 'is-critical'];
+  const totalAccidents = scopedCompanies.reduce((sum, company) => sum + company.accidents, 0);
+  const totalHours = scopedCompanies.reduce((sum, company) => sum + company.hours, 0);
+  const totalUh = totalHours ? totalAccidents * 1000000 / totalHours : 0;
+  const selectedCompany = selectedYear ? companies.find(company => company.id === selectedYear.company) : null;
+  const selectedCompanyAccidents = selectedYear ? accidents.filter(accident => accident.company === selectedYear.company) : [];
+  const toggleSelection = id => setSelectedIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
+  const openMenu = (event, id) => {
+    event.stopPropagation();
+    setMenuOpen(menuOpen === id ? null : id);
   };
 
-  const getVorjahresUH = (firma) => {
-    if (firma.jahreData.length < 2) return null;
-    return firma.jahreData[firma.jahreData.length - 2].uh;
-  };
+  if (selectedYear && selectedCompany) {
+    const currentUh = uh(selectedCompany);
+    return <div className="view accident-page">
+      <header className="emp-page-title"><div><button className="emp-round-back" onClick={() => setSelectedYear(null)}><Icon name="chevL" size={18} /></button><h1>Unfallstatistik {selectedYear.year} ({selectedCompany.name})</h1></div><div><button className="btn btn--ghost"><Icon name="download" size={14} />Jahresbericht PDF</button><button className="btn btn--primary"><Icon name="plus" size={14} />Maßnahme erstellen</button></div></header>
+      <section className="accident-year-kpis">
+        <div><span>Alle Unfälle</span><strong>{selectedCompanyAccidents.length}</strong></div>
+        <div><span>Meldepflichtig</span><strong>{selectedCompanyAccidents.filter(item => item.reportable === 'Ja').length}</strong></div>
+        <div><span>Ausfalltage</span><strong>{selectedCompany.lostDays}</strong></div>
+        <div><span>Arbeitsstunden</span><strong>{selectedCompany.hours.toLocaleString('de-DE')}</strong></div>
+        <div><span>Unfallhäufigkeit</span><strong>{currentUh.toFixed(1)}</strong></div>
+        <div><span>Vergleich Vorjahr</span><strong>{(currentUh - selectedCompany.prevUh).toFixed(1)}</strong></div>
+      </section>
+      <section className="accident-chart-grid">
+        <AccidentChart title="Unfallarten" items={[['Sturz', 2], ['Quetschung', 1], ['Schnitt', 1]]} />
+        <AccidentChart title="Körperbereiche" items={[['Hand', 2], ['Knöchel', 1], ['Schulter', 1]]} />
+        <AccidentChart title="Baustellen" items={[['Nordhorn', 2], ['Gewerbepark', 1], ['Innenstadt', 1]]} />
+        <AccidentChart title="Ursachen" items={[['Organisation', 2], ['Arbeitsmittel', 1], ['Verkehrsweg', 1]]} />
+      </section>
+      <AccidentTable title="Unfälle des Jahres" rows={selectedCompanyAccidents} selectedIds={selectedIds} toggleSelection={toggleSelection} menuOpen={menuOpen} openMenu={openMenu} />
+    </div>;
+  }
 
-  const getRisikostufe = (uh) => {
-    if (uh === 0) return 'kein-risiko';
-    if (uh < 5) return 'niedrig';
-    if (uh < 10) return 'mittel';
-    return 'hoch';
-  };
-
-  const getRisikotextColor = (stufe) => {
-    switch (stufe) {
-      case 'kein-risiko': return '#22c55e';
-      case 'niedrig': return '#84cc16';
-      case 'mittel': return '#f59e0b';
-      case 'hoch': return '#ef4444';
-      default: return '#666';
-    }
-  };
-
-  const getRisikotextLabel = (stufe) => {
-    switch (stufe) {
-      case 'kein-risiko': return 'Keine Unfälle';
-      case 'niedrig': return 'Niedriges Risiko';
-      case 'mittel': return 'Mittleres Risiko';
-      case 'hoch': return 'Hohes Risiko';
-      default: return 'Unbekannt';
-    }
-  };
-
-  const getTrendPfeil = (uh, vorjahr) => {
-    if (vorjahr === null) return '→';
-    if (uh > vorjahr) return '↑';
-    if (uh < vorjahr) return '↓';
-    return '→';
-  };
-
-  const getTrendFarbe = (uh, vorjahr) => {
-    if (vorjahr === null) return '#999';
-    if (uh > vorjahr) return '#ef4444';
-    if (uh < vorjahr) return '#22c55e';
-    return '#999';
-  };
-
-  const visibleDaten = unfallDaten.filter(firma => activeCompany === 'all' || firma.id === activeCompany);
-  const selectedFirma = unfallDaten.find(f => f.id === selectedFirmaId);
-  const aktuellesJahr = 2025;
-  const letzteMonate = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
-
-  return (
-    <div className="view">
-      <div className="view-header">
-        <div className="view-header-top">
-          <h1>Unfallstatistik-Übersicht</h1>
-          <p className="view-subtitle">SCC-Unfallhäufigkeit (UH) gemäß Regelwerk 2011 - Dokument 006</p>
-        </div>
-        <div className="view-header-tabs">
-          <span className="tab-count">{visibleDaten.length} Firmen</span>
-          <div className="header-actions">
-            {extraAction}
-            <button
-              className={`btn btn--primary ${editMode ? 'btn--active' : ''}`}
-              onClick={() => setEditMode(!editMode)}
-            >
-              {editMode ? '✓ Beenden' : '✎ Bearbeiten'}
-            </button>
-            <button
-              className="btn btn--primary"
-              onClick={() => setAddFirmaModalOpen(true)}
-              disabled={!editMode}
-            >
-              + Neue Firma
-            </button>
-          </div>
-        </div>
+  return <div className="view accident-page">
+    <div className="accident-header">
+      <div><h1>Unfallstatistik</h1><p>SCC-Unfallhäufigkeit, Arbeitsstunden, Risiken und Maßnahmen im Überblick.</p></div>
+      <div className="accident-actions">
+        {extraAction}
+        <select value={companyFilter} onChange={event => setCompanyFilter(event.target.value)}><option value="all">Alle Firmen</option>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select>
+        <select value={periodFilter} onChange={event => setPeriodFilter(event.target.value)}><option>Aktuelles Jahr</option><option>Letzte 3 Jahre</option><option>Letzte 5 Jahre</option><option>Eigener Zeitraum</option></select>
+        <button className="btn btn--ghost"><Icon name="filter" size={14} />Filter</button>
+        <button className="btn btn--ghost"><Icon name="download" size={14} />Export</button>
+        <button className="btn btn--ghost" onClick={() => setDialog('hours')}>Arbeitsstunden erfassen</button>
+        <button className="btn btn--primary" onClick={() => setDialog('accident')}><Icon name="plus" size={14} />Unfall erfassen</button>
       </div>
-
-      <div className="unfallstatistik-grid">
-        {visibleDaten.map((firma) => {
-          const aktuellesUH = getCurrentUH(firma);
-          const vorjahresUH = getVorjahresUH(firma);
-          const risiko = getRisikostufe(aktuellesUH);
-          const trendPfeil = getTrendPfeil(aktuellesUH, vorjahresUH);
-          const trendFarbe = getTrendFarbe(aktuellesUH, vorjahresUH);
-          const aktuellesDatum = firma.jahreData[firma.jahreData.length - 1];
-
-          return (
-            <div
-              key={firma.id}
-              className={`unfallkarte unfallkarte--${risiko}`}
-              onClick={() => {
-                if (onOpenFirma) {
-                  onOpenFirma(firma);
-                  return;
-                }
-                setSelectedFirmaId(firma.id);
-                setDetailOpen(true);
-              }}
-            >
-              <div className="unfallkarte-header">
-                <div>
-                  <h3 className="unfallkarte-title">{firma.firma}</h3>
-                  <p className="unfallkarte-intern">{firma.intern}</p>
-                </div>
-                <div className={`risiko-badge risiko-badge--${risiko}`}>
-                  {getRisikotextLabel(risiko)}
-                </div>
-              </div>
-
-              <div className="unfallkarte-content">
-                <div className="uh-display">
-                  <div className="uh-value" style={{ color: getRisikotextColor(risiko) }}>
-                    {aktuellesUH.toFixed(1)}
-                  </div>
-                  <div className="uh-label">UH-Quote 2025</div>
-                </div>
-
-                <div className="unfallkarte-metrics">
-                  <div className="metric-item">
-                    <span className="metric-label">Unfälle 2025</span>
-                    <span className="metric-value">{aktuellesDatum.unfaelle}</span>
-                  </div>
-                  <div className="metric-item">
-                    <span className="metric-label">Arbeitsstunden</span>
-                    <span className="metric-value">{(aktuellesDatum.stunden / 1000).toFixed(1)}k</span>
-                  </div>
-                </div>
-
-                {vorjahresUH !== null && (
-                  <div className="trend-indicator">
-                    <span className="trend-pfeil" style={{ color: trendFarbe }}>
-                      {trendPfeil}
-                    </span>
-                    <span className="trend-text">
-                      {vorjahresUH > 0 ? `vs ${vorjahresUH.toFixed(1)}` : 'Neu mit Unfällen'}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="unfallkarte-footer">
-                {editMode ? (
-                  <div className="card-actions">
-                    <button
-                      className="btn-small btn-small--edit"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingFirmaId(firma.id);
-                        setAddFirmaModalOpen(true);
-                      }}
-                    >
-                      ✎ Bearbeiten
-                    </button>
-                    <button className="btn-small btn-small--delete" onClick={(e) => e.stopPropagation()}>
-                      🗑 Löschen
-                    </button>
-                  </div>
-                ) : (
-                  <span className="view-hint">→ Details anzeigen</span>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="unfallstatistik-section">
-        <div className="jahresvergleich-header">
-          <h2>Jahresvergleich</h2>
-          <div className="header-actions">
-            <button
-              className={`btn btn--primary ${editMode ? 'btn--active' : ''}`}
-              onClick={() => setEditMode(!editMode)}
-            >
-              {editMode ? '✓ Beenden' : '✎ Bearbeiten'}
-            </button>
-            <button
-              className="btn btn--primary"
-              onClick={() => setAddFirmaModalOpen(true)}
-              disabled={!editMode}
-            >
-              + Neue Firma
-            </button>
-          </div>
-        </div>
-
-        {visibleDaten.map((firma) => {
-          const getTrendForYear = (currUH, prevUH) => {
-            if (prevUH === null) return '—';
-            if (currUH > prevUH) return '↑';
-            if (currUH < prevUH) return '↓';
-            return '→';
-          };
-
-          const getTrendColorForYear = (currUH, prevUH) => {
-            if (prevUH === null) return '#999';
-            if (currUH > prevUH) return '#ef4444';
-            if (currUH < prevUH) return '#22c55e';
-            return '#999';
-          };
-
-          return (
-            <div key={firma.id} className="jahresvergleich-firma">
-              <h3 className="firma-subtitle">
-                Firma: <strong>{firma.firma}</strong>
-              </h3>
-
-              <div className="unfallstatistik-tabelle">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Jahr</th>
-                      <th>Unfallhäufigkeit (UH) nach SCC</th>
-                      <th>Anzahl der Unfälle nach SCC²)</th>
-                      <th>Trend</th>
-                      <th>Dokument</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {firma.jahreData.map((datum, idx) => {
-                      const prevUH = idx > 0 ? firma.jahreData[idx - 1].uh : null;
-                      const trend = getTrendForYear(datum.uh, prevUH);
-                      const trendColor = getTrendColorForYear(datum.uh, prevUH);
-
-                      return (
-                        <tr key={datum.jahr}>
-                          <td className="jahr-cell">{datum.jahr}</td>
-                          <td className={datum.uh === 0 ? 'status-ok' : ''}>
-                            {datum.uh === 0 ? '—' : datum.uh.toFixed(2)}
-                          </td>
-                          <td className={datum.unfaelle === 0 ? 'status-ok' : ''}>
-                            {datum.unfaelle}
-                          </td>
-                          <td style={{ color: trendColor, fontWeight: 'bold', textAlign: 'center', fontSize: '18px' }}>
-                            {trend}
-                          </td>
-                          <td className="dokument-cell">
-                            <a href="#" className="pdf-link" onClick={(e) => e.preventDefault()}>
-                              📄 PDF
-                            </a>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          );
-        })}
-
-        <div className="tabelle-fussnote">
-          <p>²) Unfälle mit einer Ausfallzeit ab einer Arbeitstag (Wegunfälle wurden nicht berücksichtigt)</p>
-        </div>
-      </div>
-
-      <div className="unfallstatistik-section">
-        <h2>Erklärung</h2>
-        <div className="info-box">
-          <p>
-            <strong>Unfallhäufigkeit (UH)</strong> = (Anzahl der Arbeitsunfälle × 10⁶) / Geleistete Arbeitsstunden
-          </p>
-          <p style={{ marginTop: '12px', marginBottom: 0 }}>
-            Die UH wird nach SCC-Regelwerk 2011 berechnet. Sie zeigt die Quote von Arbeitsunfällen pro 1 Million geleistete Arbeitsstunden.
-          </p>
-        </div>
-      </div>
-
-      {addFirmaModalOpen && (
-        <div className="modal-overlay" onClick={() => { setAddFirmaModalOpen(false); setEditingFirmaId(null); }}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{editingFirmaId ? 'Firma bearbeiten' : 'Neue Firma hinzufügen'}</h2>
-              <button
-                className="btn-close"
-                onClick={() => {
-                  setAddFirmaModalOpen(false);
-                  setEditingFirmaId(null);
-                }}
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="form-group">
-                <label>Firmenname *</label>
-                <input type="text" className="form-input" placeholder="z.B. Janning Neue Firma GmbH" />
-              </div>
-
-              <div className="form-group">
-                <label>SCC-Interne Nummer *</label>
-                <input type="text" className="form-input" placeholder="z.B. SGU_040" />
-              </div>
-
-              <div className="form-section">
-                <h3>Jahresangaben 2023</h3>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Unfälle</label>
-                    <input type="number" className="form-input" placeholder="0" min="0" />
-                  </div>
-                  <div className="form-group">
-                    <label>Arbeitsstunden</label>
-                    <input type="number" className="form-input" placeholder="0" min="0" />
-                  </div>
-                  <div className="form-group">
-                    <label>UH-Quote</label>
-                    <input type="number" className="form-input" placeholder="0.0" step="0.1" disabled />
-                    <span className="form-hint">Berechnet automatisch</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-section">
-                <h3>Jahresangaben 2024</h3>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Unfälle</label>
-                    <input type="number" className="form-input" placeholder="0" min="0" />
-                  </div>
-                  <div className="form-group">
-                    <label>Arbeitsstunden</label>
-                    <input type="number" className="form-input" placeholder="0" min="0" />
-                  </div>
-                  <div className="form-group">
-                    <label>UH-Quote</label>
-                    <input type="number" className="form-input" placeholder="0.0" step="0.1" disabled />
-                    <span className="form-hint">Berechnet automatisch</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="form-section">
-                <h3>Jahresangaben 2025</h3>
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Unfälle</label>
-                    <input type="number" className="form-input" placeholder="0" min="0" />
-                  </div>
-                  <div className="form-group">
-                    <label>Arbeitsstunden</label>
-                    <input type="number" className="form-input" placeholder="0" min="0" />
-                  </div>
-                  <div className="form-group">
-                    <label>UH-Quote</label>
-                    <input type="number" className="form-input" placeholder="0.0" step="0.1" disabled />
-                    <span className="form-hint">Berechnet automatisch</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button className="btn btn--ghost" onClick={() => { setAddFirmaModalOpen(false); setEditingFirmaId(null); }}>
-                Abbrechen
-              </button>
-              <button className="btn btn--primary">
-                {editingFirmaId ? 'Speichern' : 'Firma hinzufügen'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {detailOpen && selectedFirma && (
-        <div className="detail-panel detail-panel-unfallstatistik">
-          <div className="detail-header">
-            <button className="btn-close" onClick={() => setDetailOpen(false)}>✕</button>
-            <h2>{selectedFirma.firma}</h2>
-            <span className="detail-intern">{selectedFirma.intern}</span>
-          </div>
-
-          <div className="detail-content">
-            <section className="detail-section">
-              <h3>Detaillierte Übersicht</h3>
-              <table className="detail-table">
-                <thead>
-                  <tr>
-                    <th>Jahr</th>
-                    <th>Unfälle</th>
-                    <th>Arbeitsstunden</th>
-                    <th>UH-Quote</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedFirma.jahreData.map((datum) => (
-                    <tr key={datum.jahr}>
-                      <td><strong>{datum.jahr}</strong></td>
-                      <td>{datum.unfaelle}</td>
-                      <td>{datum.stunden.toLocaleString('de-DE')}</td>
-                      <td className={datum.uh === 0 ? 'status-ok' : ''}>
-                        <strong>{datum.uh === 0 ? '—' : datum.uh.toFixed(1)}</strong>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </section>
-
-            <section className="detail-section">
-              <h3>Risikobewertung</h3>
-              <div className="risiko-erklarung">
-                <div className="risiko-item">
-                  <span className="risiko-color" style={{ background: '#22c55e' }}></span>
-                  <span>UH = 0: Keine Unfälle</span>
-                </div>
-                <div className="risiko-item">
-                  <span className="risiko-color" style={{ background: '#84cc16' }}></span>
-                  <span>UH &lt; 5: Niedriges Risiko</span>
-                </div>
-                <div className="risiko-item">
-                  <span className="risiko-color" style={{ background: '#f59e0b' }}></span>
-                  <span>UH 5-10: Mittleres Risiko</span>
-                </div>
-                <div className="risiko-item">
-                  <span className="risiko-color" style={{ background: '#ef4444' }}></span>
-                  <span>UH &gt; 10: Hohes Risiko</span>
-                </div>
-              </div>
-            </section>
-          </div>
-        </div>
-      )}
     </div>
-  );
+
+    <section className="accident-filter-strip">
+      {['Jahr', 'Baustelle', 'Abteilung', 'Unfallart', 'Meldepflichtig', 'Status', 'Zeitraum'].map(label => <label key={label}><span>{label}</span><select value={label === 'Jahr' ? yearFilter : 'all'} onChange={event => label === 'Jahr' && setYearFilter(event.target.value)}><option value="all">Alle</option><option value="2025">2025</option><option value="2024">2024</option><option value="2023">2023</option></select></label>)}
+    </section>
+
+    <section className="accident-kpis">
+      <div><span>Unfälle</span><strong>{totalAccidents}</strong><small>berücksichtigte Arbeitsunfälle</small></div>
+      <div><span>Arbeitsstunden</span><strong>{totalHours.toLocaleString('de-DE')}</strong><small>aus Monatswerten</small></div>
+      <div><span>Unfallhäufigkeit</span><strong>{totalUh.toFixed(1)}</strong><small>Unfälle x 1.000.000 / Stunden</small></div>
+      <div><span>Zielwert</span><strong>10,0</strong><small>Abweichung {(totalUh - 10).toFixed(1)}</small></div>
+      <div><span>Beinaheunfälle</span><strong>{nearMisses.length}</strong><small>nicht in UH enthalten</small></div>
+    </section>
+
+    <section className="unfallstatistik-grid">
+      {scopedCompanies.map(company => {
+        const value = uh(company);
+        const [riskLabel, riskClass] = risk(value);
+        return <article key={company.id} className={`unfallkarte accident-company-card ${riskClass}`} onClick={() => setSelectedYear({ company:company.id, year:yearFilter })}>
+          <div className="unfallkarte-header">
+            <div><h3 className="unfallkarte-title">{company.name}</h3><p className="unfallkarte-intern">{company.code}</p></div>
+            <span className={`accident-risk ${riskClass}`}>{riskLabel}</span>
+          </div>
+          <div className="uh-display"><div className="uh-value">{value.toFixed(1)}</div><div className="uh-label">UH-Quote {yearFilter}</div></div>
+          <div className="unfallkarte-metrics"><div className="metric-item"><span className="metric-label">Unfälle {yearFilter}</span><span className="metric-value">{company.accidents}</span></div><div className="metric-item"><span className="metric-label">Arbeitsstunden</span><span className="metric-value">{(company.hours / 1000).toFixed(1)}k</span></div></div>
+          <p className="accident-risk-reason">{riskLabel}es Risiko, weil die Unfallhäufigkeit {value.toFixed(1)} beträgt{value > company.prevUh ? ' und gegenüber dem Vorjahr gestiegen ist.' : '.'}</p>
+          <div className="accident-target"><span>Ziel 10,0</span><strong>{(value - 10).toFixed(1)}</strong></div>
+          <button className="accident-row-menu" onClick={event => openMenu(event, company.id)}>⋮</button>
+          {menuOpen === company.id && <ActionMenu onClose={() => setMenuOpen(null)} />}
+        </article>;
+      })}
+    </section>
+
+    <section className="accident-chart-grid">
+      <AccidentChart title="Unfallhäufigkeit nach Jahr" items={[['2023', 10.9], ['2024', 13.4], ['2025', 15.8]]} />
+      <AccidentChart title="Unfälle nach Monat" items={[['Feb', 1], ['Mai', 1], ['Jun', 1], ['Sep', 1]]} />
+      <AccidentChart title="Unfälle nach Firma" items={scopedCompanies.map(company => [company.name.replace('Janning ', ''), company.accidents])} />
+      <AccidentChart title="Ausfalltage nach Jahr" items={[['2023', 9], ['2024', 13], ['2025', 22]]} />
+    </section>
+
+    <AccidentTable title="Unfallliste" rows={scopedAccidents} selectedIds={selectedIds} toggleSelection={toggleSelection} menuOpen={menuOpen} openMenu={openMenu} />
+
+    <section className="accident-two-column">
+      <div className="accident-panel"><h2>Beinaheunfälle</h2><p>Separat erfasst, nicht in der Unfallhäufigkeit enthalten.</p><table><tbody>{nearMisses.map(item => <tr key={item.date}><td><strong>{item.date}</strong><span>{item.site}</span></td><td>{item.description}<small>{item.consequence}</small></td><td>{item.owner}</td><td>{item.done}</td></tr>)}</tbody></table></div>
+      <div className="accident-panel"><h2>Maßnahmen aus Unfällen</h2><p>Verbesserungsprozess direkt aus der Statistik.</p><table><tbody>{actions.map(item => <tr key={item.task}><td><strong>{item.task}</strong><span>{item.owner}</span></td><td>{item.due}</td><td>{item.priority}</td><td><span className="badge badge--warn">{item.status}</span></td></tr>)}</tbody></table></div>
+    </section>
+
+    <section className="accident-formula">
+      <h2>Berechnungsgrundlage</h2>
+      <p><strong>Unfallhäufigkeit = Anzahl der berücksichtigten Arbeitsunfälle × 1.000.000 / geleistete Arbeitsstunden</strong></p>
+      <p>Gezählt werden nur meldepflichtige Arbeitsunfälle mit mindestens einem Ausfalltag. Wegeunfälle und Beinaheunfälle werden nicht eingerechnet.</p>
+    </section>
+
+    {dialog === 'accident' && <AccidentDialog onClose={() => setDialog(null)} companies={companies} />}
+    {dialog === 'hours' && <HoursDialog onClose={() => setDialog(null)} companies={companies} />}
+  </div>;
+}
+
+function ActionMenu() {
+  return <div className="accident-action-menu">
+    {['Details anzeigen', 'Bearbeiten', 'Dokument öffnen', 'PDF erstellen', 'Duplizieren', 'Archivieren', 'Löschen'].map(item => <button key={item}>{item}</button>)}
+  </div>;
+}
+
+function AccidentChart({ title, items }) {
+  const max = Math.max(...items.map(item => Number(item[1])), 1);
+  return <div className="accident-chart"><h3>{title}</h3>{items.map(([label, value]) => <div key={label} className="accident-bar"><span>{label}</span><div><i style={{ width:`${Math.max((Number(value) / max) * 100, 4)}%` }} /></div><strong>{value}</strong></div>)}</div>;
+}
+
+function AccidentTable({ title, rows, selectedIds, toggleSelection, menuOpen, openMenu }) {
+  return <section className="accident-panel">
+    <div className="accident-panel-head"><div><h2>{title}</h2><p>{rows.length} Einträge</p></div>{selectedIds.length > 0 && <div className="accident-bulk"><strong>{selectedIds.length} ausgewählt</strong><button>Status ändern</button><button>Archivieren</button><button>Export</button></div>}</div>
+    <div className="accident-table-wrap"><table className="accident-table"><thead><tr>{['', 'Unfallnummer', 'Datum', 'Person', 'Firma', 'Baustelle', 'Unfallart', 'Ausfalltage', 'Status', 'Aktionen'].map(head => <th key={head}>{head}{head && <button>⌄</button>}</th>)}</tr></thead><tbody>{rows.map(row => <tr key={row.id}><td><input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleSelection(row.id)} /></td><td><strong>{row.no}</strong></td><td>{row.date}<small>{row.time}</small></td><td>{row.person}<small>{row.department}</small></td><td>{window.company(row.company)?.name || row.company}</td><td>{row.site}</td><td>{row.type}<small>{row.body}</small></td><td>{row.days}</td><td><span className="badge badge--warn">{row.status}</span></td><td className="accident-actions-cell"><button onClick={event => openMenu(event, row.id)}>⋮</button>{menuOpen === row.id && <ActionMenu />}</td></tr>)}</tbody></table></div>
+  </section>;
+}
+
+function AccidentDialog({ onClose, companies }) {
+  const fields = ['Unfallnummer', 'Datum und Uhrzeit', 'Betroffene Person', 'Baustelle / Standort', 'Abteilung', 'Tätigkeit beim Unfall', 'Unfallart', 'Verletzter Körperbereich', 'Unfallbeschreibung', 'Unfallursache', 'Sofortmaßnahmen', 'Arztbesuch', 'Krankenhaus', 'Meldepflichtig', 'Ausfalltage', 'Wiederaufnahme der Arbeit', 'Zuständige Führungskraft', 'Zeugen', 'BG-BAU-Meldung', 'Status'];
+  return <ModalFrame title="Unfall erfassen" subtitle="Arbeitsunfall, Maßnahmen und Nachweise dokumentieren." onClose={onClose}>
+    <label><span>Firma</span><select>{companies.map(company => <option key={company.id}>{company.name}</option>)}</select></label>
+    {fields.map(field => <label key={field} className={field.includes('beschreibung') || field.includes('ursache') || field.includes('Sofort') ? 'is-wide' : ''}><span>{field}</span>{field.includes('beschreibung') || field.includes('ursache') || field.includes('Sofort') ? <textarea /> : <input />}</label>)}
+    <div className="accident-documents-field is-wide">
+      <span>Dokumente und Fotos</span>
+      <div className="accident-doc-chip"><Icon name="doc" size={15} /><strong>Unfallmeldung_UNF-2025-005.pdf</strong><button type="button"><Icon name="x" size={14} /></button></div>
+      <div className="accident-doc-chip"><Icon name="doc" size={15} /><strong>Foto_Baustelle_Schadstelle.jpg</strong><button type="button"><Icon name="x" size={14} /></button></div>
+      <label className="accident-doc-upload"><Icon name="upload" size={16} /><strong>Anlagen hinzufügen</strong><input type="file" multiple /></label>
+      <p>PDF, JPG oder PNG als Nachweis zum Unfall hinterlegen.</p>
+    </div>
+  </ModalFrame>;
+}
+
+function HoursDialog({ onClose, companies }) {
+  return <ModalFrame title="Arbeitsstunden erfassen" subtitle="Monatswerte pflegen, Jahreswert automatisch ableiten." onClose={onClose}>
+    <label><span>Firma</span><select>{companies.map(company => <option key={company.id}>{company.name}</option>)}</select></label>
+    {['Jahr', 'Monat', 'Geleistete Arbeitsstunden', 'Quelle', 'Bemerkung'].map(field => <label key={field} className={field === 'Bemerkung' ? 'is-wide' : ''}><span>{field}</span>{field === 'Bemerkung' ? <textarea /> : <input />}</label>)}
+    <div className="accident-auto-calc is-wide"><span>Jahresarbeitsstunden</span><strong>werden automatisch aus den Monatswerten berechnet</strong></div>
+  </ModalFrame>;
+}
+
+function ModalFrame({ title, subtitle, onClose, children }) {
+  return <div className="fach-dialog-backdrop" onClick={onClose}><section className="fach-dialog accident-dialog" onClick={event => event.stopPropagation()}>
+    <header><div><span>Unfallstatistik</span><h2>{title}</h2><p>{subtitle}</p></div><button onClick={onClose}><Icon name="x" size={18} /></button></header>
+    <div className="fach-dialog-grid">{children}</div>
+    <footer><button className="btn btn--ghost" onClick={onClose}>Abbrechen</button><button className="btn btn--primary">Speichern</button></footer>
+  </section></div>;
 }
 
 window.UnfallstatistikView = UnfallstatistikView;

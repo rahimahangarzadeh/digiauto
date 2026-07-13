@@ -9109,3 +9109,55 @@ a.subtle:hover { text-decoration: underline; }
   .fach-dialog-grid{grid-template-columns:1fr}
   .fach-dialog-grid .is-wide{grid-column:auto}
 }
+/* Unfallstatistik Erweiterung */
+.accident-page{display:grid;gap:18px}
+.accident-header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px}
+.accident-header h1{margin:0;font-family:var(--font-serif);font-size:32px;font-weight:500;color:var(--fg-1)}
+.accident-header p{margin:6px 0 0;color:var(--fg-2);font-size:13px}
+.accident-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.accident-actions select,.accident-filter-strip select{min-height:36px;border:1px solid var(--border-1);border-radius:7px;background:#fff;padding:0 10px;font:inherit;font-size:12px}
+.accident-filter-strip{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:10px;border:1px solid var(--border-1);border-radius:9px;background:rgba(255,255,255,.78);padding:12px}
+.accident-filter-strip label{display:grid;gap:5px}
+.accident-filter-strip span{color:var(--fg-3);font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.35px}
+.accident-kpis,.accident-year-kpis{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px}
+.accident-year-kpis{grid-template-columns:repeat(6,minmax(130px,1fr))}
+.accident-kpis>div,.accident-year-kpis>div{min-height:56px;display:grid;grid-template-columns:1fr auto;align-items:center;border:1px solid #eee4dc;border-radius:8px;background:rgba(255,255,255,.84);padding:10px 16px;box-shadow:0 4px 10px rgba(34,29,24,.06)}
+.accident-kpis span,.accident-year-kpis span{color:var(--fg-3);font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.35px}
+.accident-kpis strong,.accident-year-kpis strong{font-family:var(--font-serif);font-size:25px;font-weight:500;color:#1f6e42}
+.accident-kpis small{grid-column:1/-1;color:var(--fg-3);font-size:11px}
+.accident-company-card{position:relative}
+.accident-risk{display:inline-flex;align-items:center;border-radius:999px;padding:7px 12px;font-size:10px;font-weight:850;text-transform:uppercase}
+.accident-risk.is-low{background:#e6f5eb;color:#197a38}.accident-risk.is-mid{background:#fff4db;color:#9c6a08}.accident-risk.is-warn{background:#fff1d6;color:#a45b0a}.accident-risk.is-high,.accident-risk.is-critical{background:#fde7e4;color:#a13232}
+.accident-risk-reason{min-height:38px;margin:10px 0 0;color:var(--fg-2);font-size:12px;line-height:1.45}
+.accident-target{display:flex;justify-content:space-between;border-top:1px solid var(--border-1);padding-top:10px;color:var(--fg-3);font-size:12px}.accident-target strong{color:#a13232}
+.accident-row-menu{position:absolute;right:12px;bottom:12px;width:30px;height:30px;border:1px solid var(--border-1);border-radius:7px;background:#fff;cursor:pointer}
+.accident-action-menu{position:absolute;right:0;top:34px;z-index:40;min-width:170px;overflow:hidden;border:1px solid var(--border-1);border-radius:8px;background:#fff;box-shadow:0 16px 42px rgba(0,0,0,.16)}
+.accident-action-menu button{width:100%;min-height:34px;border:0;border-bottom:1px solid var(--border-1);background:#fff;padding:0 12px;text-align:left;font:inherit;font-size:12px;cursor:pointer}
+.accident-action-menu button:hover{background:#f6f2ec}
+.accident-chart-grid{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:12px}
+.accident-chart{border:1px solid var(--border-1);border-radius:9px;background:#fff;padding:16px}
+.accident-chart h3{margin:0 0 14px;font-family:var(--font-serif);font-size:18px;font-weight:500}
+.accident-bar{display:grid;grid-template-columns:96px 1fr 36px;gap:8px;align-items:center;margin:9px 0;color:var(--fg-2);font-size:12px}
+.accident-bar div{height:8px;border-radius:999px;background:#ece7df;overflow:hidden}.accident-bar i{display:block;height:100%;border-radius:999px;background:#4c8b5a}.accident-bar strong{text-align:right;color:var(--fg-1)}
+.accident-panel{position:relative;border:1px solid var(--border-1);border-radius:9px;background:#fff;padding:16px}
+.accident-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.accident-panel h2{margin:0;font-family:var(--font-serif);font-size:20px;font-weight:500}.accident-panel p{margin:4px 0 0;color:var(--fg-3);font-size:12px}
+.accident-bulk{display:flex;align-items:center;gap:7px;border:1px solid rgba(201,100,66,.24);border-radius:8px;background:#fff6f1;padding:8px}.accident-bulk button{border:1px solid var(--border-1);border-radius:6px;background:#fff;padding:6px 9px;font:inherit;font-size:11px}
+.accident-table-wrap{overflow:auto;border:1px solid var(--border-1);border-radius:8px}
+.accident-table{width:100%;min-width:1180px;border-collapse:collapse}.accident-table th,.accident-table td{border-bottom:1px solid var(--border-1);padding:11px 12px;text-align:left;vertical-align:top;font-size:12px}
+.accident-table th{background:#f7f6f2;color:var(--fg-3);font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.35px}.accident-table th button{margin-left:4px;border:0;background:transparent;color:var(--fg-3)}.accident-table td strong{color:var(--fg-1)}.accident-table td small{display:block;margin-top:3px;color:var(--fg-3)}
+.accident-actions-cell{position:relative}.accident-actions-cell>button{width:28px;height:28px;border:1px solid var(--border-1);border-radius:7px;background:#fff}
+.accident-two-column{display:grid;grid-template-columns:1fr 1fr;gap:12px}.accident-panel table{width:100%;border-collapse:collapse}.accident-panel td{border-bottom:1px solid var(--border-1);padding:10px 8px;font-size:12px;vertical-align:top}.accident-panel td span,.accident-panel td small{display:block;color:var(--fg-3);margin-top:3px}
+.accident-formula{border:1px solid var(--border-1);border-radius:9px;background:#fff;padding:16px}.accident-formula h2{margin:0 0 8px;font-family:var(--font-serif);font-size:20px;font-weight:500}.accident-formula p{margin:6px 0;color:var(--fg-2);font-size:13px}
+.accident-dialog .fach-dialog-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.accident-dialog .is-wide{grid-column:1/-1}.accident-auto-calc{border:1px solid #cde7d6;border-radius:8px;background:#edf8f1;padding:12px;color:#1f6e42}.accident-auto-calc span{display:block;color:#34734c;font-size:10px;font-weight:850;text-transform:uppercase}.accident-auto-calc strong{display:block;margin-top:4px}
+.accident-documents-field{display:grid;gap:9px;border:1px solid var(--border-1);border-radius:8px;background:#fff;padding:12px}
+.accident-documents-field>span{color:var(--fg-3);font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.35px}
+.accident-doc-chip{min-height:38px;display:grid;grid-template-columns:18px minmax(0,1fr) 28px;align-items:center;gap:8px;border:1px solid var(--border-1);border-radius:7px;background:#fbfaf6;padding:0 8px}
+.accident-doc-chip strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg-1);font-size:12px}
+.accident-doc-chip button{width:26px;height:26px;border:0;border-radius:6px;background:transparent;color:var(--fg-3);cursor:pointer}
+.accident-doc-chip button:hover{background:#f0ebe3;color:#111}
+.accident-doc-upload{min-height:40px;position:relative;display:flex!important;align-items:center;gap:8px;border:1px dashed #d8c7c1!important;border-radius:7px;background:#fff;padding:0 12px;color:var(--color-accent);font-size:12px;font-weight:800;cursor:pointer}
+.accident-doc-upload input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.accident-documents-field p{margin:0;color:var(--fg-3);font-size:11px}
+@media(max-width:1100px){.accident-filter-strip,.accident-kpis,.accident-year-kpis,.accident-chart-grid,.accident-two-column{grid-template-columns:1fr 1fr}.accident-header{flex-direction:column}.accident-actions{justify-content:flex-start}.accident-dialog .fach-dialog-grid{grid-template-columns:1fr}}
+@media(max-width:720px){.accident-filter-strip,.accident-kpis,.accident-year-kpis,.accident-chart-grid,.accident-two-column{grid-template-columns:1fr}}

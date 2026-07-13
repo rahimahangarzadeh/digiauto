@@ -736,10 +736,12 @@ function InformationMatrixDestroyDialog({ row, onClose }) {
 }
 
 function CompanyFormsPage({ company, onBack }) {
-  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   return <div className="emp-full company-forms-page">
-    <CompanyPageTitle title={`Formulare (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
-    <FormulareView />
+    <FormulareView
+      activeCompany={company.id}
+      title={`Formulare (${company.name})`}
+      onBack={onBack}
+    />
   </div>;
 }
 

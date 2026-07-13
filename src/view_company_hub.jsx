@@ -30,6 +30,9 @@ function companyRows() {
 function CompanyHubView() {
   const [selectedCompany, setSelectedCompany] = React.useState(null);
   const [sort, setSort] = React.useState({ key:'name', dir:'asc' });
+  const [viewMode, setViewMode] = React.useState('cards');
+  const [selectedIds, setSelectedIds] = React.useState([]);
+  const [createOpen, setCreateOpen] = React.useState(false);
   const [columnMenu, setColumnMenu] = React.useState(null);
   const [filterPanel, setFilterPanel] = React.useState(null);
   const [filterSearch, setFilterSearch] = React.useState('');
@@ -40,7 +43,7 @@ function CompanyHubView() {
 
   const columns = [
     { key:'name', label:'Name Firma' }, { key:'employees', label:'Anzahl Mitarbeiter' },
-    { key:'manager', label:'GeschÃ¤ftsfÃ¼hrer' }, { key:'address', label:'Adresse' },
+    { key:'manager', label:'Geschäftsführer' }, { key:'address', label:'Adresse' },
     { key:'phone', label:'Tel' }, { key:'description', label:'Beschreibung' },
     { key:'logo', label:'Logo' }, { key:'status', label:'Status' },
   ];
@@ -61,6 +64,7 @@ function CompanyHubView() {
   rows = [...rows].sort((a, b) => String(columnValue(a, sort.key)).localeCompare(String(columnValue(b, sort.key)), 'de', { numeric:true }) * (sort.dir === 'asc' ? 1 : -1));
 
   const setCompanySort = (key, dir) => { setSort({ key, dir }); setColumnMenu(null); };
+  const setCompanyGroup = key => { setGroupBy(key); setColumnMenu(null); };
   const toggleFilter = (key, value) => setColumnFilters(current => {
     const values = current[key] || [];
     return { ...current, [key]: values.includes(value) ? values.filter(item => item !== value) : [...values, value] };
@@ -71,24 +75,52 @@ function CompanyHubView() {
   const sortLabel = sort.key === 'name' ? 'Name (A-Z)' : columnLabel(sort.key);
   const kpiIcon = { all:'building', active:'check', preparing:'clock', inactive:'x' };
   const statusTone = company => company.status === 'Aktiv' ? 'valid' : company.status === 'In Vorbereitung' ? 'warn' : 'expired';
+  const selectedCompanies = rows.filter(company => selectedIds.includes(company.id));
+  const allVisibleSelected = rows.length > 0 && rows.every(company => selectedIds.includes(company.id));
+  const toggleSelected = id => setSelectedIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
+  const toggleAllVisible = () => setSelectedIds(current => allVisibleSelected ? current.filter(id => !rows.some(company => company.id === id)) : Array.from(new Set([...current, ...rows.map(company => company.id)])));
+  const renderColumnMenu = key => columnMenu === key && <div className="company-column-menu" onClick={event => event.stopPropagation()}>
+    <button onClick={() => setCompanySort(key, 'asc')}>A bis Z</button>
+    <button onClick={() => setCompanySort(key, 'desc')}>Z bis A</button>
+    <button onClick={() => { setFilterPanel(key); setFilterSearch(''); setColumnMenu(null); }}>Filtern nach</button>
+    <button onClick={() => setCompanyGroup(key)}>Gruppieren nach "{columnLabel(key)}"</button>
+  </div>;
+  const renderCompanyRows = list => list.map(company => <tr key={company.id} className={selectedIds.includes(company.id) ? 'is-selected' : ''}>
+    <td><input type="checkbox" checked={selectedIds.includes(company.id)} onChange={() => toggleSelected(company.id)} /></td>
+    <td onClick={() => setSelectedCompany(company)}><div className="company-name-cell"><div><strong>{company.name}</strong><small>{company.short}</small></div></div></td>
+    <td><span className="company-count">{company.employees}</span></td>
+    <td>{company.manager}</td>
+    <td>{company.address}</td>
+    <td>{company.phone}</td>
+    <td>{company.description}</td>
+    <td><img className="company-row-logo" src={company.logo} alt={company.short} /></td>
+    <td><span className={'company-status company-status--' + statusTone(company)}><i />{company.status}</span></td>
+  </tr>);
+  const groupedRows = groupBy ? Object.entries(rows.reduce((groups, company) => {
+    const value = String(columnValue(company, groupBy) || '-');
+    groups[value] = groups[value] || [];
+    groups[value].push(company);
+    return groups;
+  }, {})) : [];
 
   return <div className="company-hub">
     <header className="company-list-head">
       <div className="company-list-title"><h1>Firma</h1><p>Firmen der Janning-Gruppe verwalten und im Detail ansehen.</p></div>
       <div className="company-list-kpis">{kpis.map(kpi => <button key={kpi.key} className={kpiFilter === kpi.key ? 'is-active' : ''} style={{ '--company-kpi-color':kpi.color }} onClick={() => setKpiFilter(kpi.key)}><Icon name={kpiIcon[kpi.key]} size={24} /><span>{kpi.label}</span><strong>{kpi.value}</strong></button>)}</div>
-      <div className="company-list-actions"><button className="btn btn--ghost"><Icon name="download" size={14} />Exportieren</button><button className="btn btn--primary"><Icon name="plus" size={14} />Firma</button></div>
+      <div className="company-list-actions"><button className="btn btn--ghost"><Icon name="download" size={14} />Exportieren</button><button className="btn btn--primary" onClick={() => setCreateOpen(true)}><Icon name="plus" size={14} />Firma</button></div>
     </header>
     <div className="company-viewbar">
       <button className="company-sort-button"><Icon name="filter" size={16} />Sortieren: <strong>{sortLabel}</strong><Icon name="chev" size={14} /></button>
-      <div className="company-view-toggle"><button className="is-active" title="Kartenansicht"><Icon name="dashboard" size={18} /></button><button title="Listenansicht"><Icon name="matrix" size={18} /></button></div>
+      <div className="company-view-toggle"><button className={viewMode === 'cards' ? 'is-active' : ''} title="Kartenansicht" onClick={() => setViewMode('cards')}><Icon name="dashboard" size={18} /></button><button className={viewMode === 'list' ? 'is-active' : ''} title="Listenansicht" onClick={() => setViewMode('list')}><Icon name="matrix" size={18} /></button></div>
     </div>
     {(sort.key !== 'name' || sort.dir !== 'asc' || groupBy || kpiFilter !== 'all') && <div className="company-list-resetbar">
-      {(sort.key !== 'name' || sort.dir !== 'asc') && <button className="btn btn--ghost" onClick={() => setSort({ key:'name', dir:'asc' })}>Sortierung zurÃ¼cksetzen</button>}
+      {(sort.key !== 'name' || sort.dir !== 'asc') && <button className="btn btn--ghost" onClick={() => setSort({ key:'name', dir:'asc' })}>Sortierung zurücksetzen</button>}
       {groupBy && <button className="btn btn--ghost" onClick={() => setGroupBy('')}>Gruppierung aufheben</button>}
       {kpiFilter !== 'all' && <button className="btn btn--ghost" onClick={() => setKpiFilter('all')}>KPI-Filter aufheben</button>}
     </div>}
-    {Object.entries(columnFilters).some(([, values]) => values?.length) && <div className="company-filter-chips">{Object.entries(columnFilters).flatMap(([key, values]) => (values || []).map(value => <span key={key + value}><small>{columnLabel(key)}:</small><strong>{value}</strong><button onClick={() => toggleFilter(key, value)}><Icon name="x" size={13} /></button></span>))}<button className="btn btn--ghost" onClick={() => setColumnFilters({})}>Alle Filter lÃ¶schen</button></div>}
-    <section className="company-card-grid">
+    {Object.entries(columnFilters).some(([, values]) => values?.length) && <div className="company-filter-chips">{Object.entries(columnFilters).flatMap(([key, values]) => (values || []).map(value => <span key={key + value}><small>{columnLabel(key)}:</small><strong>{value}</strong><button onClick={() => toggleFilter(key, value)}><Icon name="x" size={13} /></button></span>))}<button className="btn btn--ghost" onClick={() => setColumnFilters({})}>Alle Filter löschen</button></div>}
+    {selectedIds.length > 0 && <div className="company-bulkbar"><strong>{selectedCompanies.length} Firma ausgewählt</strong><button><Icon name="download" size={14} />Export</button><button><Icon name="mail" size={14} />Versenden</button><button className="is-danger"><Icon name="trash" size={14} />Löschen</button><button className="is-clear" onClick={() => setSelectedIds([])}><Icon name="x" size={14} /></button></div>}
+    {viewMode === 'cards' ? <section className="company-card-grid">
       {rows.map(company => <article key={company.id} className="company-card">
         <div className="company-card__top">
           <img src={company.logo} alt={company.short} />
@@ -104,8 +136,42 @@ function CompanyHubView() {
         </div>
         <button className="company-card__open" onClick={() => setSelectedCompany(company)}><Icon name="eye" size={22} />Öffnen</button>
       </article>)}
+    </section> : <section className="company-list-table tbl-wrap">
+      <table className="tbl">
+        <thead><tr>
+          <th><input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} /></th>
+          {columns.map(column => <th key={column.key}><div className="company-list-th"><button onClick={() => setColumnMenu(columnMenu === column.key ? null : column.key)}>{column.label}<span>{sort.key === column.key ? (sort.dir === 'asc' ? '↑' : '↓') : '⌄'}</span></button>{renderColumnMenu(column.key)}</div></th>)}
+        </tr></thead>
+        <tbody>{groupBy ? groupedRows.flatMap(([group, items]) => [
+          <tr key={'group-' + group} className="company-group-row"><td colSpan={columns.length + 1}>{columnLabel(groupBy)}: {group} <span>{items.length}</span></td></tr>,
+          ...renderCompanyRows(items)
+        ]) : renderCompanyRows(rows)}</tbody>
+      </table>
+    </section>}
+    {filterPanel && <div className="company-filter-backdrop" onClick={() => setFilterPanel(null)}><section className="company-filter-panel" onClick={event => event.stopPropagation()}><header><strong>{columnLabel(filterPanel)} filtern</strong><button onClick={() => setFilterPanel(null)}><Icon name="x" size={15} /></button></header><label><Icon name="search" size={15} /><input autoFocus value={filterSearch} onChange={event => setFilterSearch(event.target.value)} placeholder="Suchen..." /></label><div>{visibleFilterValues.map(value => <label key={value}><input type="checkbox" checked={(columnFilters[filterPanel] || []).includes(value)} onChange={() => toggleFilter(filterPanel, value)} /><span>{value}</span></label>)}</div><footer><button className="btn btn--ghost" onClick={() => setColumnFilters(current => ({ ...current, [filterPanel]:[] }))}>Zurücksetzen</button><button className="btn btn--primary" onClick={() => setFilterPanel(null)}>Anwenden</button></footer></section></div>}
+    {createOpen && <CompanyCreateDialog onClose={() => setCreateOpen(false)} />}
+  </div>;
+}
+
+function CompanyCreateDialog({ onClose }) {
+  const [form, setForm] = React.useState({ name:'', manager:'', status:'Aktiv', address:'', phone:'', email:'', logo:'', description:'', founded:'2026' });
+  const set = (key, value) => setForm(current => ({ ...current, [key]:value }));
+  return <div className="company-create-backdrop" onClick={onClose}>
+    <section className="company-create-dialog" onClick={event => event.stopPropagation()}>
+      <header><div><span>Neue Firma</span><h2>Firma erstellen</h2></div><button onClick={onClose}><Icon name="x" size={18} /></button></header>
+      <div className="company-create-grid">
+        <label><span>Firmenname</span><input value={form.name} onChange={event => set('name', event.target.value)} placeholder="Janning Muster GmbH" /></label>
+        <label><span>Geschäftsführer</span><input value={form.manager} onChange={event => set('manager', event.target.value)} placeholder="Vorname Nachname" /></label>
+        <label><span>Status</span><select value={form.status} onChange={event => set('status', event.target.value)}><option>Aktiv</option><option>In Vorbereitung</option><option>Inaktiv</option></select></label>
+        <label><span>Gründungsjahr</span><input value={form.founded} onChange={event => set('founded', event.target.value)} placeholder="2012" /></label>
+        <label className="is-wide"><span>Adresse</span><input value={form.address} onChange={event => set('address', event.target.value)} placeholder="Straße, PLZ Ort" /></label>
+        <label><span>Telefon</span><input value={form.phone} onChange={event => set('phone', event.target.value)} placeholder="+49 ..." /></label>
+        <label><span>E-Mail</span><input value={form.email} onChange={event => set('email', event.target.value)} placeholder="info@firma.de" /></label>
+        <label className="is-wide"><span>Logo</span><div className="company-create-upload"><Icon name="upload" size={17} /><strong>Logo hochladen</strong><small>PNG oder JPG</small><input type="file" accept="image/*" onChange={event => set('logo', event.target.files?.[0]?.name || '')} /></div></label>
+        <label className="is-wide"><span>Beschreibung</span><textarea value={form.description} onChange={event => set('description', event.target.value)} placeholder="Kurzbeschreibung der Firma" /></label>
+      </div>
+      <footer><button className="btn btn--ghost" onClick={onClose}>Abbrechen</button><button className="btn btn--primary" onClick={onClose}>Firma erstellen</button></footer>
     </section>
-    {filterPanel && <div className="company-filter-backdrop" onClick={() => setFilterPanel(null)}><section className="company-filter-panel" onClick={event => event.stopPropagation()}><header><strong>{columnLabel(filterPanel)} filtern</strong><button onClick={() => setFilterPanel(null)}><Icon name="x" size={15} /></button></header><label><Icon name="search" size={15} /><input autoFocus value={filterSearch} onChange={event => setFilterSearch(event.target.value)} placeholder="Suchen..." /></label><div>{visibleFilterValues.map(value => <label key={value}><input type="checkbox" checked={(columnFilters[filterPanel] || []).includes(value)} onChange={() => toggleFilter(filterPanel, value)} /><span>{value}</span></label>)}</div><footer><button className="btn btn--ghost" onClick={() => setColumnFilters(current => ({ ...current, [filterPanel]:[] }))}>ZurÃ¼cksetzen</button><button className="btn btn--primary" onClick={() => setFilterPanel(null)}>Anwenden</button></footer></section></div>}
   </div>;
 }
 

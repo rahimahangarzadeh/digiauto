@@ -8761,6 +8761,38 @@ a.subtle:hover { text-decoration: underline; }
 @media(max-width:1350px){.company-list-head{grid-template-columns:repeat(4,1fr)}.company-list-kpis{grid-column:1/-1;grid-row:auto;grid-template-columns:repeat(2,minmax(140px,1fr))}.company-list-actions{grid-column:1/-1;justify-content:flex-start;padding-top:0;gap:14px}.company-card-grid{grid-template-columns:repeat(2,minmax(280px,1fr))}.company-viewbar{justify-content:flex-start}}
 @media(max-width:760px){.company-list-kpis{grid-template-columns:1fr 1fr}.company-card-grid{grid-template-columns:1fr}.company-card__top{grid-template-columns:72px minmax(0,1fr)}.company-status{grid-column:2}.company-card__meta{grid-template-columns:1fr}.company-viewbar{align-items:stretch;flex-direction:column}.company-view-toggle{width:max-content}}
 
+.company-list-table{margin-top:-6px}
+.company-list-th{position:relative;display:inline-flex;align-items:center}
+.company-list-table .tbl th:first-child,
+.company-list-table .tbl td:first-child{width:42px;text-align:center}
+.company-list-table input[type="checkbox"]{width:15px;height:15px;accent-color:#2f80ed;cursor:pointer}
+.company-list-table tbody tr.is-selected td{background:#f4e1d9}
+.company-list-table .company-status{height:28px;font-size:11px}
+.company-group-row td span{float:right;color:var(--fg-3);font-size:11px}
+.company-bulkbar{display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:10px 12px;border:1px solid rgba(201,100,66,.24);border-radius:8px;background:#fff6f1}
+.company-bulkbar strong{margin-right:auto;color:var(--fg-1);font-size:13px}
+.company-bulkbar button{min-height:32px;display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border-1);border-radius:7px;background:#fff;padding:0 11px;color:var(--fg-1);font:inherit;font-size:12px;font-weight:750;cursor:pointer}
+.company-bulkbar button.is-danger{color:#a13232;border-color:#efcbc5;background:#fff7f6}
+.company-bulkbar button.is-clear{padding:0 9px;color:var(--fg-3)}
+.company-create-backdrop{position:fixed;inset:0;z-index:2400;display:grid;place-items:center;background:rgba(24,22,20,.36);padding:22px}
+.company-create-dialog{width:min(760px,96vw);max-height:92vh;display:grid;grid-template-rows:auto minmax(0,1fr) auto;overflow:hidden;border:1px solid var(--border-1);border-radius:10px;background:#fbfaf6;box-shadow:0 24px 80px rgba(20,18,16,.22)}
+.company-create-dialog>header{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:22px 24px 16px;border-bottom:1px solid var(--border-1);background:#111}
+.company-create-dialog>header span{color:#b8c1c9;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.04em}
+.company-create-dialog>header h2{margin:6px 0 0;color:#fff;font-family:var(--font-serif);font-size:29px;font-weight:500}
+.company-create-dialog>header button{width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:#fff;cursor:pointer}
+.company-create-grid{min-height:0;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:20px 24px}
+.company-create-grid label{display:grid;gap:7px;color:var(--fg-1);font-size:12px;font-weight:800}
+.company-create-grid label>span{color:var(--fg-3);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.company-create-grid input,.company-create-grid select,.company-create-grid textarea{width:100%;box-sizing:border-box;border:1px solid var(--border-1);border-radius:7px;background:#fff;padding:11px 12px;color:var(--fg-1);font:inherit;font-size:13px}
+.company-create-grid textarea{min-height:98px;resize:vertical}
+.company-create-grid .is-wide{grid-column:1/-1}
+.company-create-upload{min-height:72px;position:relative;display:grid;grid-template-columns:34px minmax(0,1fr);align-items:center;gap:10px;border:1px dashed #d8c7c1;border-radius:8px;background:#fff;padding:12px;color:var(--fg-1);cursor:pointer}
+.company-create-upload svg{color:var(--color-accent)}
+.company-create-upload small{display:block;margin-top:3px;color:var(--fg-3);font-size:11px;font-weight:500}
+.company-create-upload input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.company-create-dialog>footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 24px;border-top:1px solid var(--border-1);background:#fff}
+@media(max-width:760px){.company-create-grid{grid-template-columns:1fr}.company-bulkbar{align-items:stretch;flex-direction:column}.company-bulkbar strong{margin-right:0}}
+
 /* Training create dialog */
 .training-create-backdrop{position:fixed;inset:0;z-index:1400;display:grid;place-items:center;background:rgba(22,19,16,.34);backdrop-filter:blur(3px);padding:24px}
 .training-create-modal{width:min(780px,100%);border:1px solid #e2ded8;border-radius:10px;background:rgba(255,255,255,.96);box-shadow:0 24px 70px rgba(28,23,18,.22);overflow:hidden}

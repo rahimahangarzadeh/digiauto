@@ -8484,6 +8484,519 @@ a.subtle:hover { text-decoration: underline; }
 .company-accident-edit-table input{width:100%;min-height:34px;border:1px solid var(--border-1);border-radius:6px;background:white;padding:0 9px;font:inherit;font-size:12px}
 .company-organization-page .org-page{padding:0}
 .company-certification-page .cert-overview{padding:0}
+
+/* Zertifizierungsübersicht - erweiterte Verwaltung */
+.cert-admin,
+.cert-detail-page{
+  background:#f8f5f0;
+  min-height:calc(100vh - 54px);
+  padding:26px 30px 46px;
+}
+.cert-admin-head{
+  align-items:flex-start;
+  display:flex;
+  gap:18px;
+  justify-content:space-between;
+  margin-bottom:20px;
+}
+.cert-admin-title h1,
+.cert-detail-page .emp-page-title h1{
+  font-family:Georgia, 'Times New Roman', serif;
+  font-size:34px;
+  font-weight:500;
+  line-height:1.1;
+  margin:0;
+}
+.cert-admin-title p{
+  color:#5d6570;
+  font-size:14px;
+  margin:8px 0 0;
+}
+.cert-admin-actions,
+.page-actions,
+.audit-actions{
+  align-items:center;
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  justify-content:flex-end;
+}
+.cert-kpis{
+  display:grid;
+  gap:12px;
+  grid-template-columns:repeat(4, minmax(150px, 1fr));
+  margin-bottom:18px;
+}
+.cert-kpi-card{
+  align-items:center;
+  background:#fffdfa;
+  border:1px solid #eadfd4;
+  border-radius:8px;
+  box-shadow:0 8px 18px rgba(43,32,22,.06);
+  display:grid;
+  grid-template-columns:1fr auto auto;
+  gap:10px;
+  min-height:54px;
+  padding:11px 14px;
+  text-align:left;
+}
+.cert-kpi-card span{
+  color:#7c7b77;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.cert-kpi-card strong{
+  color:#161616;
+  font-family:Georgia, 'Times New Roman', serif;
+  font-size:27px;
+  font-weight:500;
+}
+.cert-kpi-card small{
+  color:#6f7479;
+  font-size:11px;
+  text-align:right;
+}
+.tone-success{color:#2d7d46!important}
+.tone-warning{color:#a97716!important}
+.tone-danger{color:#b63838!important}
+.cert-admin-layout{
+  display:grid;
+  gap:16px;
+  grid-template-columns:290px minmax(520px,1fr) 360px;
+}
+.cert-company-panel,
+.cert-main-panel,
+.cert-audit-panel,
+.info-card{
+  background:#fffdfa;
+  border:1px solid #e6ded4;
+  border-radius:8px;
+  box-shadow:0 10px 26px rgba(47,36,25,.05);
+}
+.cert-company-panel,
+.cert-audit-panel{
+  padding:14px;
+}
+.cert-main-panel{
+  min-width:0;
+  padding:14px;
+}
+.cert-panel-head{
+  align-items:flex-start;
+  display:flex;
+  gap:10px;
+  justify-content:space-between;
+  margin-bottom:12px;
+}
+.cert-panel-head h2{
+  font-family:Georgia, 'Times New Roman', serif;
+  font-size:21px;
+  font-weight:500;
+  margin:2px 0 0;
+}
+.count-pill{
+  align-items:center;
+  background:#f8f5f0;
+  border:1px solid #e3d8cc;
+  border-radius:999px;
+  color:#7a6f65;
+  display:inline-flex;
+  font-size:12px;
+  height:28px;
+  justify-content:center;
+  min-width:28px;
+}
+.cert-company-cards,
+.cert-audit-list{
+  display:grid;
+  gap:10px;
+}
+.cert-company-card,
+.cert-audit-card,
+.cert-manage-card{
+  background:#fffdfa;
+  border:1px solid #e6ded4;
+  border-radius:8px;
+  cursor:pointer;
+  position:relative;
+}
+.cert-company-card{
+  padding:14px;
+}
+.cert-company-card.is-selected{
+  border-color:#d06a45;
+  box-shadow:inset 3px 0 0 #d06a45;
+}
+.cert-company-card h3,
+.cert-manage-card h3,
+.cert-audit-card h3{
+  font-size:15px;
+  margin:0;
+}
+.cert-company-card p,
+.cert-manage-card p,
+.cert-audit-card p{
+  color:#68707a;
+  margin:6px 0 0;
+}
+.mini-status-row{
+  display:grid;
+  gap:5px;
+  margin-top:14px;
+}
+.mini-status-row span{
+  color:#5f6469;
+  font-size:12px;
+}
+.dots-btn{
+  align-items:center;
+  background:transparent;
+  border:0;
+  border-radius:6px;
+  color:#202327;
+  display:inline-flex;
+  font-size:20px;
+  height:28px;
+  justify-content:center;
+  line-height:1;
+  position:absolute;
+  right:8px;
+  top:8px;
+  width:28px;
+  z-index:4;
+}
+.dots-btn:hover{background:#f4eee7}
+.cert-context-menu{
+  background:#fff;
+  border:1px solid #ded6cd;
+  border-radius:8px;
+  box-shadow:0 16px 38px rgba(0,0,0,.12);
+  display:grid;
+  min-width:210px;
+  padding:6px;
+  position:absolute;
+  right:8px;
+  top:38px;
+  z-index:20;
+}
+.cert-context-menu button{
+  background:transparent;
+  border:0;
+  border-radius:6px;
+  font-size:12px;
+  padding:8px 10px;
+  text-align:left;
+}
+.cert-context-menu button:hover{background:#f8f5f0}
+.cert-card-grid{
+  display:grid;
+  gap:12px;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+}
+.cert-manage-card{
+  padding:16px;
+}
+.cert-manage-card.cert-state-expired{
+  background:#fff5f3;
+  border-color:#f0b8ae;
+}
+.cert-manage-card.cert-state-soon{
+  background:#fff8e8;
+  border-color:#e7c981;
+}
+.cert-card-top{
+  align-items:center;
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:12px;
+  padding-right:30px;
+}
+.cert-card-top small{
+  color:#7c7b77;
+  font-size:11px;
+  font-weight:700;
+}
+.cert-card-meta{
+  border-top:1px solid #eee5dc;
+  display:grid;
+  gap:8px;
+  grid-template-columns:repeat(2, minmax(0,1fr));
+  margin-top:14px;
+  padding-top:12px;
+}
+.cert-card-meta span{
+  color:#5d6570;
+  display:grid;
+  font-size:12px;
+  gap:3px;
+}
+.cert-card-meta b{
+  color:#8a8782;
+  font-size:10px;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.cert-card-warning{
+  color:#a14b2d;
+  font-size:12px;
+  font-weight:700;
+  margin-top:12px;
+}
+.cert-card-actions{
+  display:flex;
+  gap:8px;
+  margin-top:14px;
+}
+.cert-card-actions button{
+  align-items:center;
+  background:#fff;
+  border:1px solid #e1d8ce;
+  border-radius:7px;
+  display:inline-flex;
+  gap:6px;
+  justify-content:center;
+  padding:7px 10px;
+}
+.cert-status-pill{
+  align-items:center;
+  border:1px solid #d9d0c6;
+  border-radius:999px;
+  display:inline-flex;
+  font-size:11px;
+  font-weight:800;
+  padding:5px 9px;
+}
+.cert-status-pill--valid{background:#eef8ef;border-color:#c5e3ca;color:#267844}
+.cert-status-pill--soon{background:#fff5d9;border-color:#e6c46c;color:#926711}
+.cert-status-pill--expired{background:#fde9e6;border-color:#efa59d;color:#ae2f2f}
+.cert-status-pill--archived,
+.cert-status-pill--neutral,
+.cert-status-pill--progress,
+.cert-status-pill--review{background:#f4f1ed;border-color:#ddd5cc;color:#5f6469}
+.cert-table-wrap{
+  overflow:auto;
+}
+.cert-admin-table{
+  min-width:1380px;
+  width:100%;
+}
+.cert-admin-table th{
+  position:relative;
+}
+.column-head-btn{
+  background:transparent;
+  border:0;
+  color:#77736c;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.column-menu{
+  background:#fff;
+  border:1px solid #ded6cd;
+  box-shadow:0 16px 32px rgba(0,0,0,.12);
+  display:grid;
+  left:8px;
+  min-width:210px;
+  padding:6px;
+  position:absolute;
+  top:30px;
+  z-index:30;
+}
+.column-menu button{
+  background:transparent;
+  border:0;
+  font-size:12px;
+  padding:9px 10px;
+  text-align:left;
+}
+.column-menu button:hover{background:#f3eee8}
+.group-row td{
+  background:#f4eee7!important;
+  color:#8a5a43;
+  font-weight:800;
+}
+.is-danger-row td{
+  background:#fff2ef!important;
+}
+.cert-bulkbar{
+  align-items:center;
+  background:#fff3ea;
+  border:1px solid #ead2c4;
+  border-radius:8px;
+  display:flex;
+  gap:10px;
+  margin-bottom:12px;
+  padding:10px 12px;
+}
+.cert-bulkbar button{
+  align-items:center;
+  background:#fff;
+  border:1px solid #e0d6cc;
+  border-radius:7px;
+  display:inline-flex;
+  gap:6px;
+  padding:7px 10px;
+}
+.cert-bulkbar .is-danger{
+  color:#b63838;
+}
+.cert-audit-card{
+  align-items:flex-start;
+  display:grid;
+  gap:14px;
+  grid-template-columns:105px 1fr;
+  padding:13px 42px 13px 13px;
+}
+.cert-audit-card strong,
+.cert-audit-card span,
+.cert-audit-card small{
+  display:block;
+}
+.cert-audit-card span{
+  color:#6d7279;
+  font-size:12px;
+  margin-top:3px;
+}
+.cert-audit-card small{
+  color:#ba3131;
+  font-size:11px;
+  font-weight:800;
+  margin-top:8px;
+}
+.cert-filter-dialog{
+  max-width:860px;
+}
+.cert-modal-backdrop{
+  align-items:center;
+  background:rgba(20,20,18,.42);
+  display:flex;
+  inset:0;
+  justify-content:center;
+  padding:22px;
+  position:fixed;
+  z-index:1600;
+}
+.cert-modal-card,
+.cert-filter-dialog{
+  background:#fffdfa;
+  border:1px solid #e2d8ce;
+  border-radius:10px;
+  box-shadow:0 24px 70px rgba(16,13,10,.22);
+  max-height:calc(100vh - 44px);
+  overflow:auto;
+  padding:22px;
+}
+.cert-modal-card--wide{
+  max-width:980px;
+  width:min(980px, calc(100vw - 44px));
+}
+.cert-modal-card__head{
+  align-items:flex-start;
+  border-bottom:1px solid #ece3da;
+  display:flex;
+  justify-content:space-between;
+  margin:-22px -22px 20px;
+  padding:20px 22px;
+}
+.cert-modal-card__head h2,
+.cert-filter-dialog h2{
+  font-family:Georgia, 'Times New Roman', serif;
+  font-size:30px;
+  font-weight:500;
+  line-height:1.1;
+  margin:4px 0 0;
+}
+.filter-grid,
+.form-grid{
+  display:grid;
+  gap:14px;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+.form-grid--three{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.form-field,
+.filter-grid label{
+  color:#7d7973;
+  display:grid;
+  font-size:11px;
+  font-weight:800;
+  gap:7px;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.form-field input,
+.form-field select,
+.form-field textarea,
+.filter-grid input,
+.filter-grid select{
+  background:#fff;
+  border:1px solid #ded6cc;
+  border-radius:7px;
+  color:#111;
+  font-size:14px;
+  min-height:40px;
+  padding:9px 11px;
+  text-transform:none;
+}
+.form-field textarea{
+  min-height:74px;
+  resize:vertical;
+}
+.cert-detail-grid{
+  display:grid;
+  gap:16px;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  margin-top:20px;
+}
+.info-card{
+  padding:18px;
+}
+.info-card h2{
+  border-bottom:1px solid #ece3da;
+  font-family:Georgia, 'Times New Roman', serif;
+  font-size:20px;
+  font-weight:500;
+  margin:0 0 12px;
+  padding-bottom:12px;
+}
+.info-row{
+  border-bottom:1px solid #f0e8df;
+  display:grid;
+  gap:4px;
+  padding:10px 0;
+}
+.info-row:last-child{border-bottom:0}
+.info-row span{
+  color:#8a8782;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+}
+.info-row strong{
+  font-size:14px;
+}
+@media (max-width:1300px){
+  .cert-admin-layout{grid-template-columns:260px 1fr}
+  .cert-audit-panel{grid-column:1 / -1}
+  .cert-kpis{grid-template-columns:repeat(2, minmax(150px,1fr))}
+}
+@media (max-width:900px){
+  .cert-admin{padding:18px}
+  .cert-admin-head{display:grid}
+  .cert-admin-layout,
+  .cert-detail-grid,
+  .form-grid,
+  .form-grid--three,
+  .filter-grid{grid-template-columns:1fr}
+  .cert-card-grid,
+  .cert-kpis{grid-template-columns:1fr}
+}
 .company-org-preview{min-height:220px;border:1px solid var(--border-1);background:#fff;padding:18px;color:var(--fg-1)}
 .company-org-preview>strong{display:block;border-bottom:1px solid var(--border-1);padding-bottom:10px;margin-bottom:14px}
 .company-org-preview>span{display:block;color:var(--fg-3);font-size:11px;margin-bottom:18px}

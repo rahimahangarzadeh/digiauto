@@ -8786,12 +8786,18 @@ a.subtle:hover { text-decoration: underline; }
   position:relative;
 }
 .column-head-btn{
+  align-items:center;
   background:transparent;
   border:0;
   color:#77736c;
+  cursor:pointer;
+  display:inline-flex;
   font-size:11px;
   font-weight:800;
+  gap:4px;
+  justify-content:flex-start;
   letter-spacing:.04em;
+  padding:0;
   text-transform:uppercase;
 }
 .column-menu{
@@ -9003,12 +9009,18 @@ a.subtle:hover { text-decoration: underline; }
 .norm-detail-page{
   background:#f8f5f0;
   min-height:calc(100vh - 54px);
+  max-width:100%;
+  min-width:0;
+  overflow-x:hidden;
   padding:26px 30px 46px;
 }
 .company-norms-page .norm-admin-page{
   min-height:auto;
   padding:0;
 }
+.company-norms-page .emp-page-title{align-items:center;gap:14px}
+.company-norms-page .emp-page-title>div{flex:0 1 auto}
+.company-norms-page .emp-page-title>.norm-actions{flex:1 1 auto;min-width:0}
 .norm-page-head{
   align-items:flex-start;
   display:flex;
@@ -9032,10 +9044,14 @@ a.subtle:hover { text-decoration: underline; }
 .norm-actions{
   align-items:center;
   display:flex;
-  flex-wrap:wrap;
+  flex-wrap:nowrap;
   gap:8px;
   justify-content:flex-end;
 }
+.norm-actions .segmented{height:38px;display:inline-flex;overflow:hidden;border:1px solid #ded6cc;border-radius:8px;background:#fffdfa;box-shadow:0 3px 10px rgba(47,36,25,.035)}
+.norm-actions .segmented button{min-width:82px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-right:1px solid #ded6cc;background:#fffdfa;padding:0 11px;color:#332f2b;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.norm-actions .segmented button:last-child{border-right:0}
+.norm-actions .segmented button.is-active{background:#111;color:#fff}
 .norm-select{
   background:#fffdfa;
   border:1px solid #ded6cc;
@@ -9045,39 +9061,43 @@ a.subtle:hover { text-decoration: underline; }
 }
 .norm-kpis{
   display:grid;
-  gap:12px;
-  grid-template-columns:repeat(4,minmax(150px,1fr));
-  margin-bottom:18px;
+  gap:8px;
+  grid-template-columns:repeat(8,minmax(0,1fr));
+  margin-bottom:14px;
+  max-width:100%;
+  min-width:0;
 }
 .norm-kpi{
   align-items:center;
   background:#fffdfa;
   border:1px solid #eadfd4;
   border-radius:8px;
-  box-shadow:0 8px 18px rgba(43,32,22,.06);
+  box-shadow:0 3px 10px rgba(47,36,25,.045);
   display:grid;
-  gap:10px;
+  gap:8px;
   grid-template-columns:1fr auto auto;
-  min-height:54px;
-  padding:11px 14px;
+  min-height:48px;
+  padding:8px 10px;
   text-align:left;
+  transition:border-color .14s ease,box-shadow .14s ease,background .14s ease;
 }
+.norm-kpi:hover,.norm-kpi.is-active{border-color:rgba(201,100,66,.55);background:#fff7f1;box-shadow:0 7px 18px rgba(47,36,25,.075)}
 .norm-kpi span{
   color:#7c7b77;
-  font-size:11px;
+  font-size:9px;
   font-weight:800;
-  letter-spacing:.05em;
+  letter-spacing:.035em;
   text-transform:uppercase;
 }
 .norm-kpi strong{
   color:#161616;
   font-family:Georgia, 'Times New Roman', serif;
-  font-size:27px;
+  font-size:23px;
   font-weight:500;
 }
 .norm-kpi small{
   color:#6f7479;
-  font-size:11px;
+  font-size:9px;
   text-align:right;
 }
 .norm-bulkbar{
@@ -9187,11 +9207,20 @@ a.subtle:hover { text-decoration: underline; }
   justify-content:center;
   padding:7px 10px;
 }
-.norm-table-wrap{
+.norm-table-shell{
   background:#fffdfa;
   border:1px solid #e6ded4;
   border-radius:8px;
   box-shadow:0 10px 26px rgba(47,36,25,.05);
+  max-width:100%;
+  min-width:0;
+  overflow:hidden;
+}
+.norm-table-wrap{
+  max-height:calc(100vh - 330px);
+  max-width:100%;
+  min-width:0;
+  min-height:260px;
   overflow:auto;
 }
 .norm-admin-table{
@@ -9303,7 +9332,9 @@ a.subtle:hover { text-decoration: underline; }
 .norm-filter-card{width:min(980px, calc(100vw - 44px))}
 @media (max-width:1300px){
   .norm-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .norm-kpis{grid-template-columns:repeat(2,minmax(150px,1fr))}
+  .norm-kpis{grid-template-columns:repeat(3,minmax(150px,1fr))}
+  .norm-actions{justify-content:flex-start;flex-wrap:wrap}
+  .company-norms-page .emp-page-title{align-items:flex-start;flex-direction:column}
 }
 @media (max-width:900px){
   .norm-admin-page,

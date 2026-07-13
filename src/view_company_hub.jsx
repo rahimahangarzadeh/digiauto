@@ -465,10 +465,8 @@ function CompanyCertificationPage({ company, onBack }) {
 }
 
 function CompanyNormsPage({ company, onBack }) {
-  const [showAllCompanies, setShowAllCompanies] = React.useState(false);
   return <div className="emp-full company-norms-page">
-    <CompanyPageTitle title={`Normenmatrix (${showAllCompanies ? 'Alle Firmen' : company.name})`} onBack={onBack} action={<CompanyAllFirmsButton showAllCompanies={showAllCompanies} setShowAllCompanies={setShowAllCompanies} company={company} />} />
-    <NormenmatrixView activeCompany={showAllCompanies ? 'all' : company.id} />
+    <NormenmatrixView activeCompany={company.id} title={`Normenmatrix (${company.name})`} onBack={onBack} />
   </div>;
 }
 
@@ -569,7 +567,6 @@ function CompanyInformationMatrixPage({ company, onBack }) {
     </div>
     <button className="btn btn--ghost"><Icon name="filter" size={14} />Filter</button>
     <button className="btn btn--ghost"><Icon name="download" size={14} />Excel</button>
-    <button className="btn btn--ghost"><Icon name="doc" size={14} />PDF</button>
     <button className="btn btn--primary" onClick={() => setDialog({ mode:'create' })}><Icon name="plus" size={14} />Eintrag anlegen</button>
   </div>;
   return <div className="emp-full company-info-matrix-page">

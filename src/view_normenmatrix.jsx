@@ -1,4 +1,4 @@
-function NormenmatrixView({ activeCompany = 'all', extraAction = null }) {
+function NormenmatrixView({ activeCompany = 'all', extraAction = null, title = 'Normenmatrix', onBack = null }) {
   const companies = window.SEED?.companies || [];
   const today = new Date(window.SEED?.today || '2026-04-21');
   const sourceRows = window.NORMENMATRIX_ROWS || [];
@@ -160,13 +160,7 @@ function NormenmatrixView({ activeCompany = 'all', extraAction = null }) {
     />;
   }
 
-  return <div className="norm-admin-page">
-    <div className="norm-page-head">
-      <div>
-        <h1>Normenmatrix</h1>
-        <p>Normen, Regelwerke, Prüfstatus, Dokumente und Versionen verwalten.</p>
-      </div>
-      <div className="norm-actions">
+  const titleActions = <div className="norm-actions">
         {extraAction}
         <select className="norm-select" value={filters.company} onChange={event => setFilters(current => ({ ...current, company: event.target.value }))}>
           <option value="all">Alle Firmen</option>
@@ -179,11 +173,15 @@ function NormenmatrixView({ activeCompany = 'all', extraAction = null }) {
         <button className="btn btn--ghost" type="button" onClick={() => setFilterOpen(true)}><Icon name="filter" size={15} />Filter</button>
         <button className="btn btn--ghost" type="button"><Icon name="download" size={15} />Export</button>
         <button className="btn btn--primary" type="button" onClick={() => openNormDialog('add')}><Icon name="plus" size={15} />Norm hinzufügen</button>
-      </div>
-    </div>
+      </div>;
+
+  return <div className="norm-admin-page">
+    {onBack
+      ? <CompanyPageTitle title={title} onBack={onBack} action={titleActions} />
+      : <div className="norm-page-head"><div><h1>{title}</h1></div>{titleActions}</div>}
 
     <section className="norm-kpis">
-      {kpis.map(kpi => <button key={kpi.label} className="norm-kpi" type="button" onClick={() => setFilters(current => ({ ...current, status: kpi.status || 'all', due: kpi.due || current.due, docs: kpi.docs || current.docs }))}>
+      {kpis.map(kpi => <button key={kpi.label} className={'norm-kpi ' + ((kpi.status && filters.status === kpi.status) || (kpi.due && filters.due === kpi.due) || (kpi.docs && filters.docs === kpi.docs) || (!kpi.status && !kpi.due && !kpi.docs && filters.status === 'all' && filters.due === 'all' && filters.docs === 'all') ? 'is-active' : '')} type="button" onClick={() => setFilters(current => ({ ...current, status: kpi.status || 'all', due: kpi.due || 'all', docs: kpi.docs || 'all' }))}>
         <span>{kpi.label}</span>
         <strong className={kpi.tone ? `tone-${kpi.tone}` : ''}>{kpi.value}</strong>
         <small>{kpi.hint}</small>
@@ -271,10 +269,29 @@ function enrichNormRow(row, today, companyMap) {
 }
 
 function decodeText(text) {
-  return String(text || '')
-    .replaceAll('Ã¤', 'ä').replaceAll('Ã¶', 'ö').replaceAll('Ã¼', 'ü')
-    .replaceAll('Ã„', 'Ä').replaceAll('Ã–', 'Ö').replaceAll('Ãœ', 'Ü')
-    .replaceAll('ÃŸ', 'ß').replaceAll('â€“', '-').replaceAll('â€ž', '„').replaceAll('â€œ', '“');
+  let value = String(text || '');
+  [
+    [[0x00c3, 0x0192, 0x00c2, 0x00a4], 'ä'],
+    [[0x00c3, 0x0192, 0x00c2, 0x00b6], 'ö'],
+    [[0x00c3, 0x0192, 0x00c2, 0x00bc], 'ü'],
+    [[0x00c3, 0x0192, 0x00e2, 0x20ac, 0x017e], 'Ä'],
+    [[0x00c3, 0x0192, 0x00e2, 0x20ac, 0x201c], 'Ö'],
+    [[0x00c3, 0x0192, 0x00c5, 0x201c], 'Ü'],
+    [[0x00c3, 0x0192, 0x00c5, 0xb8], 'ß'],
+    [[0x00c3, 0x00a4], 'ä'],
+    [[0x00c3, 0x00b6], 'ö'],
+    [[0x00c3, 0x00bc], 'ü'],
+    [[0x00c3, 0x0084], 'Ä'],
+    [[0x00c3, 0x0096], 'Ö'],
+    [[0x00c3, 0x009c], 'Ü'],
+    [[0x00c3, 0x009f], 'ß'],
+    [[0x00e2, 0x20ac, 0x201c], '-'],
+    [[0x00e2, 0x20ac, 0x017e], '„'],
+    [[0x00e2, 0x20ac, 0x0153], '“'],
+  ].forEach(([codes, replacement]) => {
+    value = value.split(String.fromCharCode(...codes)).join(replacement);
+  });
+  return value;
 }
 
 function extractNormNumber(name) {
@@ -369,38 +386,41 @@ function NormCard({ row, menuOpen, onMenu, onOpen, onEdit, onCheck, onVersion })
 
 function NormTable({ groups, columns, selectedIds, toggleSelected, toggleAll, onOpen, onEdit, onCheck, onVersion, columnMenu, setColumnMenu, sortBy, setSortBy, groupBy, setGroupBy, hiddenCols, setHiddenCols }) {
   const flat = groups.flatMap(([, items]) => items);
-  return <div className="norm-table-wrap">
-    <table className="admin-table norm-admin-table">
-      <thead><tr>
-        <th><input type="checkbox" checked={flat.length > 0 && flat.every(row => selectedIds.includes(row.id))} onChange={toggleAll} /></th>
-        {columns.filter(([key]) => !hiddenCols.includes(key)).map(([key, label]) => <th key={key}>
-          <button type="button" className="column-head-btn" onClick={() => setColumnMenu(columnMenu === key ? null : key)}>{label}⌄</button>
-          {columnMenu === key && <NormColumnMenu colKey={key} label={label} setSortBy={setSortBy} groupBy={groupBy} setGroupBy={setGroupBy} hiddenCols={hiddenCols} setHiddenCols={setHiddenCols} />}
-        </th>)}
-      </tr></thead>
-      {groups.map(([label, items]) => <tbody key={label}>
-        {groups.length > 1 && <tr className="group-row"><td colSpan={columns.length + 1}>{label} · {items.length}</td></tr>}
-        {items.map(row => <tr key={row.id} className={row.status === 'Veraltet' || row.daysToCheck < 0 ? 'is-danger-row' : ''} onClick={() => onOpen(row.id)}>
-          <td onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleSelected(row.id)} /></td>
-          {!hiddenCols.includes('number') && <td>{row.number}</td>}
-          {!hiddenCols.includes('area') && <td>{row.area}</td>}
-          {!hiddenCols.includes('name') && <td className="norm-name-cell"><strong>{row.name}</strong><small>{row.companyNames}</small></td>}
-          {!hiddenCols.includes('normNumber') && <td>{row.normNumber}</td>}
-          {!hiddenCols.includes('purpose') && <td className="wide-cell">{row.purpose}</td>}
-          {!hiddenCols.includes('version') && <td>{row.version}</td>}
-          {!hiddenCols.includes('issueDate') && <td>{window.fmtDE?.(row.issueDate) || row.issueDate}</td>}
-          {!hiddenCols.includes('lastCheck') && <td>{window.fmtDE?.(row.lastCheck) || row.lastCheck}</td>}
-          {!hiddenCols.includes('nextCheck') && <td>{window.fmtDE?.(row.nextCheck) || row.nextCheck}</td>}
-          {!hiddenCols.includes('owner') && <td>{row.owner}</td>}
-          {!hiddenCols.includes('status') && <td><span className={`norm-status-pill norm-status-${statusClass(row.status)}`}>{row.status}</span></td>}
-          {!hiddenCols.includes('documents') && <td>{row.documents.length ? `${row.documents.length} Datei(en)` : <span className="tone-danger">fehlt</span>}</td>}
-          {!hiddenCols.includes('link') && <td>{row.link ? <a href={row.link} onClick={event => event.stopPropagation()}>Link</a> : '-'}</td>}
-          {!hiddenCols.includes('provider') && <td>{row.provider}</td>}
-          {!hiddenCols.includes('notes') && <td>{row.notes || '-'}</td>}
-          {!hiddenCols.includes('actions') && <td onClick={event => event.stopPropagation()}><div className="norm-row-actions"><button onClick={() => onEdit('edit', row)}><Icon name="edit" size={14} /></button><button onClick={() => onCheck(row)}><Icon name="check" size={14} /></button><button onClick={() => onVersion(row)}><Icon name="history" size={14} /></button></div></td>}
-        </tr>)}
-      </tbody>)}
-    </table>
+
+  return <div className="norm-table-shell">
+    <div className="norm-table-wrap">
+      <table className="admin-table norm-admin-table">
+        <thead><tr>
+          <th><input type="checkbox" checked={flat.length > 0 && flat.every(row => selectedIds.includes(row.id))} onChange={toggleAll} /></th>
+          {columns.filter(([key]) => !hiddenCols.includes(key)).map(([key, label]) => <th key={key}>
+            <button type="button" className="column-head-btn" onClick={() => setColumnMenu(columnMenu === key ? null : key)}>{label}⌄</button>
+            {columnMenu === key && <NormColumnMenu colKey={key} label={label} setSortBy={setSortBy} groupBy={groupBy} setGroupBy={setGroupBy} hiddenCols={hiddenCols} setHiddenCols={setHiddenCols} />}
+          </th>)}
+        </tr></thead>
+        {groups.map(([label, items]) => <tbody key={label}>
+          {groups.length > 1 && <tr className="group-row"><td colSpan={columns.length + 1}>{label} · {items.length}</td></tr>}
+          {items.map(row => <tr key={row.id} className={row.status === 'Veraltet' || row.daysToCheck < 0 ? 'is-danger-row' : ''} onClick={() => onOpen(row.id)}>
+            <td onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleSelected(row.id)} /></td>
+            {!hiddenCols.includes('number') && <td>{row.number}</td>}
+            {!hiddenCols.includes('area') && <td>{row.area}</td>}
+            {!hiddenCols.includes('name') && <td className="norm-name-cell"><strong>{row.name}</strong><small>{row.companyNames}</small></td>}
+            {!hiddenCols.includes('normNumber') && <td>{row.normNumber}</td>}
+            {!hiddenCols.includes('purpose') && <td className="wide-cell">{row.purpose}</td>}
+            {!hiddenCols.includes('version') && <td>{row.version}</td>}
+            {!hiddenCols.includes('issueDate') && <td>{window.fmtDE?.(row.issueDate) || row.issueDate}</td>}
+            {!hiddenCols.includes('lastCheck') && <td>{window.fmtDE?.(row.lastCheck) || row.lastCheck}</td>}
+            {!hiddenCols.includes('nextCheck') && <td>{window.fmtDE?.(row.nextCheck) || row.nextCheck}</td>}
+            {!hiddenCols.includes('owner') && <td>{row.owner}</td>}
+            {!hiddenCols.includes('status') && <td><span className={`norm-status-pill norm-status-${statusClass(row.status)}`}>{row.status}</span></td>}
+            {!hiddenCols.includes('documents') && <td>{row.documents.length ? `${row.documents.length} Datei(en)` : <span className="tone-danger">fehlt</span>}</td>}
+            {!hiddenCols.includes('link') && <td>{row.link ? <a href={row.link} onClick={event => event.stopPropagation()}>Link</a> : '-'}</td>}
+            {!hiddenCols.includes('provider') && <td>{row.provider}</td>}
+            {!hiddenCols.includes('notes') && <td>{row.notes || '-'}</td>}
+            {!hiddenCols.includes('actions') && <td onClick={event => event.stopPropagation()}><div className="norm-row-actions"><button onClick={() => onEdit('edit', row)}><Icon name="edit" size={14} /></button><button onClick={() => onCheck(row)}><Icon name="check" size={14} /></button><button onClick={() => onVersion(row)}><Icon name="history" size={14} /></button></div></td>}
+          </tr>)}
+        </tbody>)}
+      </table>
+    </div>
   </div>;
 }
 

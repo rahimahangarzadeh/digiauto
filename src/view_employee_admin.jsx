@@ -19,7 +19,36 @@ function EmployeeAdminDetail({ emp, onBack }) {
   const [operatorRecord, setOperatorRecord] = React.useState(null);
   const [equipmentCheckRecord, setEquipmentCheckRecord] = React.useState(null);
   const [siteRecord, setSiteRecord] = React.useState(null);
+  const employeeChoices = React.useMemo(() => window.SEED.employees.filter(item => item.status === 'aktiv'), []);
+  const [currentEmployeeId, setCurrentEmployeeId] = React.useState(emp.id);
+  React.useEffect(() => setCurrentEmployeeId(emp.id), [emp.id]);
+  const currentIndex = Math.max(0, employeeChoices.findIndex(item => item.id === currentEmployeeId));
+  emp = employeeChoices[currentIndex] || emp;
   const company = window.company(emp.company);
+  const openEmployee = (id, keepMasterOpen = false) => {
+    const nextEmp = employeeChoices.find(item => item.id === id);
+    if (!nextEmp) return;
+    setCurrentEmployeeId(id);
+    setRecord(null);
+    setInstructionRecord(null);
+    setJobRecord(null);
+    setMedicalRecord(null);
+    setLicenseRecord(null);
+    setOperatorRecord(null);
+    setEquipmentCheckRecord(null);
+    setSiteRecord(null);
+    if (keepMasterOpen) {
+      setMasterRecord(employeeMasterRecord(nextEmp));
+    } else {
+      setMasterRecord(null);
+      setArea('dashboard');
+    }
+  };
+  const goEmployee = (offset, keepMasterOpen = false) => {
+    if (!employeeChoices.length) return;
+    const next = (currentIndex + offset + employeeChoices.length) % employeeChoices.length;
+    openEmployee(employeeChoices[next].id, keepMasterOpen);
+  };
 
   if (siteRecord) return <EmployeeSiteRecord emp={emp} record={siteRecord} onBack={() => setSiteRecord(null)} />;
   if (equipmentCheckRecord) return <EmployeeEquipmentCheckRecord emp={emp} record={equipmentCheckRecord} onBack={() => setEquipmentCheckRecord(null)} />;
@@ -28,7 +57,7 @@ function EmployeeAdminDetail({ emp, onBack }) {
   if (medicalRecord) return <EmployeeMedicalRecord emp={emp} record={medicalRecord} onBack={() => setMedicalRecord(null)} />;
   if (jobRecord) return <EmployeeJobRecord emp={emp} record={jobRecord} onBack={() => setJobRecord(null)} />;
   if (instructionRecord) return <EmployeeInstructionRecord emp={emp} record={instructionRecord} onBack={() => setInstructionRecord(null)} />;
-  if (masterRecord) return <EmployeeMasterRecord emp={emp} record={masterRecord} onBack={() => setMasterRecord(null)} />;
+  if (masterRecord) return <EmployeeMasterRecord emp={emp} record={masterRecord} onBack={() => setMasterRecord(null)} employeeChoices={employeeChoices} onSelectEmployee={id => openEmployee(id, true)} onPrevEmployee={() => goEmployee(-1, true)} onNextEmployee={() => goEmployee(1, true)} />;
   if (record) return <EmployeeTrainingRecord emp={emp} record={record} onBack={() => setRecord(null)} />;
   if (area === 'instructions') return <EmployeeInstructionArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setInstructionRecord} />;
   if (area === 'jobs') return <EmployeeJobArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setJobRecord} />;
@@ -59,12 +88,29 @@ function EmployeeAdminDetail({ emp, onBack }) {
               <div><dt>Position</dt><dd>{emp.position}</dd></div>
               <div><dt>Firma</dt><dd>{company?.name || '-'}</dd></div>
             </dl>
+            <div className="emp-profile-kpis">
+              {[
+                ['Schulungen','9',() => setArea('trainings')],
+                ['Unterweisungen','2',() => setArea('instructions')],
+                ['Dokumente','6',() => setArea('infoMatrix')],
+                ['Offene Termine','3',() => setArea('appointments')],
+                ['Ablaufende Nachweise','4',() => setArea('trainings')],
+              ].map(([label,value,action]) => <button key={label} type="button" onClick={action}><span>{label}</span><strong>{value}</strong></button>)}
+            </div>
+          </div>
+          <div className="emp-master-hero-picker emp-master-hero-picker--detail">
+            <label>
+              <span>Mitarbeiter auswählen</span>
+              <select value={emp.id} onChange={event => openEmployee(event.target.value)}>
+                {employeeChoices.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+            <div>
+              <button type="button" onClick={() => goEmployee(-1)}><Icon name="chevL" size={15} />Vorheriger</button>
+              <button type="button" onClick={() => goEmployee(1)}>Nächster<Icon name="chevR" size={15} /></button>
+            </div>
           </div>
         </section>
-        <div className="emp-quick-actions">
-          <button onClick={() => setArea('trainings')}><Icon name="cap" size={20} />Schulung hinzufügen</button>
-          <button onClick={() => setArea('appointments')}><Icon name="cal" size={20} />Termin erstellen</button>
-        </div>
       </div>
 
       <div className="emp-detail-body">
@@ -76,7 +122,7 @@ function EmployeeAdminDetail({ emp, onBack }) {
           ))}
         </nav>
         {area === 'dashboard'
-          ? <><EmployeeOverviewCenter /><EmployeeOverviewAside /></>
+          ? <><EmployeeOverviewCenter onOpenArea={setArea} onOpenMaster={() => setMasterRecord(employeeMasterRecord(emp))} /><EmployeeOverviewAside onOpenArea={setArea} /></>
           : <main className="emp-workspace__content emp-workspace__content--wide"><EmployeeAreaPlaceholder area={area} /></main>}
       </div>
     </div>
@@ -92,30 +138,30 @@ function EmpPageTitle({ title, onBack, action }) {
   );
 }
 
-function EmployeeOverviewCenter() {
+function EmployeeOverviewCenter({ onOpenArea, onOpenMaster }) {
   const appointments = [
-    ['15','OKT','Sicherheitsunterweisung','Präsenzschulung · 09:00 Uhr'],
-    ['20','OKT','Geräteprüfung','Bagger-Zertifizierung · Ganztägig'],
-    ['02','NOV','Führerscheinkontrolle','Quartalsprüfung · Büro'],
+    ['15','OKT','Sicherheitsunterweisung','Präsenzschulung · 09:00 Uhr','Bestätigt','Schulungsraum B','Sabine Janning','Unterweisung','1 Tag vorher','instructions'],
+    ['20','OKT','Geräteprüfung','Bagger-Zertifizierung · Ganztägig','Offen','Werkstatt','Dirk Jürgens','Geräteprüfung','Heute','checks'],
+    ['02','NOV','Führerscheinkontrolle','Quartalsprüfung · Büro','Fällig','Büro','Fuhrpark','Kontrolle','3 Tage vorher','license'],
   ];
   const activities = [
-    ['doc','Zertifikat hochgeladen','Vor 2 Stunden · Erweitertes Zertifikat'],
-    ['building','Baustelle zugewiesen','Gestern · Wohnpark „Grüne Aue“'],
-    ['phone','Profil aktualisiert','Vor 3 Tagen · Telefonnummer geändert'],
+    ['doc','Zertifikat „SCC 017“ hochgeladen','12.07.2026, 10:32 · geändert von Rahim Ahangarzadeh · Schulungen','trainings'],
+    ['building','Baustelle zugewiesen','11.07.2026, 08:15 · geändert von Sabine Janning · Baustellen','sites'],
+    ['phone','Profil aktualisiert','10.07.2026, 14:20 · geändert von Max Mustermann · Stammdaten','master'],
   ];
   return (
     <main className="emp-overview-center">
       <section className="emp-overview-card emp-appointments">
         <header><h2>Anstehende Termine</h2><button>Alle sehen</button></header>
-        {appointments.map(item => <div className="emp-appointment-row" key={item[0]+item[2]}>
+        {appointments.map(item => <button type="button" className="emp-appointment-row" key={item[0]+item[2]} onClick={() => onOpenArea(item[9])}>
           <time><strong>{item[0]}</strong><span>{item[1]}</span></time>
-          <div><strong>{item[2]}</strong><span>{item[3]}</span></div><Icon name="chevR" size={16} />
-        </div>)}
+          <div><strong>{item[2]}</strong><span>{item[3]}</span><small>{item[4]} · {item[5]} · {item[6]} · {item[7]} · Erinnerung: {item[8]}</small></div><Icon name="chevR" size={16} />
+        </button>)}
       </section>
       <section className="emp-overview-card emp-recent">
         <header><h2>Letzte Aktivitäten</h2></header>
         <div className="emp-recent-list">
-          {activities.map(item => <div key={item[1]}><span className="emp-recent-icon"><Icon name={item[0]} size={17} /></span><div><strong>{item[1]}</strong><small>{item[2]}</small></div></div>)}
+          {activities.map(item => <button type="button" key={item[1]} onClick={() => item[3] === 'master' ? onOpenMaster() : onOpenArea(item[3])}><span className="emp-recent-icon"><Icon name={item[0]} size={17} /></span><div><strong>{item[1]}</strong><small>{item[2]}</small></div><Icon name="chevR" size={14} /></button>)}
         </div>
         <button className="emp-show-all">Alle Aktivitäten anzeigen</button>
       </section>
@@ -123,13 +169,23 @@ function EmployeeOverviewCenter() {
   );
 }
 
-function EmployeeOverviewAside() {
+function EmployeeOverviewAside({ onOpenArea }) {
+  const needs = [
+    ['Ablaufende Schulungen',3,'trainings'],
+    ['Abgelaufene Schulungen',1,'trainings'],
+    ['Fehlende Dokumente',1,'infoMatrix'],
+    ['Offene Unterweisungen',2,'instructions'],
+    ['Fällige Vorsorge',1,'medical'],
+    ['Führerscheinkontrolle fällig',1,'license'],
+    ['Geräteprüfung fällig',1,'checks'],
+    ['Fehlende Stellenbeschreibung',1,'jobs'],
+    ['Offene Termine',3,'appointments'],
+  ];
   return (
     <aside className="emp-overview-aside">
       <section className="emp-action-required">
         <h2><Icon name="flag" size={19} />Handlungsbedarf</h2>
-        <div><span>Ablaufende Zertifikate</span><strong>3</strong></div>
-        <div><span>Fehlendes Dokument</span><strong>1</strong></div>
+        {needs.map(item => <button type="button" key={item[0]} onClick={() => onOpenArea(item[2])}><span>{item[0]}</span><strong>{item[1]}</strong></button>)}
         <button>Jetzt bearbeiten <Icon name="chevR" size={14} /></button>
       </section>
       <section className="emp-side-stat">
@@ -224,10 +280,14 @@ function employeeMasterRecord(emp) {
   return {
     id:emp.id, firstName:emp.firstName, lastName:emp.lastName, pn:emp.personalNr,
     company:company?.name || '-', department:emp.department, position:emp.position,
-    group, workload:emp.workload || 'Vollzeit', entry:window.fmtDE(emp.entry),
+    group, employmentType:'Festangestellt', workload:emp.workload || 'Vollzeit', weeklyHours:emp.workload === 'Teilzeit' ? '24 Std.' : '40 Std.',
+    entry:window.fmtDE(emp.entry), probationUntil:'15.08.2026', exitDate:'-', manager:'Christian Janning', costCenter:'TB-410', site:'Nordhorn',
     phone:emp.phone, email:emp.email, address:emp.address, status:emp.status === 'aktiv' ? 'Aktiv' : 'Inaktiv',
+    mobile:'+49 170 1234567', office:'Büro Nordhorn', privatePhone:'Nur berechtigt sichtbar', privateEmail:'Nur berechtigt sichtbar',
+    emergencyContact:'Maria Beck · +49 170 9876543',
     description:`${emp.position} im Bereich ${emp.department}. Zugeordnet zur ${company?.name || 'Janning Group'}.`,
-    profile:emp.initials, role:'Mitarbeiter', user:emp.email, password:'••••••••••',
+    profile:emp.initials, role:'Mitarbeiter', user:`${emp.firstName.toLowerCase()}.${emp.lastName.toLowerCase()}`, loginEmail:emp.email,
+    accountStatus:'Aktiv', lastLogin:'12.07.2026, 08:41 Uhr', passwordChanged:'03.06.2026', twoFactor:'Aktiv',
   };
 }
 
@@ -285,16 +345,19 @@ function EmployeeMasterArea({ emp, onBack, onOpen }) {
   );
 }
 
-function EmployeeMasterRecord({ emp, record, onBack }) {
+function EmployeeMasterRecord({ emp, record, onBack, employeeChoices = [], onSelectEmployee, onPrevEmployee, onNextEmployee }) {
   const [editing, setEditing] = React.useState(false);
   const [form, setForm] = React.useState({...record});
+  const [historyOpen, setHistoryOpen] = React.useState(false);
+  React.useEffect(() => setForm({...record}), [record.id]);
+  const choices = employeeChoices.length ? employeeChoices : [emp];
   const set = (key, value) => setForm(current => ({...current, [key]:value}));
   const inputFor = (key, options) => options
     ? <select value={form[key]} onChange={event => set(key,event.target.value)}>{options.map(option => <option key={option}>{option}</option>)}</select>
-    : <input type={key === 'password' ? 'password' : 'text'} value={form[key]} onChange={event => set(key,event.target.value)} />;
+    : <input type="text" value={form[key]} onChange={event => set(key,event.target.value)} />;
   return (
     <div className="emp-full emp-master-detail">
-      <EmpPageTitle title={`Stammdaten (${emp.name})`} onBack={onBack} action={<button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Alle bearbeiten</button>} />
+      <EmpPageTitle title={`Stammdaten (${emp.name})`} onBack={onBack} action={<button className="emp-edit-all" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Bearbeiten</button>} />
 
       <section className="emp-master-hero">
         <span className="emp-master-avatar is-hero">{form.profile}</span>
@@ -302,7 +365,18 @@ function EmployeeMasterRecord({ emp, record, onBack }) {
           <div className="emp-master-hero__name"><h2>{form.firstName} {form.lastName}</h2><span className="emp-active"><i />{form.status}</span></div>
           <dl><div><dt>Position</dt><dd>{form.position}</dd></div><div><dt>Firma</dt><dd>{form.company}</dd></div></dl>
         </div>
-        <button className="emp-master-edit" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Alle bearbeiten</button>
+        <div className="emp-master-hero-picker">
+          <label>
+            <span>Mitarbeiter auswählen</span>
+            <select value={emp.id} onChange={event => onSelectEmployee && onSelectEmployee(event.target.value)}>
+              {choices.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </label>
+          <div>
+            <button type="button" onClick={onPrevEmployee}><Icon name="chevL" size={15} />Vorheriger</button>
+            <button type="button" onClick={onNextEmployee}>Nächster<Icon name="chevR" size={15} /></button>
+          </div>
+        </div>
       </section>
 
       <div className="emp-master-layout">
@@ -310,29 +384,53 @@ function EmployeeMasterRecord({ emp, record, onBack }) {
           <MasterDataCard title="Beschäftigung" icon="building" className="emp-master-employment">
             <div className="emp-master-field-grid">
               <MasterDataField label="Personalnummer" icon="doc" editing={editing} value={form.pn}>{inputFor('pn')}</MasterDataField>
+              <MasterDataField label="Vorname" icon="users" editing={editing} value={form.firstName}>{inputFor('firstName')}</MasterDataField>
+              <MasterDataField label="Nachname" icon="users" editing={editing} value={form.lastName}>{inputFor('lastName')}</MasterDataField>
               <MasterDataField label="Firma" icon="building" editing={editing} value={form.company}>{inputFor('company')}</MasterDataField>
               <MasterDataField label="Abteilung" icon="doc" editing={editing} value={form.department}>{inputFor('department')}</MasterDataField>
               <MasterDataField label="Position" icon="users" editing={editing} value={form.position}>{inputFor('position')}</MasterDataField>
-              <MasterDataField label="Gruppe" icon="users" editing={editing} value={form.group}>{inputFor('group',['Gewerblich','Angestellt','Azubi','Praktikant'])}</MasterDataField>
-              <MasterDataField label="Arbeitszeit" icon="clock" editing={editing} value={form.workload}>{inputFor('workload',['Vollzeit','Teilzeit'])}</MasterDataField>
+              <MasterDataField label="Mitarbeitergruppe" icon="users" editing={editing} value={form.group}>{inputFor('group',['Gewerblich','Angestellt','Azubi','Praktikant'])}</MasterDataField>
+              <MasterDataField label="Beschäftigungsart" icon="doc" editing={editing} value={form.employmentType}>{inputFor('employmentType',['Festangestellt','Befristet','Aushilfe','Praktikum'])}</MasterDataField>
+              <MasterDataField label="Vollzeit oder Teilzeit" icon="clock" editing={editing} value={form.workload}>{inputFor('workload',['Vollzeit','Teilzeit'])}</MasterDataField>
+              <MasterDataField label="Wochenarbeitszeit" icon="clock" editing={editing} value={form.weeklyHours}>{inputFor('weeklyHours')}</MasterDataField>
               <MasterDataField label="Eintritt" icon="cal" editing={editing} value={form.entry}>{inputFor('entry')}</MasterDataField>
+              <MasterDataField label="Probezeit bis" icon="cal" editing={editing} value={form.probationUntil}>{inputFor('probationUntil')}</MasterDataField>
+              <MasterDataField label="Austrittsdatum" icon="cal" editing={editing} value={form.exitDate}>{inputFor('exitDate')}</MasterDataField>
+              <MasterDataField label="Personalstatus" icon="shield" editing={editing} value={form.status}>{inputFor('status',['Aktiv','Probezeit','Elternzeit','Freigestellt','Gekündigt','Ausgeschieden','Archiviert'])}</MasterDataField>
+              <MasterDataField label="Direkte Führungskraft" icon="users" editing={editing} value={form.manager}>{inputFor('manager')}</MasterDataField>
+              <MasterDataField label="Kostenstelle" icon="doc" editing={editing} value={form.costCenter}>{inputFor('costCenter')}</MasterDataField>
+              <MasterDataField label="Standort" icon="pin" editing={editing} value={form.site}>{inputFor('site')}</MasterDataField>
             </div>
           </MasterDataCard>
 
           <MasterDataCard title="Kontaktdaten" icon="users">
-            <div className="emp-master-contact-list">
-              <MasterDataField label="Telefon" icon="phone" editing={editing} value={form.phone}>{inputFor('phone')}</MasterDataField>
-              <MasterDataField label="E-Mail" icon="mail" editing={editing} value={form.email}>{inputFor('email')}</MasterDataField>
-              <MasterDataField label="Adresse" icon="pin" editing={editing} value={form.address}>{inputFor('address')}</MasterDataField>
+            <div className="emp-master-field-grid emp-master-contact-list">
+              <MasterDataField label="Geschäftliche Telefonnummer" icon="phone" editing={editing} value={form.phone}>{inputFor('phone')}</MasterDataField>
+              <MasterDataField label="Mobilnummer" icon="phone" editing={editing} value={form.mobile}>{inputFor('mobile')}</MasterDataField>
+              <MasterDataField label="Geschäftliche E-Mail" icon="mail" editing={editing} value={form.email}>{inputFor('email')}</MasterDataField>
+              <MasterDataField label="Standort / Büro" icon="building" editing={editing} value={form.office}>{inputFor('office')}</MasterDataField>
+              <MasterDataField label="Private Telefonnummer" icon="phone" editing={editing} value={form.privatePhone}>{inputFor('privatePhone')}</MasterDataField>
+              <MasterDataField label="Private E-Mail" icon="mail" editing={editing} value={form.privateEmail}>{inputFor('privateEmail')}</MasterDataField>
+              <MasterDataField label="Private Adresse" icon="pin" editing={editing} value={form.address}>{inputFor('address')}</MasterDataField>
+              <MasterDataField label="Notfallkontakt" icon="users" editing={editing} value={form.emergencyContact}>{inputFor('emergencyContact')}</MasterDataField>
             </div>
           </MasterDataCard>
 
           <MasterDataCard title="Systemzugang" icon="shield">
-            <div className="emp-system-access">
+            <div className="emp-system-access emp-system-access--expanded">
+              <MasterDataField label="Benutzername" editing={editing} value={form.user}>{inputFor('user')}</MasterDataField>
+              <MasterDataField label="E-Mail für Anmeldung" editing={editing} value={form.loginEmail}>{inputFor('loginEmail')}</MasterDataField>
               <MasterDataField label="Rolle" editing={editing} value={form.role}>{inputFor('role',['Admin','Geschäftsführer','Verwaltung','Bauleiter','Mitarbeiter'])}</MasterDataField>
-              <MasterDataField label="Benutzerkonto" editing={editing} value={form.user}>{inputFor('user')}</MasterDataField>
-              <MasterDataField label="Passwort" editing={editing} value={form.password}>{inputFor('password')}</MasterDataField>
-              {!editing && <button><Icon name="shield" size={14} />Passwort ändern</button>}
+              <MasterDataField label="Konto aktiv / gesperrt" editing={editing} value={form.accountStatus}>{inputFor('accountStatus',['Aktiv','Gesperrt'])}</MasterDataField>
+              <MasterDataField label="Letzter Login" editing={editing} value={form.lastLogin}>{inputFor('lastLogin')}</MasterDataField>
+              <MasterDataField label="Passwort zuletzt geändert" editing={editing} value={form.passwordChanged}>{inputFor('passwordChanged')}</MasterDataField>
+              <MasterDataField label="Zwei-Faktor-Authentifizierung" editing={editing} value={form.twoFactor}>{inputFor('twoFactor',['Aktiv','Nicht aktiv'])}</MasterDataField>
+              {!editing && <div className="emp-access-actions">
+                <button><Icon name="shield" size={14} />Passwort zurücksetzen</button>
+                <button><Icon name="mail" size={14} />Anmeldelink senden</button>
+                <button><Icon name="flag" size={14} />Konto sperren</button>
+                <button><Icon name="users" size={14} />Rolle ändern</button>
+              </div>}
             </div>
           </MasterDataCard>
 
@@ -342,20 +440,37 @@ function EmployeeMasterRecord({ emp, record, onBack }) {
         </main>
 
         <aside className="emp-master-aside">
-          <MasterDataCard title="Letzte Änderung" icon="history"><p className="emp-last-change">03.06.2026, 10:32 Uhr<br />von Sabine Janning</p></MasterDataCard>
+          <button type="button" className="emp-master-card emp-history-button" onClick={() => setHistoryOpen(current => !current)}>
+            <header><Icon name="history" size={17} /><h3>Letzte Änderung</h3></header>
+            <div className="emp-master-card__body"><p className="emp-last-change">03.06.2026, 10:32 Uhr<br />von Sabine Janning</p><small>Historie öffnen</small></div>
+          </button>
           <MasterDataCard title="Schnellaktionen" icon="settings">
             <div className="emp-master-actions">
               <button><Icon name="plus" size={14} />Dokument hinzufügen<Icon name="chevR" size={13} /></button>
               <button><Icon name="cap" size={14} />Schulung hinzufügen<Icon name="chevR" size={13} /></button>
               <button><Icon name="flag" size={14} />Unterweisung hinzufügen<Icon name="chevR" size={13} /></button>
+              <button><Icon name="check" size={14} />Qualifikation hinzufügen<Icon name="chevR" size={13} /></button>
+              <button><Icon name="shield" size={14} />Vorsorge eintragen<Icon name="chevR" size={13} /></button>
+              <button><Icon name="cal" size={14} />Führerscheinkontrolle eintragen<Icon name="chevR" size={13} /></button>
+              <button><Icon name="settings" size={14} />Beauftragung erstellen<Icon name="chevR" size={13} /></button>
+              <button><Icon name="building" size={14} />Baustelle zuordnen<Icon name="chevR" size={13} /></button>
               <button><Icon name="cal" size={14} />Termin erstellen<Icon name="chevR" size={13} /></button>
+              <button><Icon name="history" size={14} />Austritt erfassen<Icon name="chevR" size={13} /></button>
             </div>
           </MasterDataCard>
           <MasterDataCard title="Profilbild" icon="doc">
-            <div className="emp-master-photo"><span className="emp-master-avatar is-large">{form.profile}</span><div><strong>Profilbild des Mitarbeiters</strong><small>PNG oder JPG, maximal 5 MB</small><label><Icon name="upload" size={14} />Profilbild ändern<input type="file" accept="image/*" /></label></div></div>
+            <div className="emp-master-photo"><span className="emp-master-avatar is-large">{form.profile}</span><div><strong>Profilbild des Mitarbeiters</strong><small>PNG oder JPG, maximal 5 MB</small><label><Icon name="upload" size={14} />Profilbild ändern<input type="file" accept="image/*" /></label><button>Profilbild entfernen</button><button>Initialen verwenden</button></div></div>
           </MasterDataCard>
         </aside>
       </div>
+      {historyOpen && <section className="emp-history-panel">
+        <header><h2>Änderungshistorie</h2><button onClick={() => setHistoryOpen(false)}>Schließen</button></header>
+        {[
+          ['03.06.2026, 10:32 Uhr','Telefon','+49 5921 2868','+49 5921 8801-23','Sabine Janning'],
+          ['28.05.2026, 09:10 Uhr','Rolle','Mitarbeiter','Bauleiter','Rahim Ahangarzadeh'],
+          ['12.05.2026, 14:44 Uhr','Status','Probezeit','Aktiv','Christian Janning'],
+        ].map(row => <div key={row[0]}><strong>{row[1]}</strong><span>{row[0]} · {row[4]}</span><small>{row[2]} → {row[3]}</small></div>)}
+      </section>}
       {editing && <div className="emp-master-savebar"><button className="btn btn--ghost" onClick={() => setEditing(false)}>Abbrechen</button><button className="btn btn--primary" onClick={() => setEditing(false)}>Speichern</button></div>}
     </div>
   );

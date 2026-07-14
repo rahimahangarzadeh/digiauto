@@ -9,6 +9,19 @@ function EmployeesView({ activeCompany }) {
   const [empColumnFilters, setEmpColumnFilters] = React.useState({});
   const [empGroupBy, setEmpGroupBy] = React.useState('');
   const [empKpiFilter, setEmpKpiFilter] = React.useState('all');
+  const [empActionMenu, setEmpActionMenu] = React.useState(null);
+  const [empColumnManagerOpen, setEmpColumnManagerOpen] = React.useState(false);
+  const [empImportOpen, setEmpImportOpen] = React.useState(false);
+  const [empExportOpen, setEmpExportOpen] = React.useState(false);
+  const defaultEmpVisibleColumns = ['name','pn','firma','dept','pos','group','employmentType','workload','weeklyHours','entry','exitDate','manager','site','account','status'];
+  const [empVisibleColumns, setEmpVisibleColumns] = React.useState(() => {
+    try {
+      const saved = localStorage.getItem('emp_visible_columns');
+      return saved ? JSON.parse(saved) : defaultEmpVisibleColumns;
+    } catch {
+      return defaultEmpVisibleColumns;
+    }
+  });
 
   // Sortierung mit localStorage
   const [sort, setSort] = React.useState(() => {
@@ -30,15 +43,34 @@ function EmployeesView({ activeCompany }) {
 
   const empColumns = [
     { key: 'name', label: 'Name' },
-    { key: 'pn', label: 'PN' },
+    { key: 'pn', label: 'Personalnummer' },
     { key: 'firma', label: 'Firma' },
     { key: 'dept', label: 'Abteilung' },
     { key: 'pos', label: 'Position' },
     { key: 'group', label: 'Gruppe' },
+    { key: 'employmentType', label: 'Beschäftigungsart' },
     { key: 'workload', label: 'Arbeitszeit' },
+    { key: 'weeklyHours', label: 'Wochenarbeitszeit' },
     { key: 'entry', label: 'Eintritt' },
+    { key: 'exitDate', label: 'Austrittsdatum' },
+    { key: 'manager', label: 'Direkte Führungskraft' },
+    { key: 'site', label: 'Standort' },
+    { key: 'account', label: 'Benutzerkonto' },
     { key: 'status', label: 'Status' },
   ];
+  const persistEmpVisibleColumns = (next) => {
+    setEmpVisibleColumns(next);
+    try { localStorage.setItem('emp_visible_columns', JSON.stringify(next)); } catch {}
+  };
+  const isEmpColumnVisible = (key) => empVisibleColumns.includes(key);
+  const visibleEmpColumns = empColumns.filter(col => isEmpColumnVisible(col.key));
+  const employeeTableColSpan = 1 + visibleEmpColumns.length + 3 + 2;
+  const hideEmpColumn = (key) => {
+    persistEmpVisibleColumns(empVisibleColumns.filter(col => col !== key));
+    setEmpColumnMenu(null);
+  };
+  const showAllEmpColumns = () => persistEmpVisibleColumns(empColumns.map(col => col.key));
+  const resetEmpColumns = () => persistEmpVisibleColumns(defaultEmpVisibleColumns);
   const empColumnLabel = (key) => empColumns.find(col => col.key === key)?.label || key;
   const empColumnValue = (e, key) => {
     if (key === 'name') return `${e.lastName}, ${e.firstName}`;
@@ -47,8 +79,14 @@ function EmployeesView({ activeCompany }) {
     if (key === 'dept') return e.department;
     if (key === 'pos') return e.position;
     if (key === 'group') return employeeGroup(e);
+    if (key === 'employmentType') return employeeEmploymentType(e);
     if (key === 'workload') return employeeWorkload(e);
+    if (key === 'weeklyHours') return employeeWeeklyHours(e);
     if (key === 'entry') return window.fmtDE(e.entry);
+    if (key === 'exitDate') return employeeExitDate(e);
+    if (key === 'manager') return employeeManager(e);
+    if (key === 'site') return employeeSite(e);
+    if (key === 'account') return employeeAccountStatus(e);
     if (key === 'status') return e.status === 'aktiv' ? 'Aktiv' : 'Inaktiv';
     return '';
   };
@@ -79,6 +117,27 @@ function EmployeesView({ activeCompany }) {
     return isWhiteCollar(e) ? 'Angestellt' : 'Gewerblich';
   };
   const employeeWorkload = (e) => e.workload || (/teilzeit/i.test(`${e.position} ${e.department}`) ? 'Teilzeit' : 'Vollzeit');
+  const employeeEmploymentType = (e) => {
+    const text = `${e.position} ${e.department}`.toLowerCase();
+    if (/azubi|auszubild/.test(text)) return 'Ausbildung';
+    if (/praktik/.test(text)) return 'Praktikum';
+    return 'Festangestellt';
+  };
+  const employeeWeeklyHours = (e) => employeeWorkload(e) === 'Teilzeit' ? '24 h' : '40 h';
+  const employeeManager = (e) => {
+    const text = `${e.position} ${e.department}`.toLowerCase();
+    if (/kaufm|büro|verwaltung|angestellte/.test(text)) return 'Sabine Janning';
+    if (/bauleiter|polier|baumaschinist/.test(text)) return 'Alexander Petersen';
+    return 'Christian Janning';
+  };
+  const employeeSite = (e) => {
+    const companyName = window.company(e.company)?.name || '';
+    if (/Gronau/i.test(e.address || '') || /Galabau/i.test(companyName)) return 'Gronau';
+    if (/Lingen/i.test(e.address || '') || /Transporte/i.test(companyName)) return 'Lingen';
+    return 'Nordhorn';
+  };
+  const employeeExitDate = (e) => e.status === 'aktiv' ? '-' : '30.06.2026';
+  const employeeAccountStatus = (e) => e.status === 'aktiv' ? 'Aktiv' : 'Gesperrt';
 
   const scopedEmps = activeCompany === 'all' ? window.SEED.employees : window.SEED.employees.filter(e => e.company === activeCompany);
   const empKpis = [
@@ -99,18 +158,9 @@ function EmployeesView({ activeCompany }) {
 
   // Sortierung anwenden
   emps = [...emps].sort((a, b) => {
-    let va, vb;
-    if      (sort.col === 'name')   { va = a.lastName;    vb = b.lastName; }
-    else if (sort.col === 'pn')     { va = a.personalNr;  vb = b.personalNr; }
-    else if (sort.col === 'firma')  { va = window.company(a.company)?.short || ''; vb = window.company(b.company)?.short || ''; }
-    else if (sort.col === 'dept')   { va = a.department;  vb = b.department; }
-    else if (sort.col === 'pos')    { va = a.position;    vb = b.position; }
-    else if (sort.col === 'group')  { va = employeeGroup(a); vb = employeeGroup(b); }
-    else if (sort.col === 'workload') { va = employeeWorkload(a); vb = employeeWorkload(b); }
-    else if (sort.col === 'entry')  { va = a.entry;       vb = b.entry; }
-    else if (sort.col === 'status') { va = a.status;      vb = b.status; }
-    else                            { va = a.lastName;    vb = b.lastName; }
-    const cmp = String(va).localeCompare(String(vb), 'de');
+    const va = empColumnValue(a, sort.col) || a.lastName;
+    const vb = empColumnValue(b, sort.col) || b.lastName;
+    const cmp = String(va).localeCompare(String(vb), 'de', { numeric:true });
     return sort.dir === 'asc' ? cmp : -cmp;
   });
 
@@ -175,10 +225,10 @@ function EmployeesView({ activeCompany }) {
     : [];
   const visibleEmpFilterValues = empFilterValues.filter(value => String(value).toLowerCase().includes(empFilterSearch.toLowerCase()));
 
-  const EmpColumnHeader = ({ col }) => {
+  const EmpColumnHeader = ({ col, sticky = false }) => {
     const active = sort.col === col.key || (empColumnFilters[col.key] || []).length > 0 || empGroupBy === col.key;
     return (
-      <th style={{ position:'relative', whiteSpace:'nowrap' }}>
+      <th className={sticky ? 'employee-sticky-name' : ''} style={{ whiteSpace:'nowrap' }}>
         <button type="button" onClick={() => setEmpColumnMenu(empColumnMenu === col.key ? null : col.key)}
           style={{ display:'inline-flex', alignItems:'center', gap:6, background:'none', border:0, padding:0, cursor:'pointer', font:'inherit', textTransform:'inherit', color: active ? 'var(--fg-1)' : 'inherit', fontWeight: active ? 700 : undefined }}>
           {col.label}
@@ -186,10 +236,12 @@ function EmployeesView({ activeCompany }) {
         </button>
         {empColumnMenu === col.key && (
           <div style={{ position:'absolute', top:'100%', left:0, zIndex:20, minWidth:230, background:'white', border:'1px solid var(--border-1)', boxShadow:'0 16px 40px rgba(0,0,0,0.14)', borderRadius:4, padding:'6px 0', textTransform:'none', fontSize:14, color:'var(--fg-1)' }}>
-            <button type="button" onClick={() => setEmpSort(col.key, 'asc')} style={{ display:'block', width:'100%', textAlign:'left', padding:'11px 18px', border:0, background:'white', cursor:'pointer', font:'inherit' }}>A bis Z</button>
-            <button type="button" onClick={() => setEmpSort(col.key, 'desc')} style={{ display:'block', width:'100%', textAlign:'left', padding:'11px 18px', border:0, background:'white', cursor:'pointer', font:'inherit' }}>Z bis A</button>
+            <button type="button" onClick={() => setEmpSort(col.key, 'asc')} style={{ display:'block', width:'100%', textAlign:'left', padding:'11px 18px', border:0, background:'white', cursor:'pointer', font:'inherit' }}>A bis Z sortieren</button>
+            <button type="button" onClick={() => setEmpSort(col.key, 'desc')} style={{ display:'block', width:'100%', textAlign:'left', padding:'11px 18px', border:0, background:'white', cursor:'pointer', font:'inherit' }}>Z bis A sortieren</button>
             <button type="button" onClick={() => openEmpFilter(col.key)} style={{ display:'block', width:'100%', textAlign:'left', padding:'11px 18px', border:0, borderTop:'1px solid var(--border-1)', background:'#f3f2f1', cursor:'pointer', font:'inherit' }}>Filtern nach</button>
             <button type="button" onClick={() => { setEmpGroupBy(empGroupBy === col.key ? '' : col.key); setEmpSort(col.key, 'asc'); }} style={{ display:'block', width:'100%', textAlign:'left', padding:'11px 18px', border:0, background:'white', cursor:'pointer', font:'inherit' }}>Gruppieren nach "{col.label}"</button>
+            <button type="button" onClick={() => hideEmpColumn(col.key)} style={{ display:'block', width:'100%', textAlign:'left', padding:'11px 18px', border:0, borderTop:'1px solid var(--border-1)', background:'white', cursor:'pointer', font:'inherit' }}>Spalte ausblenden</button>
+            <button type="button" onClick={() => { setEmpColumnManagerOpen(true); setEmpColumnMenu(null); }} style={{ display:'block', width:'100%', textAlign:'left', padding:'11px 18px', border:0, background:'white', cursor:'pointer', font:'inherit', fontWeight:700 }}>Spalten verwalten</button>
           </div>
         )}
       </th>
@@ -220,7 +272,20 @@ function EmployeesView({ activeCompany }) {
         </div>
 
         <div className="company-list-actions">
-          <button className="btn btn--ghost"><Icon name="upload" size={14} />Import</button>
+          <button className="btn btn--ghost" onClick={() => setEmpImportOpen(true)}><Icon name="upload" size={14} />Import</button>
+          <div className="employee-export-wrap">
+            <button className="btn btn--ghost" onClick={() => setEmpExportOpen(empExportOpen ? false : true)}><Icon name="download" size={14} />Export</button>
+            {empExportOpen && (
+              <div className="employee-export-menu">
+                <button type="button">Aktuelle Ansicht als Excel</button>
+                <button type="button">Aktuelle Ansicht als CSV</button>
+                <button type="button">Ausgewählte Mitarbeiter als Excel</button>
+                <button type="button">Alle Mitarbeiter als Excel</button>
+                <button type="button">Mitarbeiterstammblatt als PDF</button>
+                <button type="button">Alle verfügbaren Spalten exportieren</button>
+              </div>
+            )}
+          </div>
           <button className="btn btn--primary" onClick={() => setShowNewEmp(true)}><Icon name="plus" size={14} />Mitarbeiter</button>
         </div>
       </div>
@@ -260,21 +325,22 @@ function EmployeesView({ activeCompany }) {
       {selected.size > 0 && (
         <div className="job-bulkbar">
           <strong>{selected.size} ausgewählt</strong>
-          <button type="button"><Icon name="download" size={14} />PDF export</button>
+          <button type="button"><Icon name="building" size={14} />Firma ändern</button>
           <select defaultValue="">
             <option value="">Status ändern</option>
             <option value="aktiv">Aktiv</option>
             <option value="inaktiv">Inaktiv</option>
           </select>
-          <button type="button" className="is-danger" onClick={() => setDeleteConfirm('bulk')}><Icon name="x" size={14} />Löschen</button>
+          <button type="button" onClick={() => setMessageEmp(emps.find(emp => selected.has(emp.id)) || null)}><Icon name="mail" size={14} />Nachricht senden</button>
+          <button type="button"><Icon name="history" size={14} />Archivieren</button>
         </div>
       )}
 
-	      <div className="tbl-wrap">
-	        <table className="tbl">
+	      <div className="tbl-wrap employee-table-wrap">
+	        <table className="tbl employee-table">
           <thead>
             <tr>
-              <th style={{ width: 40, textAlign:'center', padding:'0 8px' }}>
+              <th className="employee-sticky-select" style={{ width: 40, textAlign:'center', padding:'0 8px' }}>
                 <input
 	                  type="checkbox"
 	                  checked={selected.size > 0 && selected.size === emps.length}
@@ -282,7 +348,7 @@ function EmployeesView({ activeCompany }) {
                   style={{ cursor:'pointer', width:18, height:18, accentColor:'var(--color-accent)' }}
                 />
               </th>
-              {empColumns.slice(0, 8).map(col => <EmpColumnHeader key={col.key} col={col} />)}
+              {visibleEmpColumns.filter(col => col.key !== 'status').map(col => <EmpColumnHeader key={col.key} col={col} sticky={col.key === 'name'} />)}
               <th style={{ width: 60, textAlign:'center' }}>
                 <span title="Telefon" style={{ cursor:'default' }}>
                   <PhoneIcon size={13} />
@@ -298,9 +364,9 @@ function EmployeesView({ activeCompany }) {
                   <LocationIcon size={13} />
                 </span>
               </th>
-              <EmpColumnHeader col={empColumns.find(col => col.key === 'status')} />
-              <th style={{ width: 130, textAlign:'center' }}>Aktionen</th>
+              {isEmpColumnVisible('status') && <EmpColumnHeader col={empColumns.find(col => col.key === 'status')} />}
               <th style={{ width: 120, textAlign:'center' }}>Versionen</th>
+              <th className="employee-sticky-actions" style={{ width: 130, textAlign:'center' }}>Aktionen</th>
             </tr>
           </thead>
           <tbody>
@@ -314,7 +380,7 @@ function EmployeesView({ activeCompany }) {
               <React.Fragment key={e.id}>
               {empGroupBy && groupValue !== previous && (
                 <tr>
-                  <td colSpan={15} style={{ background:'var(--color-parchment)', color:'var(--fg-1)', fontWeight:700, padding:'10px 14px' }}>
+                  <td colSpan={employeeTableColSpan} style={{ background:'var(--color-parchment)', color:'var(--fg-1)', fontWeight:700, padding:'10px 14px' }}>
                     {empColumnLabel(empGroupBy)}: {groupValue}
                   </td>
                 </tr>
@@ -324,7 +390,7 @@ function EmployeesView({ activeCompany }) {
                 onMouseLeave={() => setHoveredRow(null)}
                 onClick={() => setSelectedEmp(isSelected ? null : e)}
                 style={{ cursor:'pointer', background: isSelected ? 'rgba(201,100,66,0.06)' : (isChecked ? 'rgba(201,100,66,0.03)' : undefined), outline: isSelected ? '2px solid var(--color-accent)' : undefined, outlineOffset:-2 }}>
-                <td onClick={ev => { ev.stopPropagation(); toggleRow(e.id); }} style={{ textAlign:'center', padding:'0 8px' }}>
+                <td className="employee-sticky-select" onClick={ev => { ev.stopPropagation(); toggleRow(e.id); }} style={{ textAlign:'center', padding:'0 8px' }}>
                   <input
                     type="checkbox"
                     checked={isChecked}
@@ -333,7 +399,7 @@ function EmployeesView({ activeCompany }) {
                     style={{ cursor:'pointer', width:18, height:18, accentColor:'var(--color-accent)' }}
                   />
                 </td>
-                <td>
+                {isEmpColumnVisible('name') && <td className="employee-sticky-name">
                   <div style={{display:'flex', alignItems:'center', gap:10}}>
                     <div className={'avatar avatar--' + e.color} style={{width:30, height:30, fontSize:11}}>{e.initials}</div>
                     <div>
@@ -341,14 +407,24 @@ function EmployeesView({ activeCompany }) {
                       <div className="small muted">{e.email}</div>
                     </div>
                   </div>
-                </td>
-                <td className="num">{e.personalNr}</td>
-                <td><CompanyChip id={e.company} size={22} /></td>
-                <td>{e.department}</td>
-                <td>{e.position}</td>
-                <td>{employeeGroup(e)}</td>
-                <td>{employeeWorkload(e)}</td>
-                <td className="num">{window.fmtDE(e.entry)}</td>
+                </td>}
+                {isEmpColumnVisible('pn') && <td className="num">{e.personalNr}</td>}
+                {isEmpColumnVisible('firma') && <td><CompanyChip id={e.company} size={22} /></td>}
+                {isEmpColumnVisible('dept') && <td>{e.department}</td>}
+                {isEmpColumnVisible('pos') && <td>{e.position}</td>}
+                {isEmpColumnVisible('group') && <td>{employeeGroup(e)}</td>}
+                {isEmpColumnVisible('employmentType') && <td>{employeeEmploymentType(e)}</td>}
+                {isEmpColumnVisible('workload') && <td>{employeeWorkload(e)}</td>}
+                {isEmpColumnVisible('weeklyHours') && <td>{employeeWeeklyHours(e)}</td>}
+                {isEmpColumnVisible('entry') && <td className="num">{window.fmtDE(e.entry)}</td>}
+                {isEmpColumnVisible('exitDate') && <td className="num">{employeeExitDate(e)}</td>}
+                {isEmpColumnVisible('manager') && <td>{employeeManager(e)}</td>}
+                {isEmpColumnVisible('site') && <td>{employeeSite(e)}</td>}
+                {isEmpColumnVisible('account') && <td>
+                  <span className={employeeAccountStatus(e) === 'Aktiv' ? 'badge badge--valid' : 'badge'}>
+                    <span className="badge__dot" />{employeeAccountStatus(e)}
+                  </span>
+                </td>}
                 <td style={{ textAlign:'center', padding:'0 4px' }}>
                   <ContactIconCell icon={<PhoneIcon size={13} />} tooltip={e.phone} href={'tel:' + e.phone} />
                 </td>
@@ -358,37 +434,28 @@ function EmployeesView({ activeCompany }) {
                 <td style={{ textAlign:'center', padding:'0 4px' }}>
                   <ContactIconCell icon={<LocationIcon size={13} />} tooltip={e.address} href={undefined} />
                 </td>
-                <td>
+                {isEmpColumnVisible('status') && <td>
                   {e.status === 'aktiv'
                     ? <span className="badge badge--valid"><span className="badge__dot" />Aktiv</span>
                     : <span className="badge"><span className="badge__dot" />Inaktiv</span>}
+                </td>}
+                <td onClick={ev => ev.stopPropagation()} style={{ textAlign:'center', whiteSpace:'nowrap' }}>
+                  <button type="button" className="job-small-btn">Versionen</button>
                 </td>
                 {/* Quick Actions */}
-	                <td onClick={ev => ev.stopPropagation()} style={{ padding:'0 10px', whiteSpace:'nowrap' }}>
-	                  <div style={{
-	                    display:'flex', alignItems:'center', gap:2,
-	                    opacity: 1,
-	                    transition:'opacity 120ms',
-	                    pointerEvents: 'auto',
-	                  }}>
-                    <QuickBtn title="Bearbeiten" onClick={() => setSelectedEmp(e)}>
-                      <PencilIcon />
-                    </QuickBtn>
-                    <QuickBtn title="Dokumente" onClick={() => { setSelectedEmp(e); /* opens docs tab via state */ window.__empDocTab = true; }}>
-                      <DocIcon />
-                    </QuickBtn>
-                    <QuickBtn title="Schulung anmelden" onClick={() => setRegisterEmp(e)}>
-                      <SchulungIcon />
-                    </QuickBtn>
-                    <MessageQuickBtn count={unreadForEmployee(e)} onClick={() => setMessageEmp(e)} />
-	                    <QuickBtn title="Löschen" danger onClick={() => setDeleteConfirm(e)}>
-	                      <TrashIcon />
-	                    </QuickBtn>
-	                  </div>
-	                </td>
-	                <td onClick={ev => ev.stopPropagation()} style={{ textAlign:'center', whiteSpace:'nowrap' }}>
-	                  <button type="button" className="job-small-btn">Versionen</button>
-	                </td>
+                <td className="employee-sticky-actions" onClick={ev => ev.stopPropagation()} style={{ padding:'0 10px', whiteSpace:'nowrap', textAlign:'center' }}>
+                  <button type="button" className="employee-row-menu-btn" title="Aktionen öffnen" onClick={() => setEmpActionMenu(empActionMenu === e.id ? null : e.id)}>⋮</button>
+                  {empActionMenu === e.id && (
+                    <div className="employee-row-menu" onClick={ev => ev.stopPropagation()}>
+                      <button type="button" onClick={() => { setSelectedEmp(e); setEmpActionMenu(null); }}>Details anzeigen</button>
+                      <button type="button" onClick={() => { setSelectedEmp(e); setEmpActionMenu(null); }}>Bearbeiten</button>
+                      <button type="button" onClick={() => { setSelectedEmp(e); window.__empDocTab = true; setEmpActionMenu(null); }}>Dokument hinzufügen</button>
+                      <button type="button" onClick={() => { setRegisterEmp(e); setEmpActionMenu(null); }}>Schulung anmelden</button>
+                      <button type="button" onClick={() => { setMessageEmp(e); setEmpActionMenu(null); }}>Nachricht senden ({unreadForEmployee(e)})</button>
+                      <button type="button" onClick={() => setEmpActionMenu(null)}>Archivieren</button>
+                    </div>
+                  )}
+                </td>
 	              </tr>
               </React.Fragment>
               );
@@ -423,6 +490,22 @@ function EmployeesView({ activeCompany }) {
 	          </aside>
 	        </div>
 	      )}
+      {empColumnManagerOpen && (
+        <EmployeeColumnManagerModal
+          columns={empColumns}
+          visibleColumns={empVisibleColumns}
+          onToggle={(key) => {
+            const next = empVisibleColumns.includes(key)
+              ? empVisibleColumns.filter(col => col !== key)
+              : [...empVisibleColumns, key];
+            persistEmpVisibleColumns(next);
+          }}
+          onShowAll={showAllEmpColumns}
+          onReset={resetEmpColumns}
+          onClose={() => setEmpColumnManagerOpen(false)}
+        />
+      )}
+      {empImportOpen && <EmployeeImportModal onClose={() => setEmpImportOpen(false)} />}
 	      {showNewEmp && <NewEmployeeModal onClose={() => setShowNewEmp(false)} />}
       {messageEmp && <EmployeeMessagePanel emp={messageEmp} messages={messagesForEmployee(messageEmp)} onClose={() => setMessageEmp(null)} onSend={(text) => sendEmployeeReply(messageEmp, text)} />}
       {deleteConfirm && <DeleteConfirmModal emp={deleteConfirm} count={deleteConfirm === 'bulk' ? selected.size : 1} onClose={() => setDeleteConfirm(null)} onConfirm={() => { setDeleteConfirm(null); clearSelection(); }} />}
@@ -489,6 +572,169 @@ function LocationIcon({ size = 14 }) {
       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
       <circle cx="12" cy="10" r="3"/>
     </svg>
+  );
+}
+
+function EmployeeColumnManagerModal({ columns, visibleColumns, onToggle, onShowAll, onReset, onClose }) {
+  return (
+    <div className="employee-manage-backdrop" onClick={onClose}>
+      <section className="employee-manage-modal" onClick={e => e.stopPropagation()}>
+        <header>
+          <div>
+            <span>Mitarbeiterliste</span>
+            <h2>Spalten verwalten</h2>
+          </div>
+          <button type="button" onClick={onClose}><Icon name="x" size={18} /></button>
+        </header>
+        <div className="employee-column-list">
+          {columns.map(col => (
+            <label key={col.key}>
+              <input type="checkbox" checked={visibleColumns.includes(col.key)} onChange={() => onToggle(col.key)} />
+              <span>{col.label}</span>
+            </label>
+          ))}
+        </div>
+        <footer>
+          <button type="button" className="btn btn--ghost" onClick={onShowAll}>Alle Spalten einblenden</button>
+          <button type="button" className="btn btn--ghost" onClick={onReset}>Standardansicht wiederherstellen</button>
+          <button type="button" className="btn btn--primary" onClick={onClose}>Übernehmen</button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
+function EmployeeImportModal({ onClose }) {
+  const [step, setStep] = React.useState(0);
+  const [uploaded, setUploaded] = React.useState(false);
+  const [done, setDone] = React.useState(false);
+  const steps = ['Datei hochladen','Spalten zuordnen','Daten prüfen','Vorhandene Mitarbeiter','Import durchführen'];
+  const requiredFields = ['Personalnummer','Vorname','Nachname','Firma','Abteilung','Position','Mitarbeitergruppe','Beschäftigungsart','Arbeitszeit','Eintrittsdatum','Personalstatus'];
+  const mappings = [
+    ['Personal-Nr.', 'Personalnummer'],
+    ['Vorname', 'Vorname'],
+    ['Nachname', 'Nachname'],
+    ['Firma', 'Firma'],
+    ['Abteilung', 'Abteilung'],
+    ['Position', 'Position'],
+    ['Eintritt', 'Eintrittsdatum'],
+  ];
+
+  return (
+    <div className="employee-manage-backdrop" onClick={onClose}>
+      <section className="employee-import-modal" onClick={e => e.stopPropagation()}>
+        <header>
+          <div>
+            <span>Mitarbeiterimport</span>
+            <h2>Import</h2>
+          </div>
+          <button type="button" onClick={onClose}><Icon name="x" size={18} /></button>
+        </header>
+        <nav>
+          {steps.map((label, index) => (
+            <button key={label} type="button" className={index === step ? 'is-active' : index < step ? 'is-done' : ''} onClick={() => setStep(index)}>
+              <span>{index + 1}</span>{label}
+            </button>
+          ))}
+        </nav>
+        <div className="employee-import-body">
+          {done ? (
+            <div className="employee-import-success">
+              <div><Icon name="check" size={26} /></div>
+              <h3>30 Mitarbeiter wurden erfolgreich importiert.</h3>
+              <p>3 Datensätze wurden aktualisiert. 2 Datensätze konnten nicht importiert werden.</p>
+              <div>
+                <button type="button" className="btn btn--ghost"><Icon name="download" size={14} />Fehlerprotokoll</button>
+                <button type="button" className="btn btn--ghost"><Icon name="download" size={14} />Importbericht Excel</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {step === 0 && (
+                <div>
+                  <div className="employee-import-drop" onClick={() => setUploaded(true)}>
+                    <Icon name="upload" size={28} />
+                    <strong>{uploaded ? 'Mitarbeiterliste_Juli_2026.xlsx' : 'Datei auswählen oder per Drag-and-drop hochladen'}</strong>
+                    <span>Excel oder CSV · maximale Dateigröße 10 MB</span>
+                  </div>
+                  <div className="employee-import-meta">
+                    <button type="button" className="btn btn--ghost"><Icon name="download" size={14} />Beispieldatei herunterladen</button>
+                    <details>
+                      <summary>Unterstützte Spalten anzeigen</summary>
+                      <p>{requiredFields.join(', ')}</p>
+                    </details>
+                  </div>
+                </div>
+              )}
+              {step === 1 && (
+                <div>
+                  <p className="employee-import-note">Pflichtfelder müssen vollständig zugeordnet sein.</p>
+                  <div className="employee-import-map">
+                    <div>Spalte aus Excel</div><div>Feld im Programm</div>
+                    {mappings.map(([excel, field]) => (
+                      <React.Fragment key={excel}>
+                        <strong>{excel}</strong>
+                        <select defaultValue={field}>
+                          {requiredFields.map(req => <option key={req}>{req}</option>)}
+                          <option>Telefon</option><option>E-Mail</option><option>Adresse</option>
+                        </select>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {step === 2 && (
+                <div>
+                  <div className="employee-import-stats">
+                    <div><strong>35</strong><span>Datensätze erkannt</span></div>
+                    <div><strong>30</strong><span>können importiert werden</span></div>
+                    <div><strong>3</strong><span>Warnungen</span></div>
+                    <div><strong>2</strong><span>Fehler</span></div>
+                  </div>
+                  <ul className="employee-import-checks">
+                    <li>Doppelte Personalnummern erkannt</li>
+                    <li>Unbekannte Firma in 1 Datensatz</li>
+                    <li>2 ungültige E-Mail-Adressen</li>
+                    <li>Datumswerte geprüft</li>
+                  </ul>
+                </div>
+              )}
+              {step === 3 && (
+                <div className="employee-import-options">
+                  {['Vorhandene Mitarbeiter nicht verändern','Vorhandene Mitarbeiter aktualisieren','Nur neue Mitarbeiter importieren','Doppelte Datensätze überspringen'].map((label, index) => (
+                    <label key={label}>
+                      <input type="radio" name="emp-import-mode" defaultChecked={index === 1} />
+                      <span>{label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {step === 4 && (
+                <div className="employee-import-confirm">
+                  <h3>Import bereit</h3>
+                  <p>Die aktuelle Zuordnung, Prüfung und Konfliktregel wird für den Import verwendet.</p>
+                  <div className="employee-import-stats">
+                    <div><strong>30</strong><span>neu</span></div>
+                    <div><strong>3</strong><span>aktualisieren</span></div>
+                    <div><strong>2</strong><span>überspringen</span></div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        {!done && (
+          <footer>
+            <button type="button" className="btn btn--ghost" onClick={step === 0 ? onClose : () => setStep(step - 1)}>{step === 0 ? 'Abbrechen' : 'Zurück'}</button>
+            {step < 4 ? (
+              <button type="button" className="btn btn--primary" disabled={step === 0 && !uploaded} onClick={() => setStep(step + 1)}>{step === 0 ? 'Datei prüfen' : 'Weiter'}</button>
+            ) : (
+              <button type="button" className="btn btn--primary" onClick={() => setDone(true)}>Mitarbeiter importieren</button>
+            )}
+          </footer>
+        )}
+      </section>
+    </div>
   );
 }
 
@@ -1064,232 +1310,219 @@ function EmpSidePanel({ emp, onClose, initialTab = 'stammdaten' }) {
 }
 
 function NewEmployeeModal({ onClose }) {
-  const [form, setForm] = React.useState({
-    vorname:'', nachname:'', pn:'', firma:'', abteilung:'', position:'',
-    eintritt:'', telefon:'', email:'', adresse:'',
-    passwort:'', rolle:'mitarbeiter', status:'aktiv', foto:null,
-  });
-  const [errors, setErrors] = React.useState({});
+  const [step, setStep] = React.useState(0);
   const [saved, setSaved] = React.useState(false);
-  const [photoPreview, setPhotoPreview] = React.useState(null);
+  const [confirm, setConfirm] = React.useState(false);
+  const [form, setForm] = React.useState({
+    vorname:'', nachname:'', pn:'', firma:'c1', abteilung:'', position:'',
+    gruppe:'Gewerblich', beschaeftigung:'Festangestellt', arbeitszeit:'Vollzeit', wochenstunden:'40',
+    eintritt:'2026-07-14', status:'Aktiv', fuehrungskraft:'Christian Janning', standort:'Nordhorn',
+    telefon:'', email:'', adresse:'',
+    kontoErstellen:true, benutzername:'', rolle:'Mitarbeiter', zugriffFirma:'c1', kontostatus:'Aktiv',
+    loginLink:true, profilbild:'', beschreibung:'',
+  });
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-  const validate = () => {
-    const e = {};
-    if (!form.vorname.trim())   e.vorname  = 'Pflichtfeld';
-    if (!form.nachname.trim())  e.nachname = 'Pflichtfeld';
-    if (!form.pn.trim())        e.pn       = 'Pflichtfeld';
-    if (!form.firma)            e.firma    = 'Pflichtfeld';
-    if (!form.email.trim())     e.email    = 'Pflichtfeld';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'UngÃ¼ltige E-Mail';
-    if (!form.passwort)         e.passwort = 'Pflichtfeld';
-    else if (form.passwort.length < 8) e.passwort = 'Mindestens 8 Zeichen';
-    setErrors(e);
-    return Object.keys(e).length === 0;
+  const steps = ['Persönliche Daten','Beschäftigung','Kontaktdaten','Systemzugang','Abschluss'];
+  const positions = ['Polier','Bauleiter','Facharbeiter','Baumaschinist','KFZ-Mechaniker','QGIS-Expertin','Kaufm. Angestellte:r','Auszubildende:r','Fahrer'];
+  const managers = ['Christian Janning','Sabine Janning','Alexander Petersen','Michael Janning','Thomas Janning'];
+  const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
+  const requiredByStep = [
+    ['vorname','nachname','pn'],
+    ['firma','abteilung','position','gruppe','beschaeftigung','arbeitszeit','wochenstunden','eintritt','status','fuehrungskraft','standort'],
+    [],
+    form.kontoErstellen ? ['email','benutzername','rolle','zugriffFirma','kontostatus'] : [],
+    [],
+  ];
+  const canContinue = requiredByStep[step].every(key => String(form[key] || '').trim());
+  const next = () => {
+    if (step < steps.length - 1 && canContinue) setStep(step + 1);
   };
-
-  const submit = () => {
-    if (!validate()) return;
+  const create = () => {
+    if (!confirm) return;
     setSaved(true);
-    setTimeout(onClose, 2000);
   };
 
-  const handlePhoto = (e) => {
-    const f = e.target.files?.[0];
-    if (f) {
-      setPhotoPreview(URL.createObjectURL(f));
-      set('foto', f.name);
-    }
-  };
-
-  const inp = {
-    width:'100%', padding:'9px 12px', fontSize:13.5,
-    border:'1px solid var(--border-1)', borderRadius:8,
-    background:'var(--color-white)', color:'var(--fg-1)',
-    outline:'none', fontFamily:'inherit', boxSizing:'border-box',
-    transition:'border-color 150ms',
-  };
-  const inpErr = { ...inp, borderColor:'#eac8c2', background:'#fdfafa' };
-
-  const Field = ({ label, required, err, children }) => (
-    <div style={{ marginBottom:14 }}>
-      <label style={{ display:'block', fontSize:11, fontWeight:700, letterSpacing:0.5, textTransform:'uppercase', color: err ? '#a13232' : 'var(--fg-3)', marginBottom:4 }}>
-        {label}{required && <span style={{ color:'var(--color-accent)', marginLeft:3 }}>*</span>}
-      </label>
+  const Field = ({ label, required, children }) => (
+    <label className="employee-wizard-field">
+      <span>{label}{required && <b>*</b>}</span>
       {children}
-      {err && <div style={{ fontSize:11, color:'#a13232', marginTop:3 }}>{err}</div>}
-    </div>
+    </label>
+  );
+  const Input = ({ value, onChange, placeholder, type='text' }) => (
+    <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder || ''} />
+  );
+  const Select = ({ value, onChange, children }) => (
+    <select value={value} onChange={e => onChange(e.target.value)}>{children}</select>
   );
 
-  const SectionHead = ({ children }) => (
-    <div style={{ fontSize:11, fontWeight:700, letterSpacing:0.7, textTransform:'uppercase', color:'var(--color-accent)', marginBottom:12, marginTop:20, paddingBottom:6, borderBottom:'1px solid var(--border-1)' }}>{children}</div>
-  );
-
-  const positions = ['Polier','Bauleiter','Facharbeiter','Baumaschinist','KFZ-Mechaniker','Auszubildender','BÃ¼roangestellter','Fahrer','SchweiÃŸer'];
+  if (saved) {
+    return (
+      <div className="employee-wizard-backdrop" onClick={onClose}>
+        <div className="employee-wizard employee-wizard--success" onClick={e => e.stopPropagation()}>
+          <button type="button" className="employee-wizard-close" onClick={onClose}><Icon name="x" size={18} /></button>
+          <div className="employee-wizard-success-icon"><Icon name="check" size={28} /></div>
+          <h2>Mitarbeiter erstellt</h2>
+          <p>{form.vorname || 'Neuer'} {form.nachname || 'Mitarbeiter'} wurde als Entwurf angelegt. Der Login-Link kann anschließend versendet werden.</p>
+          <div className="employee-wizard-next-actions">
+            <button type="button" className="btn btn--primary" onClick={onClose}>Zur Mitarbeiterliste</button>
+            <button type="button" className="btn btn--ghost">Profil öffnen</button>
+            <button type="button" className="btn btn--ghost">Weitere Person anlegen</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:3000, background:'rgba(20,20,19,0.5)', backdropFilter:'blur(3px)', display:'flex', alignItems:'flex-start', justifyContent:'flex-end' }}>
-      <div onClick={e => e.stopPropagation()} style={{
-        width: 520, height:'100vh', background:'var(--color-ivory)',
-        boxShadow:'-8px 0 40px rgba(0,0,0,0.18)',
-        display:'flex', flexDirection:'column',
-        animation:'slideInRight 220ms cubic-bezier(0.4,0,0.2,1)',
-        overflowY:'auto',
-      }}>
-        {/* Header */}
-        <div style={{ padding:'20px 24px 16px', borderBottom:'1px solid var(--border-1)', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'space-between', background:'var(--color-near-black)', color:'#fff' }}>
+    <div className="employee-wizard-backdrop" onClick={onClose}>
+      <section className="employee-wizard" onClick={e => e.stopPropagation()}>
+        <header className="employee-wizard-head">
           <div>
-            <div style={{ fontFamily:'var(--font-serif)', fontSize:20, fontWeight:500 }}>Neuer Mitarbeiter</div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginTop:2 }}>Pflichtfelder mit * markiert</div>
+            <span>Neuer Mitarbeiter</span>
+            <h2>Mitarbeiter erstellen</h2>
           </div>
-          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'rgba(255,255,255,0.6)', padding:4 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
+          <button type="button" className="employee-wizard-close" onClick={onClose}><Icon name="x" size={18} /></button>
+        </header>
+
+        <nav className="employee-wizard-steps">
+          {steps.map((label, index) => (
+            <button key={label} type="button" className={index === step ? 'is-active' : index < step ? 'is-done' : ''} onClick={() => setStep(index)}>
+              <span>{index + 1}</span>{label}
+            </button>
+          ))}
+        </nav>
+
+        <div className="employee-wizard-body">
+          {step === 0 && (
+            <div className="employee-wizard-grid">
+              <Field label="Vorname" required><Input value={form.vorname} onChange={v => set('vorname', v)} /></Field>
+              <Field label="Nachname" required><Input value={form.nachname} onChange={v => set('nachname', v)} /></Field>
+              <Field label="Personalnummer" required><Input value={form.pn} onChange={v => set('pn', v)} placeholder="z. B. 2044" /></Field>
+              <Field label="Profilbild"><Input value={form.profilbild} onChange={v => set('profilbild', v)} placeholder="Datei auswählen" /></Field>
+              <Field label="Beschreibung"><textarea value={form.beschreibung} onChange={e => set('beschreibung', e.target.value)} /></Field>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div className="employee-wizard-grid">
+              <Field label="Firma" required>
+                <Select value={form.firma} onChange={v => { set('firma', v); set('zugriffFirma', v); }}>
+                  {window.SEED.companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </Select>
+              </Field>
+              <Field label="Abteilung" required>
+                <Select value={form.abteilung} onChange={v => set('abteilung', v)}>
+                  <option value="">Bitte auswählen</option>
+                  {window.SEED.departments.map(d => <option key={d} value={d}>{d}</option>)}
+                </Select>
+              </Field>
+              <Field label="Position" required>
+                <Select value={form.position} onChange={v => set('position', v)}>
+                  <option value="">Bitte auswählen</option>
+                  {positions.map(p => <option key={p} value={p}>{p}</option>)}
+                </Select>
+              </Field>
+              <Field label="Mitarbeitergruppe" required>
+                <Select value={form.gruppe} onChange={v => set('gruppe', v)}>
+                  <option>Angestellte</option><option>Gewerbliche Mitarbeiter</option><option>Azubis</option><option>Geschäftsführer</option>
+                </Select>
+              </Field>
+              <Field label="Beschäftigungsart" required>
+                <Select value={form.beschaeftigung} onChange={v => set('beschaeftigung', v)}>
+                  <option>Festangestellt</option><option>Befristet</option><option>Ausbildung</option><option>Praktikum</option><option>Aushilfe</option>
+                </Select>
+              </Field>
+              <Field label="Vollzeit / Teilzeit" required>
+                <Select value={form.arbeitszeit} onChange={v => set('arbeitszeit', v)}>
+                  <option>Vollzeit</option><option>Teilzeit</option><option>Minijob</option>
+                </Select>
+              </Field>
+              <Field label="Wochenarbeitszeit" required><Input value={form.wochenstunden} onChange={v => set('wochenstunden', v)} placeholder="40" /></Field>
+              <Field label="Eintrittsdatum" required><Input type="date" value={form.eintritt} onChange={v => set('eintritt', v)} /></Field>
+              <Field label="Personalstatus" required>
+                <Select value={form.status} onChange={v => set('status', v)}><option>Aktiv</option><option>Inaktiv</option><option>In Vorbereitung</option><option>Archiviert</option></Select>
+              </Field>
+              <Field label="Direkte Führungskraft" required>
+                <Select value={form.fuehrungskraft} onChange={v => set('fuehrungskraft', v)}>
+                  {managers.map(m => <option key={m}>{m}</option>)}
+                </Select>
+              </Field>
+              <Field label="Standort" required>
+                <Select value={form.standort} onChange={v => set('standort', v)}>
+                  <option>Nordhorn</option><option>Gronau</option><option>Lingen</option><option>Meppen</option><option>Baustelle</option>
+                </Select>
+              </Field>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="employee-wizard-grid">
+              <Field label="Telefon"><Input value={form.telefon} onChange={v => set('telefon', v)} placeholder="+49 ..." /></Field>
+              <Field label="Geschäftliche E-Mail"><Input value={form.email} onChange={v => set('email', v)} placeholder="vorname.nachname@janning-gruppe.de" /></Field>
+              <Field label="Adresse"><textarea value={form.adresse} onChange={e => set('adresse', e.target.value)} /></Field>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="employee-wizard-grid">
+              <label className="employee-wizard-switch">
+                <input type="checkbox" checked={form.kontoErstellen} onChange={e => set('kontoErstellen', e.target.checked)} />
+                <span>Benutzerkonto erstellen</span>
+              </label>
+              {form.kontoErstellen && (
+                <>
+                  <Field label="Geschäftliche E-Mail" required><Input value={form.email} onChange={v => set('email', v)} /></Field>
+                  <Field label="Benutzername" required><Input value={form.benutzername} onChange={v => set('benutzername', v)} placeholder="vorname.nachname" /></Field>
+                  <Field label="Benutzerrolle" required>
+                    <Select value={form.rolle} onChange={v => set('rolle', v)}>
+                      <option>Mitarbeiter</option><option>Bauleiter</option><option>Verwaltung</option><option>Geschäftsführer</option><option>Admin</option>
+                    </Select>
+                  </Field>
+                  <Field label="Zugriff auf Firma" required>
+                    <Select value={form.zugriffFirma} onChange={v => set('zugriffFirma', v)}>
+                      {window.SEED.companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </Select>
+                  </Field>
+                  <Field label="Kontostatus" required>
+                    <Select value={form.kontostatus} onChange={v => set('kontostatus', v)}><option>Aktiv</option><option>Gesperrt</option><option>Einladung ausstehend</option></Select>
+                  </Field>
+                  <label className="employee-wizard-switch">
+                    <input type="checkbox" checked={form.loginLink} onChange={e => set('loginLink', e.target.checked)} />
+                    <span>Login-Link nach Erstellung senden. Kein Passwort durch Admin vergeben.</span>
+                  </label>
+                </>
+              )}
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="employee-wizard-summary">
+              <h3>Zusammenfassung</h3>
+              <dl>
+                <div><dt>Name</dt><dd>{form.vorname || '-'} {form.nachname || ''}</dd></div>
+                <div><dt>Personalnummer</dt><dd>{form.pn || '-'}</dd></div>
+                <div><dt>Firma</dt><dd>{window.company(form.firma)?.name || '-'}</dd></div>
+                <div><dt>Position</dt><dd>{form.position || '-'}</dd></div>
+                <div><dt>Gruppe</dt><dd>{form.gruppe}</dd></div>
+                <div><dt>Systemzugang</dt><dd>{form.kontoErstellen ? `${form.rolle}, ${form.kontostatus}` : 'Kein Konto'}</dd></div>
+              </dl>
+              <label className="employee-wizard-confirm">
+                <input type="checkbox" checked={confirm} onChange={e => setConfirm(e.target.checked)} />
+                <span>Ich habe die Angaben geprüft und möchte den Mitarbeiter erstellen.</span>
+              </label>
+            </div>
+          )}
         </div>
 
-        {saved ? (
-          <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:16, padding:40 }}>
-            <div style={{ width:60, height:60, borderRadius:'50%', background:'#eff5ed', border:'1px solid #cde1cf', display:'flex', alignItems:'center', justifyContent:'center', fontSize:26 }}>âœ“</div>
-            <div style={{ fontFamily:'var(--font-serif)', fontSize:20, fontWeight:500, color:'#3f7a4a', textAlign:'center' }}>Mitarbeiter wurde gespeichert</div>
-            <div style={{ fontSize:13, color:'var(--fg-3)' }}>{form.vorname} {form.nachname} wurde erfolgreich angelegt.</div>
-          </div>
-        ) : (
-          <div style={{ flex:1, padding:'20px 24px 100px', overflowY:'auto' }}>
-
-            {/* Foto */}
-            <div style={{ display:'flex', alignItems:'center', gap:16, marginBottom:8 }}>
-              <div style={{ width:72, height:72, borderRadius:'50%', background: photoPreview ? 'transparent' : 'var(--color-warm-sand)', border:'2px dashed var(--border-2)', display:'flex', alignItems:'center', justifyContent:'center', overflow:'hidden', flexShrink:0, cursor:'pointer' }}
-                onClick={() => document.getElementById('emp-foto-input').click()}>
-                {photoPreview
-                  ? <img src={photoPreview} alt="Foto" style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-                  : <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--fg-3)" strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
-                }
-              </div>
-              <div>
-                <button onClick={() => document.getElementById('emp-foto-input').click()} className="btn btn--ghost" style={{ fontSize:12 }}>
-                  <Icon name="upload" size={12} /> Foto hochladen
-                </button>
-                <div style={{ fontSize:11, color:'var(--fg-3)', marginTop:4 }}>JPG, PNG Â· max 5 MB</div>
-              </div>
-              <input id="emp-foto-input" type="file" accept="image/*" style={{ display:'none' }} onChange={handlePhoto} />
-            </div>
-
-            {/* PersÃ¶nliche Daten */}
-            <SectionHead>ðŸ‘¤ PersÃ¶nliche Daten</SectionHead>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-              <Field label="Vorname" required err={errors.vorname}>
-                <input value={form.vorname} onChange={e=>set('vorname',e.target.value)} style={errors.vorname ? inpErr : inp}
-                  onFocus={e=>e.target.style.borderColor='var(--color-accent)'} onBlur={e=>e.target.style.borderColor=errors.vorname?'#eac8c2':'var(--border-1)'} />
-              </Field>
-              <Field label="Nachname" required err={errors.nachname}>
-                <input value={form.nachname} onChange={e=>set('nachname',e.target.value)} style={errors.nachname ? inpErr : inp}
-                  onFocus={e=>e.target.style.borderColor='var(--color-accent)'} onBlur={e=>e.target.style.borderColor=errors.nachname?'#eac8c2':'var(--border-1)'} />
-              </Field>
-            </div>
-            <Field label="Personalnummer (PN)" required err={errors.pn}>
-              <input value={form.pn} onChange={e=>set('pn',e.target.value)} placeholder="z. B. 2039" style={errors.pn ? inpErr : inp}
-                onFocus={e=>e.target.style.borderColor='var(--color-accent)'} onBlur={e=>e.target.style.borderColor=errors.pn?'#eac8c2':'var(--border-1)'} />
-            </Field>
-
-            {/* Unternehmensdaten */}
-            <SectionHead>ðŸ¢ Unternehmensdaten</SectionHead>
-            <Field label="Firma" required err={errors.firma}>
-              <select value={form.firma} onChange={e=>set('firma',e.target.value)} style={errors.firma ? {...inpErr, cursor:'pointer'} : {...inp, cursor:'pointer'}}>
-                <option value="">â€” auswÃ¤hlen â€”</option>
-                {window.SEED.companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </Field>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-              <Field label="Abteilung">
-                <select value={form.abteilung} onChange={e=>set('abteilung',e.target.value)} style={{...inp, cursor:'pointer'}}>
-                  <option value="">â€” auswÃ¤hlen â€”</option>
-                  {window.SEED.departments.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
-              </Field>
-              <Field label="Position">
-                <select value={form.position} onChange={e=>set('position',e.target.value)} style={{...inp, cursor:'pointer'}}>
-                  <option value="">â€” auswÃ¤hlen â€”</option>
-                  {positions.map(p => <option key={p} value={p}>{p}</option>)}
-                </select>
-              </Field>
-            </div>
-            <Field label="Eintrittsdatum">
-              <input type="date" value={form.eintritt} onChange={e=>set('eintritt',e.target.value)} style={inp}
-                onFocus={e=>e.target.style.borderColor='var(--color-accent)'} onBlur={e=>e.target.style.borderColor='var(--border-1)'} />
-            </Field>
-
-            {/* Kontakt */}
-            <SectionHead>ðŸ“ž Kontakt</SectionHead>
-            <Field label="E-Mail" required err={errors.email}>
-              <input type="email" value={form.email} onChange={e=>set('email',e.target.value)} placeholder="vorname.nachname@janning-gruppe.de" style={errors.email ? inpErr : inp}
-                onFocus={e=>e.target.style.borderColor='var(--color-accent)'} onBlur={e=>e.target.style.borderColor=errors.email?'#eac8c2':'var(--border-1)'} />
-            </Field>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-              <Field label="Telefon">
-                <input type="tel" value={form.telefon} onChange={e=>set('telefon',e.target.value)} placeholder="+49 5921 â€¦" style={inp}
-                  onFocus={e=>e.target.style.borderColor='var(--color-accent)'} onBlur={e=>e.target.style.borderColor='var(--border-1)'} />
-              </Field>
-              <Field label="Adresse">
-                <input value={form.adresse} onChange={e=>set('adresse',e.target.value)} placeholder="StraÃŸe, PLZ Ort" style={inp}
-                  onFocus={e=>e.target.style.borderColor='var(--color-accent)'} onBlur={e=>e.target.style.borderColor='var(--border-1)'} />
-              </Field>
-            </div>
-
-            {/* Zugang & Status */}
-            <SectionHead>ðŸ” Zugang &amp; Status</SectionHead>
-            <Field label="Passwort" required err={errors.passwort}>
-              <input type="password" value={form.passwort} onChange={e=>set('passwort',e.target.value)} placeholder="Mindestens 8 Zeichen" style={errors.passwort ? inpErr : inp}
-                onFocus={e=>e.target.style.borderColor='var(--color-accent)'} onBlur={e=>e.target.style.borderColor=errors.passwort?'#eac8c2':'var(--border-1)'} />
-              {form.passwort && (
-                <div style={{ marginTop:5, display:'flex', gap:4 }}>
-                  {[...Array(4)].map((_,i) => (
-                    <div key={i} style={{ flex:1, height:3, borderRadius:99, background: form.passwort.length >= (i+1)*2 ? (form.passwort.length >= 8 ? '#5f9268' : '#c89b3f') : 'var(--color-warm-sand)' }} />
-                  ))}
-                  <span style={{ fontSize:10.5, color: form.passwort.length >= 8 ? '#3f7a4a' : '#8a6a1f', marginLeft:6, whiteSpace:'nowrap' }}>
-                    {form.passwort.length >= 8 ? 'Stark' : 'Zu kurz'}
-                  </span>
-                </div>
-              )}
-            </Field>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-              <Field label="Rolle">
-                <select value={form.rolle} onChange={e=>set('rolle',e.target.value)} style={{...inp, cursor:'pointer'}}>
-                  <option value="mitarbeiter">Mitarbeiter</option>
-                  <option value="bauleiter">Bauleiter</option>
-                  <option value="geschaeftsfuehrer">GeschÃ¤ftsfÃ¼hrer</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </Field>
-              <Field label="Status">
-                <div style={{ display:'flex', gap:8, paddingTop:4 }}>
-                  {[['aktiv','Aktiv','#3f7a4a','#eff5ed'],['inaktiv','Inaktiv','#a13232','#fbecea']].map(([val,label,color,bg]) => (
-                    <button key={val} onClick={() => set('status', val)} style={{
-                      flex:1, padding:'8px 0', fontSize:13, fontWeight:500, borderRadius:8,
-                      border:'1px solid '+(form.status===val ? color : 'var(--border-1)'),
-                      background: form.status===val ? bg : 'transparent',
-                      color: form.status===val ? color : 'var(--fg-2)',
-                      cursor:'pointer', fontFamily:'inherit', transition:'all 120ms',
-                    }}>{label}</button>
-                  ))}
-                </div>
-              </Field>
-            </div>
-          </div>
-        )}
-
-        {/* Footer */}
-        {!saved && (
-          <div style={{ position:'sticky', bottom:0, padding:'16px 24px', borderTop:'1px solid var(--border-1)', background:'var(--color-ivory)', display:'flex', gap:10, flexShrink:0 }}>
-            <button onClick={submit} className="btn btn--primary" style={{ flex:1, justifyContent:'center', fontSize:14 }}>
-              Speichern
-            </button>
-            <button onClick={onClose} className="btn btn--ghost" style={{ flex:1, justifyContent:'center', fontSize:14 }}>
-              Abbrechen
-            </button>
-          </div>
-        )}
-      </div>
+        <footer className="employee-wizard-foot">
+          <button type="button" className="btn btn--ghost" onClick={step === 0 ? onClose : () => setStep(step - 1)}>{step === 0 ? 'Abbrechen' : 'Zurück'}</button>
+          {step < steps.length - 1 ? (
+            <button type="button" className="btn btn--primary" disabled={!canContinue} onClick={next}>Weiter</button>
+          ) : (
+            <button type="button" className="btn btn--primary" disabled={!confirm} onClick={create}>Mitarbeiter erstellen</button>
+          )}
+        </footer>
+      </section>
     </div>
   );
 }

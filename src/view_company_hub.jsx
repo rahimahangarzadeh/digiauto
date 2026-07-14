@@ -861,6 +861,18 @@ function CompanySiteDetailPage({ site, onBack }) {
   const ready = missing === 0;
   const allEmployees = (window.SEED?.employees || []).filter(employee => employee.status === 'aktiv');
   const siteEmployees = allEmployees.filter(employee => siteEmployeeIds.includes(employee.id));
+  const assignmentFor = (employee, index) => {
+    const roles = ['Bauleiter', 'Vorarbeiter', 'Polier', 'Kolonnenführer', 'Ersthelfer', 'Sicherheitsbeauftragter', 'Geräteführer', 'Mitarbeiter', 'Vertretung'];
+    const releases = ['Vollständiger Baustellenbereich sichtbar', 'Für Mitarbeiter freigegeben', 'Nicht freigegeben', 'Stammdaten und Dokumente sichtbar', 'Nur Stammdaten sichtbar'];
+    return {
+      role: roles[index % roles.length],
+      start: index < 3 ? '15.04.2026' : '20.04.2026',
+      end: index < 6 ? '28.06.2026' : '20.06.2026',
+      crew: index < 5 ? 'Kolonne A' : 'Kolonne B',
+      release: index === 0 ? releases[0] : index === 1 ? releases[1] : index === 2 ? releases[2] : releases[index % releases.length],
+      remark: index === 2 ? 'Portal noch nicht freigegeben.' : employee.position,
+    };
+  };
   const teamCandidates = allEmployees
     .filter(employee => teamCompanyFilter === 'all' || employee.company === teamCompanyFilter)
     .filter(employee => {
@@ -952,19 +964,22 @@ function CompanySiteDetailPage({ site, onBack }) {
         </div>
         <div className="company-site-team-list">
           <table>
-            <thead><tr><th>Auswahl</th><th>Name Mitarbeiter</th><th>Firma</th><th>Position</th><th>Abteilung</th></tr></thead>
+            <thead><tr><th>Auswahl</th><th>Name Mitarbeiter</th><th>Firma</th><th>Position</th><th>Abteilung</th><th>Rolle</th><th>Portal-Freigabe</th></tr></thead>
             <tbody>
               {teamCandidates.map(employee => {
                 const checked = teamDraftIds.includes(employee.id);
+                const assignment = assignmentFor(employee, teamDraftIds.indexOf(employee.id) >= 0 ? teamDraftIds.indexOf(employee.id) : 0);
                 return <tr key={employee.id} className={checked ? 'is-selected' : ''} onClick={() => toggleTeamDraft(employee.id)}>
                   <td><input type="checkbox" checked={checked} readOnly /></td>
                   <td><strong>{employee.name}</strong><small>PN {employee.personalNr}</small></td>
                   <td>{window.company(employee.company)?.name || employee.company}</td>
                   <td>{employee.position}</td>
                   <td>{employee.department}</td>
+                  <td>{checked ? assignment.role : '-'}</td>
+                  <td>{checked ? assignment.release : '-'}</td>
                 </tr>;
               })}
-              {teamCandidates.length === 0 && <tr><td colSpan="5" className="company-site-team-empty">Keine Mitarbeiter gefunden.</td></tr>}
+              {teamCandidates.length === 0 && <tr><td colSpan="7" className="company-site-team-empty">Keine Mitarbeiter gefunden.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -996,21 +1011,27 @@ function CompanySiteDetailPage({ site, onBack }) {
       <div className="company-site-card-head"><div><div className="card__title">Mitarbeiter der Baustelle</div><div className="card__sub">{siteEmployees.length} Mitarbeiter im Projekt</div></div><button className="btn btn--ghost" onClick={openTeamEditor}><Icon name="edit" size={14} />Liste bearbeiten</button></div>
       <div className="company-site-personal-wrap">
         <table className="company-site-personal-table">
-          <thead><tr><th>Mitarbeiter</th><th>SCC 016</th><th>SCC 017 / 018</th><th>Erste Hilfe</th><th>MVAS 99</th><th>GW 129</th><th>Geraetefuehrer</th><th>Freigabe Portal</th></tr></thead>
+          <thead><tr><th>Mitarbeiter</th><th>Rolle</th><th>Einsatzbeginn</th><th>Einsatzende</th><th>Kolonne / Arbeitsgruppe</th><th>SCC 016</th><th>SCC 017 / 018</th><th>Erste Hilfe</th><th>MVAS 99</th><th>GW 129</th><th>Geraetefuehrer</th><th>Portal-Freigabe</th><th>Bemerkung</th></tr></thead>
           <tbody>{siteEmployees.map((employee, index) => {
             const allOk = ready || index < Math.max(2, siteEmployees.length - 1);
             const deviceTypes = ['Bagger', 'Minibagger', 'Teleskopstapler', 'Personenkraftwagen'];
             const Check = ({ ok }) => ok ? <input className="company-site-check" type="checkbox" checked readOnly /> : <span className="company-site-dash">-</span>;
-            const released = index === 0;
+            const assignment = assignmentFor(employee, index);
+            const released = !assignment.release.startsWith('Nicht');
             return <tr key={employee.id}>
               <td><strong>{employee.name}</strong><small>{window.company(employee.company)?.short || employee.company} - {employee.position}</small></td>
+              <td>{assignment.role}</td>
+              <td>{assignment.start}</td>
+              <td>{assignment.end}</td>
+              <td>{assignment.crew}</td>
               <td><Check ok={allOk || index % 2 === 0} /></td>
               <td><Check ok={allOk || index % 3 !== 0} /></td>
               <td><Check ok={allOk || index % 2 !== 0} /></td>
               <td><Check ok={allOk || index % 4 !== 0} /></td>
               <td><Check ok={allOk || index % 3 === 0} /></td>
               <td>{index < 4 ? <span className="badge"><span className="badge__dot" />{deviceTypes[index % deviceTypes.length]}</span> : <span className="company-site-dash">-</span>}</td>
-              <td><label className="company-site-release"><input type="checkbox" checked={released} readOnly /><span className={'badge ' + (released ? 'badge--valid' : '')}><span className="badge__dot" />{released ? 'Freigegeben' : 'Nicht frei'}</span></label></td>
+              <td><label className="company-site-release"><input type="checkbox" checked={released} readOnly /><span className={'badge ' + (released ? 'badge--valid' : 'badge--warn')}><span className="badge__dot" />{assignment.release}</span></label></td>
+              <td>{assignment.remark}</td>
             </tr>;
           })}</tbody>
         </table>

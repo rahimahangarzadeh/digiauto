@@ -1536,16 +1536,17 @@ function EmployeeEquipmentCheckRecord({emp,record,onBack}) {
   </div>;
 }
 
-function employeeSiteRecords() {
+function employeeSiteRecords(emp) {
+  const companyName = window.company(emp.company)?.name || emp.company;
   return [
-    {id:'site-1',name:'Baustelle Alex Barum',company:'Janning Tiefbau GmbH',projectNr:'BAU-2026-014',client:'Stadt Nordhorn',manager:'Alexander Petersen',foreman:'Markus Brinker',address:'Lingener Straße 42, 48529 Nordhorn',employees:10,firstAiders:'Markus Brinker, Tobias Nowak, Ralf Kowalski',released:true,history:4,description:'Kanalsanierung Nordhorn mit Tiefbau-, Rohrbau- und Wiederherstellungsarbeiten.',document:'Baustelle_Alex_Barum.pdf'},
-    {id:'site-2',name:'Rohrgraben Suedring',company:'Janning Rohrbau GmbH',projectNr:'BAU-2026-021',client:'Wasserverband Nordhorn',manager:'Stefan Mueller',foreman:'Thomas Wegener',address:'Südring 18, 48527 Nordhorn',employees:8,firstAiders:'Thomas Wegener, Dirk Jürgens',released:true,history:3,description:'Hausanschlüsse und Rohrleitungsarbeiten am Südring.',document:'Rohrgraben_Suedring.pdf'},
-    {id:'site-3',name:'Bohrung Gewerbepark',company:'Janning Bohrtechnik GmbH',projectNr:'BAU-2026-028',client:'Gewerbepark Bentheim GmbH',manager:'Dirk Berg',foreman:'Mehmet Brinker',address:'Industriestraße 7, 48455 Bad Bentheim',employees:6,firstAiders:'Mehmet Brinker',released:false,history:2,description:'Horizontalbohrung und Leitungsverlegung im Gewerbepark.',document:'Bohrung_Gewerbepark.pdf'},
-  ];
+    {id:'site-1',name:'Baustelle Alex Barum',projectName:'Kanalsanierung Nordhorn',company:'Janning Tiefbau GmbH',projectNr:'BAU-2026-014',client:'Stadt Nordhorn',manager:'Alexander Petersen',foreman:'Markus Brinker',address:'Lingener Straße 42, 48529 Nordhorn',ownRole:'Mitarbeiter',period:'15.04.2026 - 28.06.2026',releaseLevel:'Vollständiger Baustellenbereich sichtbar',released:true,documents:'Alarmplan, Baustellenaushang, Unterweisung',description:'Kanalsanierung Nordhorn mit Tiefbau-, Rohrbau- und Wiederherstellungsarbeiten.',document:'Baustelle_Alex_Barum.pdf',visibleFor:['all']},
+    {id:'site-2',name:'Rohrgraben Suedring',projectName:'Hausanschlüsse Suedring',company:'Janning Rohrbau GmbH',projectNr:'BAU-2026-021',client:'Wasserverband Nordhorn',manager:'Stefan Mueller',foreman:'Thomas Wegener',address:'Südring 18, 48527 Nordhorn',ownRole:'Geräteführer',period:'20.05.2026 - 10.07.2026',releaseLevel:'Stammdaten und Dokumente sichtbar',released:true,documents:'Alarmplan, Baustellenaushang',description:'Hausanschlüsse und Rohrleitungsarbeiten am Südring.',document:'Rohrgraben_Suedring.pdf',visibleFor:['rohrbau','all']},
+    {id:'site-3',name:'Bohrung Gewerbepark',projectName:'Horizontalbohrung Gewerbepark',company:'Janning Bohrtechnik GmbH',projectNr:'BAU-2026-028',client:'Gewerbepark Bentheim GmbH',manager:'Dirk Berg',foreman:'Mehmet Brinker',address:'Industriestraße 7, 48455 Bad Bentheim',ownRole:'Mitarbeiter',period:'03.02.2026 - 30.04.2026',releaseLevel:'Nicht freigegeben',released:false,documents:'-',description:'Horizontalbohrung und Leitungsverlegung im Gewerbepark.',document:'Bohrung_Gewerbepark.pdf',visibleFor:[]},
+  ].filter(row => row.released && (row.visibleFor.includes('all') || row.visibleFor.includes(emp.company) || row.company === companyName));
 }
 
 function EmployeeSiteArea({emp,onBack,onOpen}) {
-  const records=React.useMemo(()=>employeeSiteRecords(),[]);
+  const records=React.useMemo(()=>employeeSiteRecords(emp),[emp]);
   const [selected,setSelected]=React.useState(new Set());
   const [sort,setSort]=React.useState({key:'name',dir:'asc'});
   const [menu,setMenu]=React.useState(null);
@@ -1553,18 +1554,18 @@ function EmployeeSiteArea({emp,onBack,onOpen}) {
   const value=(row,key)=>key==='history'?row.history:row[key];
   const rows=[...records].sort((a,b)=>(sort.dir==='asc'?1:-1)*String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
   const toggle=id=>setSelected(current=>{const next=new Set(current);next.has(id)?next.delete(id):next.add(id);return next;});
-  const columns=[['name','Baustelle / Projektname'],['company','Firma'],['projectNr','Projekt-Nr.'],['client','Auftraggeber'],['manager','Bauleiter'],['foreman','Vorarbeiter'],['address','Adresse'],['employees','Anzahl Mitarbeiter'],['firstAiders','Name Ersthelfer'],['released','Freigabe für Mitarbeiter'],['history','Versionshistorie'],['description','Beschreibung'],['document','Dokument']];
+  const columns=[['name','Baustelle / Projektname'],['company','Firma'],['projectNr','Projekt-Nr.'],['client','Auftraggeber'],['manager','Bauleiter'],['foreman','Vorarbeiter'],['address','Adresse'],['ownRole','Eigene Rolle'],['period','Einsatzzeitraum'],['releaseLevel','Freigabe'],['documents','Dokumente']];
   return <div className="emp-full">
     <EmpPageTitle title={`Baustellen (${emp.name})`} onBack={onBack}/>
     <div className="emp-training-tabs"><button className="is-active">Alle {records.length}</button>{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}</div>
-    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14}/>Als Excel exportieren</button><button><Icon name="edit" size={14}/>Freigabe ändern</button><button className="is-danger"><Icon name="trash" size={14}/>Löschen</button></div>}
+    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="eye" size={14}/>Freigegebene Dokumente ansehen</button><button><Icon name="download" size={14}/>Dokumente herunterladen</button></div>}
     <div className="emp-table-wrap"><table className="emp-site-table">
       <thead><tr><th className="emp-check"><input type="checkbox" checked={selected.size===records.length} onChange={()=>setSelected(selected.size===records.length?new Set():new Set(records.map(row=>row.id)))}/></th>
         {columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>Aufsteigend sortieren</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Absteigend sortieren</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Nach „{label}“ gruppieren</button><button onClick={()=>setMenu(null)}>Spaltenfilter öffnen</button></div>}</th>)}
       </tr></thead>
-      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan="14">{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
+      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan={columns.length+1}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
         <tr onClick={()=>onOpen(row)}><td className="emp-check" onClick={event=>event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={()=>toggle(row.id)}/></td>
-          <td><strong>{row.name}</strong></td><td>{row.company}</td><td>{row.projectNr}</td><td>{row.client}</td><td>{row.manager}</td><td>{row.foreman}</td><td>{row.address}</td><td>{row.employees}</td><td className="emp-ellipsis">{row.firstAiders}</td><td className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</td><td><span className="emp-version-chip"><Icon name="history" size={13}/>{row.history} Versionen</span></td><td className="emp-ellipsis">{row.description}</td><td><span className="emp-doc-count"><Icon name="doc" size={13}/>1</span></td>
+          <td><strong>{row.name}</strong><small>{row.projectName}</small></td><td>{row.company}</td><td>{row.projectNr}</td><td>{row.client}</td><td>{row.manager}</td><td>{row.foreman}</td><td>{row.address}</td><td>{row.ownRole}</td><td>{row.period}</td><td><span className="badge badge--valid"><span className="badge__dot" />{row.releaseLevel}</span></td><td><span className="emp-doc-count"><Icon name="doc" size={13}/>{row.documents}</span></td>
         </tr></React.Fragment>)}</tbody>
     </table></div>
   </div>;
@@ -1576,23 +1577,22 @@ function EmployeeSiteRecord({emp,record,onBack}) {
   const [form,setForm]=React.useState({...record});
   const set=(key,value)=>setForm(current=>({...current,[key]:value}));
   return <div className="emp-full emp-training-record-page">
-    <EmpPageTitle title={`${record.name} (${emp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
+    <EmpPageTitle title={`${record.name} (${emp.name})`} onBack={onBack}/>
     <section className="emp-training-record-card"><header className="emp-training-record-hero"><span className="emp-training-record-icon emp-site-record-icon"><Icon name="building" size={27}/></span><div><span>Baustelle / Projekt</span><h2>{form.name}</h2></div><span className="emp-status is-valid">Aktiv</span></header>
       <div className="emp-training-record-grid">
-        <TrainingRecordField label="Baustelle / Projektname" icon="building" editing={editing} value={form.name}><input value={form.name} onChange={e=>set('name',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Firma" icon="building" editing={editing} value={form.company}><input value={form.company} onChange={e=>set('company',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Projekt-Nr." icon="doc" editing={editing} value={form.projectNr}><input value={form.projectNr} onChange={e=>set('projectNr',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Auftraggeber" icon="users" editing={editing} value={form.client}><input value={form.client} onChange={e=>set('client',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Bauleiter" icon="users" editing={editing} value={form.manager}><input value={form.manager} onChange={e=>set('manager',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Vorarbeiter" icon="users" editing={editing} value={form.foreman}><input value={form.foreman} onChange={e=>set('foreman',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Adresse" icon="pin" editing={editing} value={form.address}><input value={form.address} onChange={e=>set('address',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Anzahl Mitarbeiter" icon="users" editing={editing} value={form.employees}><input type="number" value={form.employees} onChange={e=>set('employees',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Name Ersthelfer" icon="shield" editing={editing} value={form.firstAiders} wide><textarea rows="3" value={form.firstAiders} onChange={e=>set('firstAiders',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Freigegeben durch Arbeitgeber" icon="users" editing={editing} value={form.released?'Freigegeben':'Nicht freigegeben'}><label className="emp-check-label"><input type="checkbox" checked={form.released} onChange={e=>set('released',e.target.checked)}/>Freigegeben</label></TrainingRecordField>
-        <TrainingRecordField label="Versionshistorie" icon="history" value={`${form.history} Versionen`}/>
-        <TrainingRecordField label="Beschreibung" icon="doc" editing={editing} value={form.description} wide><textarea rows="4" value={form.description} onChange={e=>set('description',e.target.value)}/></TrainingRecordField>
-        <div className="emp-training-record-field is-wide emp-training-record-docs"><Icon name="link" size={20}/><div><label>Dokumente</label><div className="emp-file-list">{docs.map(doc=><span className="emp-file-chip" key={doc}><Icon name="doc" size={14}/><span>{doc}</span><button onClick={()=>setDocs(list=>list.filter(item=>item!==doc))}><Icon name="x" size={13}/></button></span>)}</div><label className="emp-training-add-file"><Icon name="plus" size={15}/>Dokument hinzufügen<input type="file" multiple onChange={e=>setDocs(old=>[...old,...Array.from(e.target.files||[]).map(file=>file.name)])}/></label></div></div>
-      </div>{editing&&<footer className="emp-training-record-footer"><button className="btn btn--ghost" onClick={()=>setEditing(false)}>Abbrechen</button><button className="btn btn--primary" onClick={()=>setEditing(false)}>Speichern</button></footer>}
+        <TrainingRecordField label="Baustelle / Projektname" icon="building" value={form.name}/>
+        <TrainingRecordField label="Firma" icon="building" value={form.company}/>
+        <TrainingRecordField label="Projekt-Nr." icon="doc" value={form.projectNr}/>
+        <TrainingRecordField label="Auftraggeber" icon="users" value={form.client}/>
+        <TrainingRecordField label="Bauleiter" icon="users" value={form.manager}/>
+        <TrainingRecordField label="Vorarbeiter" icon="users" value={form.foreman}/>
+        <TrainingRecordField label="Adresse" icon="pin" value={form.address}/>
+        <TrainingRecordField label="Eigene Rolle" icon="users" value={form.ownRole}/>
+        <TrainingRecordField label="Einsatzzeitraum" icon="cal" value={form.period}/>
+        <TrainingRecordField label="Freigabe" icon="shield" value={form.releaseLevel}/>
+        <TrainingRecordField label="Beschreibung" icon="doc" value={form.description} wide/>
+        <div className="emp-training-record-field is-wide emp-training-record-docs"><Icon name="link" size={20}/><div><label>Freigegebene Dokumente</label><div className="emp-file-list">{docs.map(doc=><span className="emp-file-chip" key={doc}><Icon name="doc" size={14}/><span>{doc}</span></span>)}</div></div></div>
+      </div>
     </section>
   </div>;
 }

@@ -9447,11 +9447,13 @@ a.subtle:hover { text-decoration: underline; }
 .company-site-doc-chip{max-width:190px;min-height:34px;padding:0 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .company-site-personal-card{width:100%;max-width:none}
 .company-site-personal-wrap{overflow:auto;border:1px solid var(--border-1);border-radius:8px;background:var(--color-ivory)}
-.company-site-personal-table{min-width:980px;width:100%;border-collapse:collapse}
+.company-site-personal-table{min-width:1680px;width:100%;border-collapse:collapse}
 .company-site-personal-table th,.company-site-personal-table td{border-bottom:1px solid var(--border-1);padding:12px 14px;text-align:left;vertical-align:middle;font-size:12px;color:var(--fg-2)}
 .company-site-personal-table th{background:var(--color-parchment);color:var(--fg-3);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;white-space:nowrap}
 .company-site-personal-table th:not(:first-child),.company-site-personal-table td:not(:first-child){text-align:center}
 .company-site-personal-table th:first-child,.company-site-personal-table td:first-child{width:230px;text-align:left}
+.company-site-personal-table th:nth-child(12),.company-site-personal-table td:nth-child(12){min-width:220px;text-align:left}
+.company-site-personal-table th:nth-child(13),.company-site-personal-table td:nth-child(13){min-width:170px;text-align:left}
 .company-site-personal-table td strong{display:block;color:var(--fg-1);font-weight:800;font-size:13px}
 .company-site-personal-table td small{display:block;margin-top:4px;color:var(--fg-3);font-size:11px}
 .company-site-check{width:16px;height:16px;accent-color:#1a73e8;cursor:default}
@@ -9469,7 +9471,7 @@ a.subtle:hover { text-decoration: underline; }
 .company-site-team-filters span{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;color:var(--fg-3)}
 .company-site-team-filters select,.company-site-team-filters input{height:38px;border:1px solid var(--border-1);border-radius:8px;background:var(--color-white);color:var(--fg-1);font:inherit;font-size:13px;padding:0 12px}
 .company-site-team-list{overflow:auto;background:var(--color-ivory)}
-.company-site-team-list table{width:100%;min-width:860px;border-collapse:collapse}
+.company-site-team-list table{width:100%;min-width:1180px;border-collapse:collapse}
 .company-site-team-list th,.company-site-team-list td{border-bottom:1px solid var(--border-1);padding:12px 14px;text-align:left;font-size:12px;color:var(--fg-2);vertical-align:middle}
 .company-site-team-list th{background:var(--color-parchment);color:var(--fg-3);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.35px;white-space:nowrap}
 .company-site-team-list tr{cursor:pointer}

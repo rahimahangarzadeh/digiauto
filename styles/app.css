@@ -10197,7 +10197,20 @@ a.subtle:hover { text-decoration: underline; }
 .license-upload-list button:disabled{opacity:.45;cursor:not-allowed}
 .license-upload-list strong{display:block;font-size:12px}.license-upload-list small{display:block;margin-top:3px;color:#6f7480;font-size:10.5px}
 .license-flow>footer{display:flex;justify-content:flex-end;gap:10px;padding:14px 24px;border-top:1px solid var(--border-1);background:#fff}
+.document-submit-flow{width:min(980px,96vw)}
+.document-submit-body{min-height:0;overflow:auto;display:grid;gap:14px;padding:20px 24px}
+.document-submit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.document-submit-field{display:grid;gap:6px;margin-top:10px}
+.document-submit-field:first-child{margin-top:0}
+.document-submit-field span{color:#6f7480;font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase}
+.document-submit-field input,.document-submit-field select,.document-submit-note{width:100%;box-sizing:border-box;border:1px solid var(--border-1);border-radius:7px;background:#fff;padding:10px 11px;color:#111;font:inherit;font-size:12px}
+.document-submit-note{min-height:86px;resize:vertical}
+.document-submit-meta{display:grid;gap:6px;margin-top:12px;border:1px solid #eadfd5;border-radius:7px;background:#fffaf6;padding:10px;color:#6f5c50;font-size:11px;font-weight:650}
+.document-submit-success{display:grid;grid-template-columns:24px minmax(0,1fr);align-items:center;gap:8px;border:1px solid #cde1cf;border-radius:8px;background:#eff8f1;padding:12px;color:#2f7040}
+.document-submit-success svg{grid-row:1 / span 2}
+.document-submit-success strong{font-size:12px}.document-submit-success span{color:#3f7a4a;font-size:11px}
 @media(max-width:900px){.license-flow__body{grid-template-columns:1fr}.license-flow>header h2{font-size:28px}}
+@media(max-width:760px){.document-submit-grid{grid-template-columns:1fr}}
 @media(max-width:1250px){.message-center__grid{grid-template-columns:280px minmax(430px,1fr)}.message-center__right{grid-column:1/-1;grid-template-columns:1fr 1fr}}
 @media(max-width:1250px){.message-group-send{grid-template-columns:1fr}.message-group-options{grid-template-columns:repeat(2,minmax(180px,1fr))}.message-group-send footer{justify-content:flex-end}}
 @media(max-width:820px){.message-center__grid{grid-template-columns:1fr}.message-center__right{grid-template-columns:1fr}.message-bubble{max-width:82%}.message-group-options{grid-template-columns:1fr}}

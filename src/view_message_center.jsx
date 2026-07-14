@@ -3,7 +3,7 @@
 function MessageCenterView() {
   const [activeChat, setActiveChat] = React.useState('angestellte');
   const [targetGroup, setTargetGroup] = React.useState('angestellte');
-  const [licenseFlowOpen, setLicenseFlowOpen] = React.useState(false);
+  const [uploadFlow, setUploadFlow] = React.useState(null);
   const chats = [
     { id:'angestellte', name:'Angestellte', preview:'Neue Arbeitskleidung ab naechster Woche...', time:'09:24', unread:8, members:23, tone:'blue', sent:'Guten Morgen zusammen, ab naechster Woche gibt es neue Arbeitskleidung. Weitere Infos folgen.', replyName:'Julia Meier', replyInitial:'JM', reply:'Wann bekommen wir die genau?', reply2Name:'Markus Weber', reply2Initial:'MW', reply2:'Alles klar, danke.', answer:'Die Ausgabe ist am Montag um 08:00 Uhr im Lager.' },
     { id:'gewerbliche', name:'Gewerbliche Mitarbeiter', preview:'Baustelle Nordhorn: Uhrzeiten wurden angepasst...', time:'08:18', unread:3, members:38, tone:'green', sent:'Kurze Info: Die Startzeit auf der Baustelle Nordhorn ist morgen 07:00 Uhr.', replyName:'Dirk Juergens', replyInitial:'DJ', reply:'Ist die Verkehrssicherung dann schon vor Ort?', reply2Name:'Tobias Nowak', reply2Initial:'TN', reply2:'Ich gebe das an mein Team weiter.', answer:'Ja, Verkehrssicherung ist ab 06:30 Uhr eingeplant.' },
@@ -101,7 +101,7 @@ function MessageCenterView() {
         <aside className="message-center__right">
           <section className="message-panel message-upload">
             <header><div><h2>Dokumente hochladen</h2><p>Wählen Sie die passende Kategorie aus.</p></div><span><Icon name="upload" size={18} /></span></header>
-            <div>{uploads.map(([icon,title,sub]) => <button key={title} onClick={() => title === 'Mein Führerschein' ? setLicenseFlowOpen(true) : null}><Icon name={icon} size={19} /><span><strong>{title}</strong><small>{sub}</small></span><Icon name="chevR" size={16} /></button>)}</div>
+            <div>{uploads.map(([icon,title,sub]) => <button key={title} onClick={() => setUploadFlow(title)}><Icon name={icon} size={19} /><span><strong>{title}</strong><small>{sub}</small></span><Icon name="chevR" size={16} /></button>)}</div>
           </section>
 
           <section className="message-panel message-help">
@@ -126,13 +126,127 @@ function MessageCenterView() {
         </div>
         <footer><button className="btn btn--primary">Nachricht erstellen</button><button className="btn btn--ghost"><Icon name="chevR" size={15} /></button></footer>
       </section>
-      {licenseFlowOpen && <LicenseUploadFlow onClose={() => setLicenseFlowOpen(false)} />}
+      {uploadFlow && <DocumentSubmissionFlow kind={uploadFlow} onClose={() => setUploadFlow(null)} />}
     </div>
   );
 }
 
+function DocumentSubmissionFlow({ kind, onClose }) {
+  return kind === 'Mein Führerschein'
+    ? <LicenseUploadFlow onClose={onClose} />
+    : <GenericDocumentSubmission kind={kind} onClose={onClose} />;
+}
+
+function GenericDocumentSubmission({ kind, onClose }) {
+  const [confirmed, setConfirmed] = React.useState(false);
+  const [submitted, setSubmitted] = React.useState(false);
+  const configs = {
+    'Meine Zertifikate': {
+      tag:'Zertifikate',
+      title:'Zertifikat oder Qualifikationsnachweis einreichen',
+      subtitle:'Wählen Sie die passende Qualifikation aus und laden Sie den zugehörigen Nachweis hoch.',
+      selectLabel:'Zertifikat / Qualifikation aus Liste',
+      options:['Erste Hilfe (9 UE)', 'SCC Dok. 016', 'MVAS 99', 'GW 129 Rohrnetzbau', 'Andere Qualifikation'],
+      fields:[['Ausstellende Stelle','BiW Bildungszentrum'], ['Ausstellungsdatum','TT.MM.JJJJ'], ['Gültig bis','TT.MM.JJJJ'], ['Zertifikatsnummer','z.B. Z-2026-018']],
+      confirm:'Ich bestätige, dass die Angaben vollständig sind und das hochgeladene Dokument zu meiner Qualifikation gehört.',
+      uploads:['Zertifikat als PDF oder Foto', 'Vorderseite', 'Rückseite, falls vorhanden', 'weitere Seite oder Anlage'],
+      note:'Das Originalzertifikat wurde mir am 12.07.2026 ausgehändigt.',
+      submit:'Zertifikat zur Prüfung einreichen',
+      status:'In Prüfung',
+    },
+    'Meine Unterweisungen': {
+      tag:'Unterweisungen',
+      title:'Teilnahmenachweis für Unterweisung einreichen',
+      subtitle:'Wählen Sie die durchgeführte Unterweisung aus und laden Sie den vorhandenen Nachweis hoch.',
+      selectLabel:'Unterweisung aus Liste',
+      options:['Brandschutzunterweisung', 'Jahresunterweisung Tiefbau', 'Projektbezogene Unterweisung', 'PSA gegen Absturz'],
+      fields:[['Datum der Unterweisung','TT.MM.JJJJ'], ['Firma','Janning Tiefbau GmbH'], ['Unterwiesen von','Name'], ['Version der Unterweisung','z.B. 2026-01']],
+      confirm:'Ich bestätige, dass ich an dieser Unterweisung teilgenommen und die Inhalte verstanden habe.',
+      uploads:['Teilnahmebescheinigung', 'unterschriebene Teilnehmerliste', 'sonstiger Nachweis'],
+      note:'Optional: offene Frage oder Hinweis zur Unterweisung.',
+      submit:'Teilnahmenachweis einreichen',
+      status:'Eingereicht',
+    },
+    'Meine Untersuchungsvorsorge': {
+      tag:'Arbeitsmedizinische Vorsorge',
+      title:'Vorsorgebescheinigung einreichen',
+      subtitle:'Laden Sie ausschließlich die arbeitsmedizinische Bescheinigung hoch. Medizinische Befunde oder Diagnosen werden nicht benötigt.',
+      selectLabel:'Vorsorgeart aus Liste',
+      options:['Pflichtvorsorge', 'Angebotsvorsorge', 'Wunschvorsorge', 'Eignungsuntersuchung', 'G26 Atemschutz'],
+      fields:[['Untersuchungsdatum','TT.MM.JJJJ'], ['Betriebsarzt / Untersuchungsstelle','Name'], ['Nächster Termin','falls angegeben'], ['Datenschutz','vertraulich']],
+      confirm:'Ich bestätige, dass die Datei nur die für den Arbeitgeber vorgesehene Bescheinigung enthält und keine medizinischen Befunde oder Diagnosen.',
+      uploads:['Vorsorgebescheinigung als PDF oder Foto', 'weitere Seite'],
+      note:'Die Datei ist nur für berechtigte Personen sichtbar.',
+      submit:'Bescheinigung geschützt einreichen',
+      status:'Vertraulich in Prüfung',
+    },
+    'Meine Stellenbeschreibung': {
+      tag:'Stellenbeschreibung',
+      title:'Aktuelle Stellenbeschreibung prüfen und bestätigen',
+      subtitle:'Lesen Sie die für Sie freigegebene Stellenbeschreibung und bestätigen Sie den Erhalt.',
+      selectLabel:'Freigegebene Stellenbeschreibung',
+      options:['Polier Tiefbau · Version 2.1', 'Baumaschinist · Version 1.4', 'Kaufm. Angestellte:r · Version 3.0'],
+      fields:[['Position','Polier'], ['Gültig ab','01.06.2026'], ['Freigegeben von','Christian Janning'], ['PDF-Vorschau','Stellenbeschreibung anzeigen']],
+      confirm:'Ich habe die Stellenbeschreibung vollständig gelesen und erhalten.',
+      uploads:['digital bestätigen', 'unterschriebene PDF hochladen', 'eingescannte Unterschriftsseite hochladen'],
+      note:'Ich habe Fragen oder Änderungsbedarf.',
+      submit:'Stellenbeschreibung bestätigen',
+      status:'Eingereicht',
+    },
+  };
+  const config = configs[kind] || configs['Meine Zertifikate'];
+  const modal = (
+    <div className="license-flow-backdrop" onClick={onClose}>
+      <section className="license-flow document-submit-flow" onClick={event => event.stopPropagation()}>
+        <header>
+          <div>
+            <span>{config.tag}</span>
+            <h2>{config.title}</h2>
+            <p>{config.subtitle}</p>
+          </div>
+          <button onClick={onClose} title="Schließen">x</button>
+        </header>
+        <div className="document-submit-body">
+          {submitted && <div className="document-submit-success"><Icon name="check" size={18} /><strong>Ihre Nachweise wurden erfolgreich eingereicht und werden vom Administrator geprüft.</strong><span>Status: {config.status}</span></div>}
+          <section className="license-flow-card">
+            <h3>1. Dokumentart auswählen</h3>
+            <label className="document-submit-field"><span>{config.selectLabel}</span><select>{config.options.map(item => <option key={item}>{item}</option>)}</select></label>
+            {kind === 'Meine Zertifikate' && <label className="document-submit-field"><span>Bezeichnung bei freier Eingabe</span><input placeholder="Andere Qualifikation" /></label>}
+          </section>
+          <section className="license-flow-card">
+            <h3>2. Daten prüfen oder ergänzen</h3>
+            <div className="document-submit-grid">{config.fields.map(([label, placeholder]) => <label className="document-submit-field" key={label}><span>{label}</span><input placeholder={placeholder} /></label>)}</div>
+          </section>
+          <section className="license-flow-card">
+            <h3>3. Erklärung bestätigen</h3>
+            <label className="license-confirm"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} /><span>{config.confirm}</span></label>
+          </section>
+          <section className="license-flow-card">
+            <h3>4. Datei hochladen</h3>
+            <div className="license-upload-list">
+              {config.uploads.map((item, index) => <button key={item} disabled={!confirmed}><Icon name="upload" size={16} /><span><strong>{item}</strong><small>{index === 0 ? 'fehlt' : 'optional'} · nach Upload: wird geprüft</small></span></button>)}
+            </div>
+          </section>
+          <section className="license-flow-card">
+            <h3>5. Bemerkung und Verlauf</h3>
+            <textarea className="document-submit-note" placeholder={config.note}></textarea>
+            <div className="document-submit-meta"><span>eingereicht am: nach Absenden</span><span>Bearbeitungsstatus: {config.status}</span><span>zuständige Prüfstelle: Administration</span><span>Rückfrage möglich</span><span>Änderungsverlauf wird angezeigt</span></div>
+          </section>
+        </div>
+        <footer>
+          <button className="btn btn--ghost" onClick={onClose}>Abbrechen</button>
+          <button className="btn btn--primary" disabled={!confirmed} onClick={() => setSubmitted(true)}>{config.submit}</button>
+        </footer>
+      </section>
+    </div>
+  );
+  if (window.ReactDOM && ReactDOM.createPortal && document.body) return ReactDOM.createPortal(modal, document.body);
+  return modal;
+}
+
 function LicenseUploadFlow({ onClose }) {
   const [accepted, setAccepted] = React.useState(false);
+  const [submitted, setSubmitted] = React.useState(false);
   const code = '569584';
   const uploadItems = [
     ['Führerschein Vorderseite', 'Foto oder PDF hochladen'],
@@ -173,8 +287,15 @@ function LicenseUploadFlow({ onClose }) {
           </section>
 
           <aside className="license-flow-side">
+            {submitted && <section className="document-submit-success"><Icon name="check" size={18} /><strong>Ihre Nachweise wurden erfolgreich eingereicht und werden vom Administrator geprüft.</strong><span>Status: In Prüfung</span></section>}
             <section className="license-flow-card">
-              <h3>1. Erklärung bestätigen</h3>
+              <h3>1. Angaben ergänzen</h3>
+              <label className="document-submit-field"><span>Führerscheinklassen</span><input placeholder="z.B. B, BE, C1" /></label>
+              <label className="document-submit-field"><span>Ablaufdatum optional</span><input placeholder="TT.MM.JJJJ" /></label>
+              <div className="document-submit-meta"><span>Uploadstatus: fehlt</span><span>Status nach Absenden: In Prüfung</span></div>
+            </section>
+            <section className="license-flow-card">
+              <h3>2. Erklärung bestätigen</h3>
               <label className="license-confirm">
                 <input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} />
                 <span>Ich habe die Hinweise gelesen und bestätige die Fahrer-Erklärung.</span>
@@ -182,15 +303,14 @@ function LicenseUploadFlow({ onClose }) {
             </section>
 
             <section className={'license-flow-code ' + (accepted ? 'is-active' : '')}>
-              <span>2. Prüfcode</span>
+              <span>3. Prüfcode</span>
               <strong>{accepted ? code : '------'}</strong>
-              <p>Schreiben Sie diesen Code auf ein Blatt Papier und unterschreiben Sie direkt daneben. Legen Sie dieses Papier neben Ihren Führerschein, damit beides gemeinsam im Foto sichtbar ist.</p>
             </section>
 
             <section className="license-flow-card">
-              <h3>3. Nachweise hochladen</h3>
+              <h3>4. Nachweise hochladen</h3>
               <div className="license-upload-list">
-                {uploadItems.map(([title, sub]) => <button key={title} disabled={!accepted}><Icon name="upload" size={16} /><span><strong>{title}</strong><small>{sub}</small></span></button>)}
+                {uploadItems.map(([title, sub]) => <button key={title} disabled={!accepted}><Icon name="upload" size={16} /><span><strong>{title}</strong><small>{sub} · fehlt</small></span></button>)}
               </div>
             </section>
           </aside>
@@ -198,7 +318,7 @@ function LicenseUploadFlow({ onClose }) {
 
         <footer>
           <button className="btn btn--ghost" onClick={onClose}>Abbrechen</button>
-          <button className="btn btn--primary" disabled={!accepted}>Als Nachricht an Admin senden</button>
+          <button className="btn btn--primary" disabled={!accepted} onClick={() => setSubmitted(true)}>Nachweise zur Prüfung einreichen</button>
         </footer>
       </section>
     </div>

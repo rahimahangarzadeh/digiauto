@@ -1390,38 +1390,106 @@ function EmployeeOperatorRecord({emp,record,onBack}) {
   </div>;
 }
 
-function employeeEquipmentCheckRecords() {
+function employeeEquipmentCheckRecords(emp) {
   return [
-    {id:'check-1',area:'Erdbaumaschinen',authorization:'Befähigte Person für Baumaschinenprüfung',validFrom:'01.03.2025',validTo:'01.03.2028',days:636,status:'valid',released:true,history:3,description:'Befähigung zur wiederkehrenden Prüfung von Baggern, Radladern und Verdichtungsgeräten.',document:'Befaehigung_Erdbaumaschinen.pdf'},
-    {id:'check-2',area:'Leitern und Tritte',authorization:'Beauftragung zur Prüfung von Leitern und Tritten',validFrom:'15.07.2025',validTo:'15.07.2026',days:41,status:'warn',released:true,history:2,description:'Beauftragung zur regelmäßigen Prüfung ortsveränderlicher Leitern und Tritte.',document:'Beauftragung_Leitern_Tritte.pdf'},
-    {id:'check-3',area:'Elektrische Arbeitsmittel',authorization:'Befähigte Person nach DGUV Vorschrift 3',validFrom:'18.04.2023',validTo:'18.04.2026',days:-47,status:'expired',released:false,history:4,description:'Prüfung ortsveränderlicher elektrischer Arbeitsmittel nach DGUV Vorschrift 3.',document:'Befaehigung_DGUV_V3.pdf'},
-  ];
+    {baseId:'check-1',area:'Erdbaumaschinen',qualification:'Befähigte Person für Baumaschinenprüfung',appointment:'schriftliche Beauftragung vorhanden',legal:'BetrSichV / DGUV Regel 100-500',proof:'Baumaschinenprüfung Aufbaukurs',validFrom:'01.03.2025',validTo:'01.03.2028',days:636,inspectionScope:'Bagger, Radlader, Verdichtungsgeräte',restriction:'bis 30 t',commissioner:'Christian Janning',responsible:'Alexander Petersen',deputy:'Markus Brinker',status:'valid',released:true,history:5,assignedDevices:'12 Geräte zugeordnet · 2 Prüfungen in 30 Tagen fällig',lastReport:'05.07.2026',description:'Befähigung zur wiederkehrenden Prüfung von Baggern, Radladern und Verdichtungsgeräten.',document:'Befaehigung_Erdbaumaschinen.pdf'},
+    {baseId:'check-2',area:'Leitern und Tritte',qualification:'Prüfung nach BetrSichV',appointment:'gültig bis 15.07.2026',legal:'BetrSichV / DGUV Information 208-016',proof:'Leitern-und-Tritte-Prüfung',validFrom:'15.07.2025',validTo:'15.07.2026',days:41,inspectionScope:'Leitern, Tritte, fahrbare Podeste',restriction:'nur eigene Standorte',commissioner:'Sabine Janning',responsible:'Michael Janning',deputy:'Dirk Jürgens',status:'warn',released:true,history:3,assignedDevices:'48 Arbeitsmittel zugeordnet · 6 offen',lastReport:'12.05.2026',description:'Beauftragung zur regelmäßigen Prüfung ortsveränderlicher Leitern und Tritte.',document:'Beauftragung_Leitern_Tritte.pdf'},
+    {baseId:'check-3',area:'Elektrische Arbeitsmittel',qualification:'Befähigte Person nach DGUV Vorschrift 3',appointment:'Beauftragung abgelaufen',legal:'DGUV Vorschrift 3 / TRBS 1203',proof:'Qualifikationsnachweis fehlt',validFrom:'18.04.2023',validTo:'18.04.2026',days:-47,inspectionScope:'ortsveränderliche elektrische Arbeitsmittel',restriction:'keine neuen Prüfungen zuweisen',commissioner:'Christian Janning',responsible:'Rahim Ahangarzadeh',deputy:'-',status:'expired',released:false,history:4,assignedDevices:'31 Arbeitsmittel zugeordnet · 9 überfällig',lastReport:'18.03.2026',description:'Prüfung ortsveränderlicher elektrischer Arbeitsmittel nach DGUV Vorschrift 3.',document:'Befaehigung_DGUV_V3.pdf'},
+  ].map((row,index)=>({
+    ...row,
+    id:`${emp.id}-${row.baseId}`,
+    employeeId:emp.id,
+    employee:emp,
+    employeeName:`${emp.lastName}, ${emp.firstName}`,
+    company:window.company(emp.company)?.name || emp.company,
+    companyShort:window.company(emp.company)?.short || emp.company,
+    department:emp.department,
+    position:emp.position,
+    documentMissing:index===2,
+    appointmentMissing:row.appointment.toLowerCase().includes('abgelaufen') || row.appointment.toLowerCase().includes('fehlt'),
+    warning:row.status==='expired' ? `Die Berechtigung für ${row.area} ist seit ${Math.abs(row.days)} Tagen abgelaufen. Neue Prüfungen dürfen dieser Person derzeit nicht zugewiesen werden.` : row.status==='warn' ? 'Beauftragung läuft bald ab, Verlängerung vorbereiten.' : 'Befähigung und Beauftragung liegen vor.',
+  }));
 }
 
 function EmployeeEquipmentCheckArea({emp,onBack,onOpen}) {
-  const records=React.useMemo(()=>employeeEquipmentCheckRecords(),[]);
+  const [scope,setScope]=React.useState(emp.id);
+  const sourceEmployees=React.useMemo(()=>window.SEED.employees,[]);
+  const activeEmployees=React.useMemo(()=>{
+    if(scope==='all') return sourceEmployees;
+    if(scope==='active') return sourceEmployees.filter(item=>item.status==='aktiv');
+    if(scope==='inactive') return sourceEmployees.filter(item=>item.status!=='aktiv');
+    if(scope.startsWith('company:')) return sourceEmployees.filter(item=>item.company===scope.replace('company:',''));
+    if(scope.startsWith('department:')) return sourceEmployees.filter(item=>item.department===scope.replace('department:',''));
+    return sourceEmployees.filter(item=>item.id===scope);
+  },[scope,sourceEmployees]);
+  const isAllView=scope!==emp.id;
+  const currentEmployee=activeEmployees.length===1?activeEmployees[0]:emp;
+  const records=React.useMemo(()=>activeEmployees.flatMap(employeeEquipmentCheckRecords),[activeEmployees]);
   const [selected,setSelected]=React.useState(new Set());
   const [sort,setSort]=React.useState({key:'area',dir:'asc'});
   const [menu,setMenu]=React.useState(null);
   const [filter,setFilter]=React.useState('all');
   const [group,setGroup]=React.useState('');
-  const labels={valid:'Gültig',warn:'Läuft bald ab',expired:'Abgelaufen'};
+  const [hiddenColumns,setHiddenColumns]=React.useState(new Set());
+  const labels={valid:'Gültig',warn:'Läuft bald ab',expired:'Abgelaufen',appointmentMissing:'Beauftragung fehlt',documentMissing:'Dokument fehlt',renewal:'Verlängerung in Bearbeitung',revoked:'Widerrufen',blocked:'Gesperrt',archived:'Archiviert'};
+  const statusClass=status=>status==='valid'?'valid':status==='warn'||status==='renewal'||status==='documentMissing'||status==='appointmentMissing'?'warn':status==='archived'?'archived':'expired';
   const value=(row,key)=>key==='status'?labels[row.status]:key==='history'?row.history:row[key];
-  let rows=filter==='all'?records:records.filter(row=>row.status===filter);
+  let rows=filter==='all'?records:
+    filter==='appointmentMissing'?records.filter(row=>row.appointmentMissing):
+    filter==='documentMissing'?records.filter(row=>row.documentMissing):
+    records.filter(row=>row.status===filter);
   rows=[...rows].sort((a,b)=>(sort.dir==='asc'?1:-1)*String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
   const toggle=id=>setSelected(current=>{const next=new Set(current);next.has(id)?next.delete(id):next.add(id);return next;});
-  const columns=[['area','Arbeitsmittel-Bereiche'],['authorization','Befähigung / Beauftragung'],['validFrom','Gültig ab'],['validTo','Gültig bis'],['days','Restlaufzeit'],['status','Status'],['released','Freigabe für Mitarbeiter'],['history','Versionshistorie'],['description','Beschreibung'],['document','Dokument']];
+  const baseColumns=[
+    ...(isAllView?[['employeeName','Mitarbeiter'],['companyShort','Firma'],['department','Abteilung'],['position','Position']]:[]),
+    ['area','Arbeitsmittelbereich'],['qualification','Fachliche Befähigung'],['appointment','Schriftliche Beauftragung'],['legal','Rechtsgrundlage'],['validFrom','Gültig ab'],['validTo','Gültig bis'],['days','Restlaufzeit'],['deputy','Stellvertretung'],['status','Status'],['released','Freigabe für Mitarbeiter'],['history','Befähigungs- und Beauftragungshistorie'],['document','Dokumente'],['description','Beschreibung'],['actions','Aktionen']
+  ];
+  const columns=baseColumns.filter(([key])=>!hiddenColumns.has(key));
+  const tabLabels={all:`Alle ${records.length}`,valid:`Gültig ${records.filter(row=>row.status==='valid').length}`,warn:`Läuft bald ab ${records.filter(row=>row.status==='warn').length}`,expired:`Abgelaufen ${records.filter(row=>row.status==='expired').length}`,appointmentMissing:`Beauftragung fehlt ${records.filter(row=>row.appointmentMissing).length}`,documentMissing:`Dokument fehlt ${records.filter(row=>row.documentMissing).length}`,archived:'Archiviert'};
+  const kpi=[
+    ['Prüfberechtigungen',records.length,'all'],
+    ['Gültig',records.filter(row=>row.status==='valid').length,'valid'],
+    ['Laufen bald ab',records.filter(row=>row.status==='warn').length,'warn'],
+    ['Abgelaufen',records.filter(row=>row.status==='expired').length,'expired'],
+    ['Dokument fehlt',records.filter(row=>row.documentMissing).length,'documentMissing'],
+  ];
+  const cellValue=(row,key)=>{
+    if(key==='employeeName'||key==='area') return <strong>{row[key]}</strong>;
+    if(key==='days') return row.days<0?`${Math.abs(row.days)} Tage abgelaufen`:`in ${row.days} Tagen`;
+    if(key==='status') return <span className={'emp-status is-'+statusClass(row.status)}>{labels[row.status]}</span>;
+    if(key==='appointment') return <span className={'emp-status is-'+(row.appointmentMissing?'warn':'valid')}>{row.appointment}</span>;
+    if(key==='released') return <span className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</span>;
+    if(key==='history') return <span className="emp-version-chip"><Icon name="history" size={13}/>{row.history} Ereignisse</span>;
+    if(key==='document') return <span className={'emp-doc-count '+(row.documentMissing?'is-missing':'')}><Icon name="doc" size={13}/>{row.documentMissing?'fehlt':1}</span>;
+    if(key==='actions') return <button className="emp-row-menu-btn" onClick={event=>event.stopPropagation()}>⋮</button>;
+    return row[key];
+  };
   return <div className="emp-full">
-    <EmpPageTitle title={`Geräteprüfung (${emp.name})`} onBack={onBack}/>
-    <div className="emp-training-tabs">{['all','valid','warn','expired'].map(id=><button key={id} className={filter===id?'is-active':''} onClick={()=>setFilter(id)}>{id==='all'?`Alle ${records.length}`:labels[id]}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}</div>
-    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14}/>Als Excel exportieren</button><button><Icon name="edit" size={14}/>Status ändern</button><button className="is-danger"><Icon name="trash" size={14}/>Löschen</button></div>}
+    <EmpPageTitle title={isAllView?'Prüfberechtigungen - alle Mitarbeiter':`Prüfberechtigungen (${currentEmployee.name})`} onBack={onBack} action={
+      <div className="emp-training-toolbar">
+        <label>Mitarbeiter auswählen<select value={scope} onChange={event=>{setScope(event.target.value);setSelected(new Set());}}>
+          <option value={emp.id}>{emp.name}</option>
+          <option value="all">Alle Mitarbeiter</option>
+          <option value="active">Nur aktive Mitarbeiter</option>
+          <option value="inactive">Ausgeschiedene Mitarbeiter</option>
+          {window.SEED.companies.map(company=><option key={company.id} value={`company:${company.id}`}>{company.name}</option>)}
+          {window.SEED.departments.map(dept=><option key={dept} value={`department:${dept}`}>Abteilung: {dept}</option>)}
+          {sourceEmployees.filter(item=>item.id!==emp.id).slice().sort((a,b)=>a.lastName.localeCompare(b.lastName,'de')).map(item=><option key={item.id} value={item.id}>{item.lastName}, {item.firstName}</option>)}
+        </select></label>
+        <button><Icon name="settings" size={14}/>Filter</button>
+        <button><Icon name="plus" size={14}/>Prüfberechtigung hinzufügen</button>
+      </div>
+    }/>
+    <div className="emp-training-kpis">{kpi.map(item=><button key={item[0]} className={filter===item[2]?'is-active':''} onClick={()=>setFilter(item[2])}><span>{item[0]}</span><strong>{item[1]}</strong><small>Klicken zum Filtern</small></button>)}</div>
+    <div className="emp-training-tabs">{['all','valid','warn','expired','appointmentMissing','documentMissing','archived'].map(id=><button key={id} className={filter===id?'is-active':''} onClick={()=>setFilter(id)}>{tabLabels[id]}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}{hiddenColumns.size>0&&<button className="emp-clear-group" onClick={()=>setHiddenColumns(new Set())}>Alle Spalten anzeigen</button>}</div>
+    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="doc" size={14}/>Beauftragung erstellen</button><button><Icon name="cal" size={14}/>Verlängern</button><button><Icon name="upload" size={14}/>Nachweis ersetzen</button><button><Icon name="users" size={14}/>Stellvertretung festlegen</button><button><Icon name="edit" size={14}/>Freigabe ändern</button><button><Icon name="history" size={14}/>Archivieren</button></div>}
     <div className="emp-table-wrap"><table className="emp-equipment-check-table">
-      <thead><tr><th className="emp-check"><input type="checkbox" checked={selected.size===records.length} onChange={()=>setSelected(selected.size===records.length?new Set():new Set(records.map(row=>row.id)))}/></th>
-        {columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>Aufsteigend sortieren</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Absteigend sortieren</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Nach „{label}“ gruppieren</button><button onClick={()=>setMenu(null)}>Spaltenfilter öffnen</button></div>}</th>)}
+      <thead><tr><th className="emp-check"><input type="checkbox" checked={rows.length>0&&selected.size===rows.length} onChange={()=>setSelected(selected.size===rows.length?new Set():new Set(rows.map(row=>row.id)))}/></th>
+        {columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={()=>setMenu(null)}>Filtern nach</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Gruppieren nach &quot;{label}&quot;</button><button onClick={()=>{setHiddenColumns(old=>new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button></div>}</th>)}
       </tr></thead>
-      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan="11">{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
+      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan={columns.length+1}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
         <tr className={row.status==='expired'?'is-expired':row.status==='warn'?'is-warn':''} onClick={()=>onOpen(row)}><td className="emp-check" onClick={event=>event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={()=>toggle(row.id)}/></td>
-          <td><strong>{row.area}</strong></td><td>{row.authorization}</td><td>{row.validFrom}</td><td>{row.validTo}</td><td className={row.days<0?'is-overdue':''}>{row.days<0?`${Math.abs(row.days)} Tage abgelaufen`:`in ${row.days} Tagen`}</td><td><span className={'emp-status is-'+row.status}>{labels[row.status]}</span></td><td className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</td><td><span className="emp-version-chip"><Icon name="history" size={13}/>{row.history} Versionen</span></td><td className="emp-ellipsis">{row.description}</td><td><span className="emp-doc-count"><Icon name="doc" size={13}/>1</span></td>
+          {columns.map(([key])=><td key={key} className={(key==='description'||key==='qualification'?'emp-ellipsis ':'')+(key==='days'&&row.days<0?'is-overdue':'')}>{cellValue(row,key)}</td>)}
         </tr></React.Fragment>)}</tbody>
     </table></div>
   </div>;
@@ -1432,19 +1500,35 @@ function EmployeeEquipmentCheckRecord({emp,record,onBack}) {
   const [docs,setDocs]=React.useState([record.document]);
   const [form,setForm]=React.useState({...record});
   const set=(key,value)=>setForm(current=>({...current,[key]:value}));
-  const statusName=form.status==='valid'?'Gültig':form.status==='warn'?'Läuft bald ab':'Abgelaufen';
+  const displayEmp=form.employee || emp;
+  const statusName=form.status==='valid'?'Gültig':form.status==='warn'?'Läuft bald ab':form.status==='appointmentMissing'?'Beauftragung fehlt':form.status==='documentMissing'?'Dokument fehlt':form.status==='renewal'?'Verlängerung in Bearbeitung':form.status==='revoked'?'Widerrufen':form.status==='blocked'?'Gesperrt':form.status==='archived'?'Archiviert':'Abgelaufen';
+  const statusClass=form.status==='valid'?'valid':form.status==='warn'||form.status==='appointmentMissing'||form.status==='documentMissing'||form.status==='renewal'?'warn':form.status==='archived'?'archived':'expired';
   return <div className="emp-full emp-training-record-page">
-    <EmpPageTitle title={`${record.area} (${emp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
-    <section className="emp-training-record-card"><header className="emp-training-record-hero"><span className="emp-training-record-icon emp-equipment-check-record-icon"><Icon name="check" size={27}/></span><div><span>Geräteprüfung</span><h2>{form.area}</h2></div><span className={'emp-status is-'+form.status}>{statusName}</span></header>
+    <EmpPageTitle title={`${record.area} (${displayEmp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
+    <section className="emp-training-record-card"><header className="emp-training-record-hero"><span className="emp-training-record-icon emp-equipment-check-record-icon"><Icon name="check" size={27}/></span><div><span>Prüfberechtigung</span><h2>{form.area}</h2></div><span className={'emp-status is-'+statusClass}>{statusName}</span></header>
       <div className="emp-training-record-grid">
-        <TrainingRecordField label="Arbeitsmittel-Bereiche" icon="settings" editing={editing} value={form.area}><input value={form.area} onChange={e=>set('area',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Befähigung / Beauftragung" icon="shield" editing={editing} value={form.authorization}><input value={form.authorization} onChange={e=>set('authorization',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Mitarbeiter" icon="users" value={displayEmp.name}/>
+        <TrainingRecordField label="Firma" icon="building" value={form.company || window.company(displayEmp.company)?.name || displayEmp.company}/>
+        <TrainingRecordField label="Abteilung / Position" icon="users" value={`${form.department || displayEmp.department} · ${form.position || displayEmp.position}`}/>
+        <TrainingRecordField label="Arbeitsmittelbereich" icon="settings" editing={editing} value={form.area}><input value={form.area} onChange={e=>set('area',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Fachliche Befähigung" icon="shield" editing={editing} value={form.qualification || '-'}><input value={form.qualification || ''} onChange={e=>set('qualification',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Schriftliche Beauftragung" icon="doc" editing={editing} value={form.appointment || '-'}><select value={form.appointment || 'schriftliche Beauftragung vorhanden'} onChange={e=>set('appointment',e.target.value)}><option>schriftliche Beauftragung vorhanden</option><option>Beauftragung fehlt</option><option>Beauftragung abgelaufen</option><option>Beauftragung widerrufen</option></select></TrainingRecordField>
+        <TrainingRecordField label="Rechtsgrundlage" icon="doc" editing={editing} value={form.legal || '-'}><input value={form.legal || ''} onChange={e=>set('legal',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Qualifikationsnachweis" icon="cap" editing={editing} value={form.proof || '-'}><input value={form.proof || ''} onChange={e=>set('proof',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Gültig ab" icon="cal" editing={editing} value={form.validFrom}><input value={form.validFrom} onChange={e=>set('validFrom',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Gültig bis" icon="cal" editing={editing} value={form.validTo}><input value={form.validTo} onChange={e=>set('validTo',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Restlaufzeit" icon="clock" value={form.days<0?`${Math.abs(form.days)} Tage abgelaufen`:`in ${form.days} Tagen`}/>
-        <TrainingRecordField label="Status" icon="flag" editing={editing} value={statusName}><select value={form.status} onChange={e=>set('status',e.target.value)}><option value="valid">Gültig</option><option value="warn">Läuft bald ab</option><option value="expired">Abgelaufen</option></select></TrainingRecordField>
-        <TrainingRecordField label="Freigegeben durch Arbeitgeber" icon="users" editing={editing} value={form.released?'Freigegeben':'Nicht freigegeben'}><label className="emp-check-label"><input type="checkbox" checked={form.released} onChange={e=>set('released',e.target.checked)}/>Freigegeben</label></TrainingRecordField>
-        <TrainingRecordField label="Versionshistorie" icon="history" value={`${form.history} Versionen`}/>
+        <TrainingRecordField label="Prüfbereich" icon="settings" editing={editing} value={form.inspectionScope || '-'}><input value={form.inspectionScope || ''} onChange={e=>set('inspectionScope',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Einschränkungen" icon="shield" editing={editing} value={form.restriction || '-'}><input value={form.restriction || ''} onChange={e=>set('restriction',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Beauftragende Person" icon="users" editing={editing} value={form.commissioner || '-'}><input value={form.commissioner || ''} onChange={e=>set('commissioner',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Verantwortliche Führungskraft" icon="users" editing={editing} value={form.responsible || '-'}><input value={form.responsible || ''} onChange={e=>set('responsible',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Stellvertretung" icon="users" editing={editing} value={form.deputy || '-'}><input value={form.deputy || ''} onChange={e=>set('deputy',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Status" icon="flag" editing={editing} value={statusName}><select value={form.status} onChange={e=>set('status',e.target.value)}><option value="valid">Gültig</option><option value="warn">Läuft bald ab</option><option value="expired">Abgelaufen</option><option value="appointmentMissing">Beauftragung fehlt</option><option value="documentMissing">Qualifikationsnachweis fehlt</option><option value="renewal">Verlängerung in Bearbeitung</option><option value="revoked">Widerrufen</option><option value="blocked">Gesperrt</option><option value="archived">Archiviert</option></select></TrainingRecordField>
+        <TrainingRecordField label="Freigabe für Mitarbeiter" icon="users" editing={editing} value={form.released?'Freigegeben':'Nicht freigegeben'}><label className="emp-check-label"><input type="checkbox" checked={form.released} onChange={e=>set('released',e.target.checked)}/>Freigegeben</label></TrainingRecordField>
+        <TrainingRecordField label="Zugeordnete Geräte / offene Prüfungen" icon="settings" value={form.assignedDevices || '-'}/>
+        <TrainingRecordField label="Letzter Prüfbericht" icon="doc" value={form.lastReport || '-'}/>
+        <TrainingRecordField label="Befähigungs- und Beauftragungshistorie" icon="history" value={`${form.history} Ereignisse`}/>
+        <TrainingRecordField label="Warnung" icon="flag" value={form.warning || '-'} wide/>
         <TrainingRecordField label="Beschreibung" icon="doc" editing={editing} value={form.description} wide><textarea rows="4" value={form.description} onChange={e=>set('description',e.target.value)}/></TrainingRecordField>
         <div className="emp-training-record-field is-wide emp-training-record-docs"><Icon name="link" size={20}/><div><label>Dokumente</label><div className="emp-file-list">{docs.map(doc=><span className="emp-file-chip" key={doc}><Icon name="doc" size={14}/><span>{doc}</span><button onClick={()=>setDocs(list=>list.filter(item=>item!==doc))}><Icon name="x" size={13}/></button></span>)}</div><label className="emp-training-add-file"><Icon name="plus" size={15}/>Dokument hinzufügen<input type="file" multiple onChange={e=>setDocs(old=>[...old,...Array.from(e.target.files||[]).map(file=>file.name)])}/></label></div></div>
       </div>{editing&&<footer className="emp-training-record-footer"><button className="btn btn--ghost" onClick={()=>setEditing(false)}>Abbrechen</button><button className="btn btn--primary" onClick={()=>setEditing(false)}>Speichern</button></footer>}

@@ -3,8 +3,8 @@
 const EMPLOYEE_DETAIL_AREAS = [
   ['dashboard','Übersicht','dashboard'], ['master','Stammdaten','users'], ['trainings','Schulungen','cap'],
   ['instructions','Unterweisungen','flag'], ['jobs','Stellenbeschreibungen','doc'],
-  ['medical','Untersuchungsvorsorge','shield'], ['license','Führerscheinkontrolle','cal'],
-  ['operators','Geräteführer','settings'], ['checks','Geräteprüfung','check'],
+  ['medical','Arbeitsmedizinische Vorsorge','shield'], ['license','Führerscheinkontrolle','cal'],
+  ['operators','Geräteführer','settings'], ['checks','Prüfberechtigungen','check'],
   ['sites','Baustellen','building'], ['appointments','Termine','clock'], ['infoMatrix','Informationslenkungsmatrix','doc'],
 ];
 
@@ -88,15 +88,6 @@ function EmployeeAdminDetail({ emp, onBack }) {
               <div><dt>Position</dt><dd>{emp.position}</dd></div>
               <div><dt>Firma</dt><dd>{company?.name || '-'}</dd></div>
             </dl>
-            <div className="emp-profile-kpis">
-              {[
-                ['Schulungen','9',() => setArea('trainings')],
-                ['Unterweisungen','2',() => setArea('instructions')],
-                ['Dokumente','6',() => setArea('infoMatrix')],
-                ['Offene Termine','3',() => setArea('appointments')],
-                ['Ablaufende Nachweise','4',() => setArea('trainings')],
-              ].map(([label,value,action]) => <button key={label} type="button" onClick={action}><span>{label}</span><strong>{value}</strong></button>)}
-            </div>
           </div>
           <div className="emp-master-hero-picker emp-master-hero-picker--detail">
             <label>
@@ -149,6 +140,10 @@ function EmployeeOverviewCenter({ onOpenArea, onOpenMaster }) {
     ['building','Baustelle zugewiesen','11.07.2026, 08:15 · geändert von Sabine Janning · Baustellen','sites'],
     ['phone','Profil aktualisiert','10.07.2026, 14:20 · geändert von Max Mustermann · Stammdaten','master'],
   ];
+  const sites = [
+    ['Baustelle Alex Barum','Baumaschinist / Ersthelfer','15.04.2026 - 28.06.2026','Aktiv'],
+    ['Kanalsanierung Nordhorn','Mitarbeiter','01.07.2026 - 30.09.2026','Geplant'],
+  ];
   return (
     <main className="emp-overview-center">
       <section className="emp-overview-card emp-appointments">
@@ -165,38 +160,52 @@ function EmployeeOverviewCenter({ onOpenArea, onOpenMaster }) {
         </div>
         <button className="emp-show-all">Alle Aktivitäten anzeigen</button>
       </section>
+      <section className="emp-overview-card emp-current-sites">
+        <header><h2>Aktuelle Baustellen</h2><button type="button" onClick={() => onOpenArea('sites')}>Alle sehen</button></header>
+        <div className="emp-current-site-list">
+          {sites.map(site => (
+            <button type="button" key={site[0]} onClick={() => onOpenArea('sites')}>
+              <div><strong>{site[0]}</strong><span>{site[1]}</span></div>
+              <small>{site[2]}</small>
+              <em>{site[3]}</em>
+            </button>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }
 
 function EmployeeOverviewAside({ onOpenArea }) {
-  const needs = [
-    ['Ablaufende Schulungen',3,'trainings'],
-    ['Abgelaufene Schulungen',1,'trainings'],
-    ['Fehlende Dokumente',1,'infoMatrix'],
-    ['Offene Unterweisungen',2,'instructions'],
-    ['Fällige Vorsorge',1,'medical'],
-    ['Führerscheinkontrolle fällig',1,'license'],
-    ['Geräteprüfung fällig',1,'checks'],
-    ['Fehlende Stellenbeschreibung',1,'jobs'],
-    ['Offene Termine',3,'appointments'],
+  const needGroups = [
+    { label:'Kritisch', tone:'critical', count:3, items:[['Abgelaufene Schulungen',1,'trainings'], ['Fällige Vorsorge',1,'medical'], ['Führerscheinkontrolle überfällig',1,'license']] },
+    { label:'Bald fällig', tone:'soon', count:5, items:[['Ablaufende Schulungen',3,'trainings'], ['Prüfberechtigung bald fällig',1,'checks'], ['Stellenbeschreibung offen',1,'jobs']] },
+    { label:'Offen', tone:'open', count:2, items:[['Fehlende Dokumente',1,'infoMatrix'], ['Offene Unterweisungen',2,'instructions']] },
   ];
   return (
     <aside className="emp-overview-aside">
       <section className="emp-action-required">
         <h2><Icon name="flag" size={19} />Handlungsbedarf</h2>
-        {needs.map(item => <button type="button" key={item[0]} onClick={() => onOpenArea(item[2])}><span>{item[0]}</span><strong>{item[1]}</strong></button>)}
-        <button>Jetzt bearbeiten <Icon name="chevR" size={14} /></button>
+        <div className="emp-need-summary">
+          {needGroups.map(group => <span key={group.label} className={'is-' + group.tone}>{group.label} <b>{group.count}</b></span>)}
+        </div>
+        {needGroups.map(group => (
+          <div className={'emp-need-group is-' + group.tone} key={group.label}>
+            <h3>{group.label}</h3>
+            {group.items.map(item => <button type="button" key={item[0]} onClick={() => onOpenArea(item[2])}><span>{item[0]}</span><strong>{item[1]}</strong></button>)}
+          </div>
+        ))}
+        <button>Alle offenen Punkte anzeigen <Icon name="chevR" size={14} /></button>
       </section>
       <section className="emp-side-stat">
         <h3><Icon name="flag" size={17} />Offene Unterweisungen</h3>
-        <div><strong>2</strong><span>von 12</span><Icon name="chevR" size={15} /></div>
+        <button type="button" onClick={() => onOpenArea('instructions')}><strong>2 offene Unterweisungen</strong><span>10 von 12 abgeschlossen</span><Icon name="chevR" size={15} /></button>
       </section>
       <section className="emp-next-check">
         <span><Icon name="cal" size={16} />Nächste Prüfung</span>
-        <strong>4 Tage</strong>
-        <small>Vorsorgeuntersuchung G26</small>
-        <Icon name="cal" size={86} />
+        <strong>In 4 Tagen</strong>
+        <small>Arbeitsmedizinische Vorsorge G26<br />15.07.2026 · 09:00 Uhr</small>
+        <button type="button" onClick={() => onOpenArea('appointments')}>Termin öffnen</button>
       </section>
     </aside>
   );

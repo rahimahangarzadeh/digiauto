@@ -13,12 +13,19 @@ function EmployeesView({ activeCompany }) {
   const [empColumnManagerOpen, setEmpColumnManagerOpen] = React.useState(false);
   const [empImportOpen, setEmpImportOpen] = React.useState(false);
   const [empExportOpen, setEmpExportOpen] = React.useState(false);
-  const defaultEmpVisibleColumns = ['name','pn','firma','dept','pos','group','employmentType','workload','weeklyHours','entry','exitDate','manager','site','account','status'];
+  const [empViewMode, setEmpViewMode] = React.useState(() => {
+    try { return localStorage.getItem('emp_view_mode_v1') || 'cards'; } catch (error) { return 'cards'; }
+  });
+  const setEmployeeViewMode = (mode) => {
+    setEmpViewMode(mode);
+    try { localStorage.setItem('emp_view_mode_v1', mode); } catch (error) {}
+  };
+  const defaultEmpVisibleColumns = ['name','pn','firma','dept','pos','entry','status'];
   const [empVisibleColumns, setEmpVisibleColumns] = React.useState(() => {
     try {
-      const saved = localStorage.getItem('emp_visible_columns');
+      const saved = localStorage.getItem('emp_visible_columns_compact_v1');
       return saved ? JSON.parse(saved) : defaultEmpVisibleColumns;
-    } catch {
+    } catch (error) {
       return defaultEmpVisibleColumns;
     }
   });
@@ -26,7 +33,7 @@ function EmployeesView({ activeCompany }) {
   // Sortierung mit localStorage
   const [sort, setSort] = React.useState(() => {
     try { const s = localStorage.getItem('emp_sort'); return s ? JSON.parse(s) : { col: 'name', dir: 'asc' }; }
-    catch { return { col: 'name', dir: 'asc' }; }
+    catch (error) { return { col: 'name', dir: 'asc' }; }
   });
   const toggleSort = (col) => {
     setSort(prev => {
@@ -56,15 +63,18 @@ function EmployeesView({ activeCompany }) {
     { key: 'manager', label: 'Direkte Führungskraft' },
     { key: 'site', label: 'Standort' },
     { key: 'account', label: 'Benutzerkonto' },
+    { key: 'phone', label: 'Telefon' },
+    { key: 'email', label: 'E-Mail' },
+    { key: 'address', label: 'Adresse' },
     { key: 'status', label: 'Status' },
   ];
   const persistEmpVisibleColumns = (next) => {
     setEmpVisibleColumns(next);
-    try { localStorage.setItem('emp_visible_columns', JSON.stringify(next)); } catch {}
+    try { localStorage.setItem('emp_visible_columns_compact_v1', JSON.stringify(next)); } catch (error) {}
   };
   const isEmpColumnVisible = (key) => empVisibleColumns.includes(key);
   const visibleEmpColumns = empColumns.filter(col => isEmpColumnVisible(col.key));
-  const employeeTableColSpan = 1 + visibleEmpColumns.length + 3 + 2;
+  const employeeTableColSpan = 1 + visibleEmpColumns.length + 1;
   const hideEmpColumn = (key) => {
     persistEmpVisibleColumns(empVisibleColumns.filter(col => col !== key));
     setEmpColumnMenu(null);
@@ -87,6 +97,9 @@ function EmployeesView({ activeCompany }) {
     if (key === 'manager') return employeeManager(e);
     if (key === 'site') return employeeSite(e);
     if (key === 'account') return employeeAccountStatus(e);
+    if (key === 'phone') return e.phone || '';
+    if (key === 'email') return e.email || '';
+    if (key === 'address') return e.address || '';
     if (key === 'status') return e.status === 'aktiv' ? 'Aktiv' : 'Inaktiv';
     return '';
   };
@@ -248,6 +261,70 @@ function EmployeesView({ activeCompany }) {
     );
   };
 
+  const renderEmployeeActions = (e, source = 'list') => {
+    const menuKey = `${source}-${e.id}`;
+    return (
+      <div className="employee-actions-menu-wrap" onClick={ev => ev.stopPropagation()}>
+        <button type="button" className="employee-row-menu-btn" title="Aktionen öffnen" onClick={() => setEmpActionMenu(empActionMenu === menuKey ? null : menuKey)}>⋮</button>
+        {empActionMenu === menuKey && (
+          <div className="employee-row-menu">
+            <button type="button" onClick={() => { setSelectedEmp(e); setEmpActionMenu(null); }}>Details anzeigen</button>
+            <button type="button" onClick={() => { setSelectedEmp(e); setEmpActionMenu(null); }}>Stammdaten bearbeiten</button>
+            <button type="button" onClick={() => { setSelectedEmp(e); setEmpActionMenu(null); }}>Schulungen anzeigen</button>
+            <button type="button" onClick={() => { setSelectedEmp(e); setEmpActionMenu(null); }}>Unterweisungen anzeigen</button>
+            <button type="button" onClick={() => { setSelectedEmp(e); window.__empDocTab = true; setEmpActionMenu(null); }}>Dokumente anzeigen</button>
+            <button type="button" onClick={() => { setMessageEmp(e); setEmpActionMenu(null); }}>Nachricht senden ({unreadForEmployee(e)})</button>
+            <button type="button" onClick={() => { setRegisterEmp(e); setEmpActionMenu(null); }}>Termin erstellen</button>
+            <button type="button" onClick={() => setEmpActionMenu(null)}>Benutzerkonto verwalten</button>
+            <button type="button" onClick={() => setEmpActionMenu(null)}>Archivieren</button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderEmployeeCell = (e, key) => {
+    if (key === 'name') {
+      return (
+        <td className="employee-sticky-name">
+          <div className="employee-name-cell">
+            <div className={'avatar avatar--' + e.color}>{e.initials}</div>
+            <div>
+              <strong>{e.lastName}, {e.firstName}</strong>
+              <small>{e.position} · {e.email}</small>
+            </div>
+          </div>
+        </td>
+      );
+    }
+    if (key === 'pn') return <td className="num">{e.personalNr}</td>;
+    if (key === 'firma') return <td>{window.company(e.company)?.short || e.company}</td>;
+    if (key === 'dept') return <td>{e.department}</td>;
+    if (key === 'pos') return <td>{e.position}</td>;
+    if (key === 'group') return <td>{employeeGroup(e)}</td>;
+    if (key === 'employmentType') return <td>{employeeEmploymentType(e)}</td>;
+    if (key === 'workload') return <td>{employeeWorkload(e)}</td>;
+    if (key === 'weeklyHours') return <td>{employeeWeeklyHours(e)}</td>;
+    if (key === 'entry') return <td className="num">{window.fmtDE(e.entry)}</td>;
+    if (key === 'exitDate') return <td className="num">{employeeExitDate(e)}</td>;
+    if (key === 'manager') return <td>{employeeManager(e)}</td>;
+    if (key === 'site') return <td>{employeeSite(e)}</td>;
+    if (key === 'account') return <td><span className={employeeAccountStatus(e) === 'Aktiv' ? 'badge badge--valid' : 'badge'}><span className="badge__dot" />{employeeAccountStatus(e)}</span></td>;
+    if (key === 'phone') return <td>{e.phone}</td>;
+    if (key === 'email') return <td>{e.email}</td>;
+    if (key === 'address') return <td>{e.address}</td>;
+    if (key === 'status') {
+      return (
+        <td>
+          {e.status === 'aktiv'
+            ? <span className="badge badge--valid"><span className="badge__dot" />Aktiv</span>
+            : <span className="badge"><span className="badge__dot" />Inaktiv</span>}
+        </td>
+      );
+    }
+    return <td>{empColumnValue(e, key)}</td>;
+  };
+
   if (selectedEmp && window.EmployeeAdminDetail) {
     return <EmployeeAdminDetail emp={selectedEmp} onBack={() => setSelectedEmp(null)} />;
   }
@@ -298,7 +375,11 @@ function EmployeesView({ activeCompany }) {
           {empGroupBy && <button type="button" onClick={() => setEmpGroupBy('')} className="btn btn--ghost" style={{ fontSize:12, padding:'5px 10px' }}>Gruppierung aufheben</button>}
           {empKpiFilter !== 'all' && <button type="button" onClick={() => setEmpKpiFilter('all')} className="btn btn--ghost" style={{ fontSize:12, padding:'5px 10px' }}>KPI-Filter aufheben</button>}
         </div>
-        <div className="muted small" style={{marginLeft:'auto'}}>{emps.length} Personen</div>
+        <div className="employee-view-toggle">
+          <button type="button" className={empViewMode === 'cards' ? 'is-active' : ''} onClick={() => setEmployeeViewMode('cards')}><Icon name="dashboard" size={15} />Kacheln</button>
+          <button type="button" className={empViewMode === 'list' ? 'is-active' : ''} onClick={() => setEmployeeViewMode('list')}><Icon name="matrix" size={15} />Liste</button>
+        </div>
+        <div className="muted small">{emps.length} Personen</div>
       </div>
 
       {Object.entries(empColumnFilters).some(([, values]) => values?.length) && (
@@ -336,133 +417,84 @@ function EmployeesView({ activeCompany }) {
         </div>
       )}
 
-	      <div className="tbl-wrap employee-table-wrap">
-	        <table className="tbl employee-table">
-          <thead>
-            <tr>
-              <th className="employee-sticky-select" style={{ width: 40, textAlign:'center', padding:'0 8px' }}>
-                <input
-	                  type="checkbox"
-	                  checked={selected.size > 0 && selected.size === emps.length}
-	                  onChange={toggleAll}
-                  style={{ cursor:'pointer', width:18, height:18, accentColor:'var(--color-accent)' }}
-                />
-              </th>
-              {visibleEmpColumns.filter(col => col.key !== 'status').map(col => <EmpColumnHeader key={col.key} col={col} sticky={col.key === 'name'} />)}
-              <th style={{ width: 60, textAlign:'center' }}>
-                <span title="Telefon" style={{ cursor:'default' }}>
-                  <PhoneIcon size={13} />
-                </span>
-              </th>
-              <th style={{ width: 60, textAlign:'center' }}>
-                <span title="E-Mail" style={{ cursor:'default' }}>
-                  <MailIcon size={13} />
-                </span>
-              </th>
-              <th style={{ width: 60, textAlign:'center' }}>
-                <span title="Adresse" style={{ cursor:'default' }}>
-                  <LocationIcon size={13} />
-                </span>
-              </th>
-              {isEmpColumnVisible('status') && <EmpColumnHeader col={empColumns.find(col => col.key === 'status')} />}
-              <th style={{ width: 120, textAlign:'center' }}>Versionen</th>
-              <th className="employee-sticky-actions" style={{ width: 130, textAlign:'center' }}>Aktionen</th>
-            </tr>
-          </thead>
-          <tbody>
-            {emps.map((e, index) => {
-              const isSelected = selectedEmp?.id === e.id;
-              const isHovered  = hoveredRow === e.id;
-              const isChecked = selected.has(e.id);
-              const groupValue = empGroupBy ? empColumnValue(e, empGroupBy) : '';
-              const previous = empGroupBy && index > 0 ? empColumnValue(emps[index - 1], empGroupBy) : null;
-              return (
-              <React.Fragment key={e.id}>
-              {empGroupBy && groupValue !== previous && (
-                <tr>
-                  <td colSpan={employeeTableColSpan} style={{ background:'var(--color-parchment)', color:'var(--fg-1)', fontWeight:700, padding:'10px 14px' }}>
-                    {empColumnLabel(empGroupBy)}: {groupValue}
-                  </td>
-                </tr>
-              )}
-              <tr key={e.id}
-                onMouseEnter={() => setHoveredRow(e.id)}
-                onMouseLeave={() => setHoveredRow(null)}
-                onClick={() => setSelectedEmp(isSelected ? null : e)}
-                style={{ cursor:'pointer', background: isSelected ? 'rgba(201,100,66,0.06)' : (isChecked ? 'rgba(201,100,66,0.03)' : undefined), outline: isSelected ? '2px solid var(--color-accent)' : undefined, outlineOffset:-2 }}>
-                <td className="employee-sticky-select" onClick={ev => { ev.stopPropagation(); toggleRow(e.id); }} style={{ textAlign:'center', padding:'0 8px' }}>
+      {empViewMode === 'cards' ? (
+        <section className="employee-card-grid">
+          {emps.map(e => (
+            <article key={e.id} className="employee-card" onClick={() => setSelectedEmp(e)}>
+              <header>
+                <div className={'avatar avatar--' + e.color}>{e.initials}</div>
+                <div>
+                  <h3>{e.lastName}, {e.firstName}</h3>
+                  <p>PN {e.personalNr}</p>
+                </div>
+                {e.status === 'aktiv'
+                  ? <span className="badge badge--valid"><span className="badge__dot" />Aktiv</span>
+                  : <span className="badge"><span className="badge__dot" />Inaktiv</span>}
+              </header>
+              <dl>
+                <div><dt>Firma</dt><dd>{window.company(e.company)?.name || e.company}</dd></div>
+                <div><dt>Abteilung</dt><dd>{e.department}</dd></div>
+                <div><dt>Position</dt><dd>{e.position}</dd></div>
+                <div><dt>E-Mail</dt><dd>{e.email}</dd></div>
+              </dl>
+              <footer>
+                <button type="button" onClick={(event) => { event.stopPropagation(); setSelectedEmp(e); }}><Icon name="eye" size={15} />Öffnen</button>
+                {renderEmployeeActions(e, 'card')}
+              </footer>
+            </article>
+          ))}
+        </section>
+      ) : (
+        <div className="tbl-wrap employee-table-wrap employee-table-wrap--compact">
+          <table className="tbl employee-table employee-table--compact">
+            <thead>
+              <tr>
+                <th className="employee-sticky-select">
                   <input
                     type="checkbox"
-                    checked={isChecked}
-                    onChange={() => toggleRow(e.id)}
-                    onClick={ev => ev.stopPropagation()}
+                    checked={selected.size > 0 && selected.size === emps.length}
+                    onChange={toggleAll}
                     style={{ cursor:'pointer', width:18, height:18, accentColor:'var(--color-accent)' }}
                   />
-                </td>
-                {isEmpColumnVisible('name') && <td className="employee-sticky-name">
-                  <div style={{display:'flex', alignItems:'center', gap:10}}>
-                    <div className={'avatar avatar--' + e.color} style={{width:30, height:30, fontSize:11}}>{e.initials}</div>
-                    <div>
-                      <div style={{fontWeight:500}}>{e.lastName}, {e.firstName}</div>
-                      <div className="small muted">{e.email}</div>
-                    </div>
-                  </div>
-                </td>}
-                {isEmpColumnVisible('pn') && <td className="num">{e.personalNr}</td>}
-                {isEmpColumnVisible('firma') && <td><CompanyChip id={e.company} size={22} /></td>}
-                {isEmpColumnVisible('dept') && <td>{e.department}</td>}
-                {isEmpColumnVisible('pos') && <td>{e.position}</td>}
-                {isEmpColumnVisible('group') && <td>{employeeGroup(e)}</td>}
-                {isEmpColumnVisible('employmentType') && <td>{employeeEmploymentType(e)}</td>}
-                {isEmpColumnVisible('workload') && <td>{employeeWorkload(e)}</td>}
-                {isEmpColumnVisible('weeklyHours') && <td>{employeeWeeklyHours(e)}</td>}
-                {isEmpColumnVisible('entry') && <td className="num">{window.fmtDE(e.entry)}</td>}
-                {isEmpColumnVisible('exitDate') && <td className="num">{employeeExitDate(e)}</td>}
-                {isEmpColumnVisible('manager') && <td>{employeeManager(e)}</td>}
-                {isEmpColumnVisible('site') && <td>{employeeSite(e)}</td>}
-                {isEmpColumnVisible('account') && <td>
-                  <span className={employeeAccountStatus(e) === 'Aktiv' ? 'badge badge--valid' : 'badge'}>
-                    <span className="badge__dot" />{employeeAccountStatus(e)}
-                  </span>
-                </td>}
-                <td style={{ textAlign:'center', padding:'0 4px' }}>
-                  <ContactIconCell icon={<PhoneIcon size={13} />} tooltip={e.phone} href={'tel:' + e.phone} />
-                </td>
-                <td style={{ textAlign:'center', padding:'0 4px' }}>
-                  <ContactIconCell icon={<MailIcon size={13} />} tooltip={e.email} href={'mailto:' + e.email} />
-                </td>
-                <td style={{ textAlign:'center', padding:'0 4px' }}>
-                  <ContactIconCell icon={<LocationIcon size={13} />} tooltip={e.address} href={undefined} />
-                </td>
-                {isEmpColumnVisible('status') && <td>
-                  {e.status === 'aktiv'
-                    ? <span className="badge badge--valid"><span className="badge__dot" />Aktiv</span>
-                    : <span className="badge"><span className="badge__dot" />Inaktiv</span>}
-                </td>}
-                <td onClick={ev => ev.stopPropagation()} style={{ textAlign:'center', whiteSpace:'nowrap' }}>
-                  <button type="button" className="job-small-btn">Versionen</button>
-                </td>
-                {/* Quick Actions */}
-                <td className="employee-sticky-actions" onClick={ev => ev.stopPropagation()} style={{ padding:'0 10px', whiteSpace:'nowrap', textAlign:'center' }}>
-                  <button type="button" className="employee-row-menu-btn" title="Aktionen öffnen" onClick={() => setEmpActionMenu(empActionMenu === e.id ? null : e.id)}>⋮</button>
-                  {empActionMenu === e.id && (
-                    <div className="employee-row-menu" onClick={ev => ev.stopPropagation()}>
-                      <button type="button" onClick={() => { setSelectedEmp(e); setEmpActionMenu(null); }}>Details anzeigen</button>
-                      <button type="button" onClick={() => { setSelectedEmp(e); setEmpActionMenu(null); }}>Bearbeiten</button>
-                      <button type="button" onClick={() => { setSelectedEmp(e); window.__empDocTab = true; setEmpActionMenu(null); }}>Dokument hinzufügen</button>
-                      <button type="button" onClick={() => { setRegisterEmp(e); setEmpActionMenu(null); }}>Schulung anmelden</button>
-                      <button type="button" onClick={() => { setMessageEmp(e); setEmpActionMenu(null); }}>Nachricht senden ({unreadForEmployee(e)})</button>
-                      <button type="button" onClick={() => setEmpActionMenu(null)}>Archivieren</button>
-                    </div>
-                  )}
-                </td>
-	              </tr>
-              </React.Fragment>
-              );
-            })}
-          </tbody>
-	        </table>
-	      </div>
+                </th>
+                {visibleEmpColumns.map(col => <EmpColumnHeader key={col.key} col={col} sticky={col.key === 'name'} />)}
+                <th className="employee-sticky-actions">Aktionen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {emps.map((e, index) => {
+                const isChecked = selected.has(e.id);
+                const groupValue = empGroupBy ? empColumnValue(e, empGroupBy) : '';
+                const previous = empGroupBy && index > 0 ? empColumnValue(emps[index - 1], empGroupBy) : null;
+                return (
+                  <React.Fragment key={e.id}>
+                    {empGroupBy && groupValue !== previous && (
+                      <tr>
+                        <td colSpan={employeeTableColSpan} className="employee-group-row">
+                          {empColumnLabel(empGroupBy)}: {groupValue}
+                        </td>
+                      </tr>
+                    )}
+                    <tr onClick={() => setSelectedEmp(e)} className={isChecked ? 'is-selected' : ''}>
+                      <td className="employee-sticky-select" onClick={ev => { ev.stopPropagation(); toggleRow(e.id); }}>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleRow(e.id)}
+                          onClick={ev => ev.stopPropagation()}
+                          style={{ cursor:'pointer', width:18, height:18, accentColor:'var(--color-accent)' }}
+                        />
+                      </td>
+                      {visibleEmpColumns.map(col => <React.Fragment key={col.key}>{renderEmployeeCell(e, col.key)}</React.Fragment>)}
+                      <td className="employee-sticky-actions">{renderEmployeeActions(e, 'list')}</td>
+                    </tr>
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 	      {empFilterPanel && (
 	        <div style={{ position:'fixed', inset:0, zIndex:50, background:'rgba(0,0,0,0.16)', display:'flex', justifyContent:'flex-end' }} onClick={() => setEmpFilterPanel(null)}>
 	          <aside style={{ width:390, maxWidth:'92vw', height:'100%', background:'white', boxShadow:'-18px 0 42px rgba(0,0,0,0.18)', display:'flex', flexDirection:'column' }} onClick={e => e.stopPropagation()}>
@@ -3968,4 +4000,3 @@ function InstructionsView({ activeCompany }) {
 }
 
 Object.assign(window, { EmployeesView, TrainingsView, TrainingDetailPanel, ProvidersView, CompaniesView, CertsView, InstructionsView });
-

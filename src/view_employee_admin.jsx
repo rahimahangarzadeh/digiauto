@@ -264,12 +264,162 @@ function EmployeeInformationMatrixDetail({ emp, row, onBack }) {
   </div>;
 }
 
-function EmployeeAppointmentsArea({emp,onBack}) {
-  return <div className="emp-full emp-appointments-page">
-    <EmpPageTitle title={`Termine (${emp.name})`} onBack={onBack}/>
-    <section className="emp-calendar-shell">
-      <CalendarView activeCompany={emp.company} selectedTraining={null} selectedInstruction={null} selectedDate="" onTrainingSelected={() => {}} />
+function employeeAppointmentRows(emp) {
+  const names = window.SEED.employees.filter(item => item.status === 'aktiv').slice(0, 10);
+  const rows = [
+    {id:'apt-1',employeeId:emp.id,employeeName:emp.name,type:'Schulung',title:'Sicherheitsunterweisung',training:'Erste Hilfe',provider:'Interne Schulung (Janning)',company:window.company(emp.company)?.name || emp.company,date:'2026-10-15',start:'09:00',end:'10:30',place:'Aufenthaltsraum Nordhorn',responsible:'Rahim Ahangarzadeh',status:'Bestätigt',docs:'vollständig',certs:'vollständig',invoice:'-',archived:false,post:'-'},
+    {id:'apt-2',employeeId:emp.id,employeeName:emp.name,type:'Geräteprüfung',title:'Geräteprüfung',training:'Bagger-Zertifizierung',provider:'DEKRA Akademie',company:window.company(emp.company)?.name || emp.company,date:'2026-10-20',start:'08:00',end:'16:00',place:'Bauhof Nordhorn',responsible:'Alexander Petersen',status:'Geplant',docs:'offen',certs:'-',invoice:'-',archived:false,post:'-'},
+    {id:'apt-3',employeeId:emp.id,employeeName:emp.name,type:'Führerscheinkontrolle',title:'Führerscheinkontrolle',training:'Quartalsprüfung',provider:'Fuhrpark',company:window.company(emp.company)?.name || emp.company,date:'2026-11-02',start:'11:00',end:'11:15',place:'Büro',responsible:'Sabine Janning',status:'Nachbearbeitung offen',docs:'vollständig',certs:'offen',invoice:'offen',archived:false,post:'7 von 10'},
+    {id:'apt-4',employeeId:emp.id,employeeName:emp.name,type:'Vorsorge',title:'Vorsorge G26',training:'Arbeitsmedizinische Vorsorge',provider:'Betriebsarzt Nordhorn',company:window.company(emp.company)?.name || emp.company,date:'2026-07-18',start:'08:30',end:'09:00',place:'Praxis Nordhorn',responsible:'Sabine Janning',status:'Vollständig',docs:'vollständig',certs:'vollständig',invoice:'bezahlt',archived:true,post:'10 von 10'},
+  ];
+  names.forEach((person, index) => rows.push({
+    id:'apt-all-' + person.id,
+    employeeId:person.id,
+    employeeName:person.name,
+    type:index % 3 === 0 ? 'Unterweisung' : index % 3 === 1 ? 'Schulung' : 'Geräteprüfung',
+    title:index % 3 === 0 ? 'Brandschutzunterweisung' : index % 3 === 1 ? 'SCC 017 Führungskräfte' : 'Staplerprüfung',
+    training:index % 3 === 0 ? 'Unterweisung' : index % 3 === 1 ? 'SCC' : 'Sicherheit / Verkehr',
+    provider:index % 2 ? 'DEKRA Akademie' : 'Interne Schulung (Janning)',
+    company:window.company(person.company)?.name || person.company,
+    date:`2026-10-${String(22 + index).padStart(2, '0')}`,
+    start:index % 2 ? '08:00' : '13:00',
+    end:index % 2 ? '12:00' : '15:00',
+    place:index % 2 ? 'Schulungsraum B' : 'Bauhof Nordhorn',
+    responsible:index % 2 ? 'Rahim Ahangarzadeh' : 'Christian Janning',
+    status:index % 4 === 0 ? 'Nachbearbeitung offen' : index % 4 === 1 ? 'Geplant' : index % 4 === 2 ? 'Durchgeführt' : 'Bestätigt',
+    docs:index % 3 ? 'vollständig' : 'offen',
+    certs:index % 4 ? 'vollständig' : 'offen',
+    invoice:index % 2 ? 'bezahlt' : 'offen',
+    archived:false,
+    post:index % 4 === 0 ? '6 von 10' : '-',
+  }));
+  return rows;
+}
+
+function EmployeeAppointmentModal({ type, onClose }) {
+  const isPost = type === 'post';
+  const checklist = ['Teilnehmerliste vollständig', 'Anwesenheit dokumentiert', 'Ergebnisse eingetragen', 'Zertifikate vollständig', 'Gültigkeitsdaten eingetragen', 'nächste Wiederholung eingetragen', 'Sicherheitspass-Aufkleber dokumentiert', 'Rechnung erhalten', 'Rechnung bezahlt', 'Schulungsunterlagen gespeichert'];
+  return <div className="emp-modal-backdrop" onMouseDown={onClose}>
+    <section className="emp-appointment-modal" onMouseDown={event => event.stopPropagation()}>
+      <header>
+        <div><span>{isPost ? 'Termin nachbearbeiten' : 'Neuer Termin'}</span><h2>{isPost ? 'Nachbearbeitung prüfen' : 'Termin eintragen'}</h2></div>
+        <button type="button" onClick={onClose}>×</button>
+      </header>
+      {isPost ? <React.Fragment>
+        <div className="emp-appointment-progress"><strong>7 von 10 Punkten vollständig</strong><span>Es fehlen zwei Zertifikate und die Rechnung.</span></div>
+        <div className="emp-appointment-checklist">
+          {checklist.map((item, index) => <label key={item}><input type="checkbox" defaultChecked={index < 7} />{item}</label>)}
+        </div>
+        <footer><button type="button" onClick={onClose}>Abbrechen</button><button type="button" className="btn btn--primary">Abschließen und archivieren</button></footer>
+      </React.Fragment> : <React.Fragment>
+        <div className="emp-form-grid">
+          <label><span>Terminart</span><select><option>Schulung</option><option>Unterweisung</option><option>arbeitsmedizinische Vorsorge</option><option>Führerscheinkontrolle</option><option>Geräteprüfung</option><option>Besprechung</option><option>sonstiger Termin</option></select></label>
+          <label><span>Terminbezeichnung</span><input placeholder="z.B. Erste Hilfe Auffrischung" /></label>
+          <label><span>Firma</span><select><option>Janning Tiefbau GmbH</option><option>Janning Galabau GmbH</option><option>Janning Rohrbau GmbH</option></select></label>
+          <label><span>Teilnehmer</span><input placeholder="Mitarbeiter auswählen" /></label>
+          <label><span>Datum</span><input type="date" /></label>
+          <label><span>Beginn</span><input type="time" /></label>
+          <label><span>Ende</span><input type="time" /></label>
+          <label><span>Ort</span><input placeholder="Ort, Raum oder Treffpunkt" /></label>
+          <label><span>Schulung aus Liste</span><select><option>Erste Hilfe (9 UE)</option><option>SCC 017 Führungskräfte</option><option>MVAS 99</option></select></label>
+          <label><span>Anbieter oder Akademie</span><select><option>Interne Schulung (Janning)</option><option>DEKRA Akademie</option><option>BiW Bildungszentrum</option></select></label>
+          <label><span>Referent / Prüfer</span><input /></label>
+          <label><span>Status</span><select><option>Geplant</option><option>Bestätigt</option><option>Durchgeführt</option><option>Nachbearbeitung offen</option></select></label>
+          <label><span>Dokumente</span><input placeholder="Datei hochladen" /></label>
+          <label className="is-wide"><span>Notiz</span><textarea /></label>
+        </div>
+        <footer><button type="button" onClick={onClose}>Abbrechen</button><button type="button" className="btn btn--primary">Speichern</button></footer>
+      </React.Fragment>}
     </section>
+  </div>;
+}
+
+function EmployeeAppointmentsArea({emp,onBack}) {
+  const [mode, setMode] = React.useState('calendar');
+  const [scope, setScope] = React.useState(emp.id);
+  const [selected, setSelected] = React.useState(new Set());
+  const [menu, setMenu] = React.useState(null);
+  const [sort, setSort] = React.useState({key:'date', dir:'asc'});
+  const [filter, setFilter] = React.useState('upcoming');
+  const [modal, setModal] = React.useState(null);
+  React.useEffect(() => setScope(emp.id), [emp.id]);
+  const employees = React.useMemo(() => window.SEED.employees.filter(item => item.status === 'aktiv'), []);
+  const baseRows = React.useMemo(() => employeeAppointmentRows(emp), [emp.id]);
+  const isAll = scope === 'all' || scope === 'active' || scope === 'inactive';
+  const scopedRows = baseRows.filter(row => {
+    if (scope === 'all') return true;
+    if (scope === 'active') return employees.some(item => item.id === row.employeeId);
+    if (scope === 'inactive') return false;
+    return row.employeeId === scope;
+  });
+  const visibleRows = scopedRows.filter(row => {
+    if (mode === 'archive') return row.archived || row.status === 'Archiviert';
+    if (filter === 'today') return row.date === '2026-10-15';
+    if (filter === 'week') return row.date >= '2026-10-15' && row.date <= '2026-10-22';
+    if (filter === 'month') return row.date.startsWith('2026-10');
+    if (filter === 'past') return row.date < '2026-10-15';
+    return !row.archived;
+  }).sort((a,b) => {
+    const left = String(a[sort.key] || '');
+    const right = String(b[sort.key] || '');
+    return sort.dir === 'asc' ? left.localeCompare(right, 'de') : right.localeCompare(left, 'de');
+  });
+  const columns = [
+    ...(isAll ? [{key:'employeeName', label:'Mitarbeiter'}] : []),
+    {key:'title', label:'Termin'}, {key:'type', label:'Terminart'}, {key:'date', label:'Datum'}, {key:'start', label:'Beginn'}, {key:'end', label:'Ende'},
+    {key:'company', label:'Firma'}, {key:'training', label:'Schulung'}, {key:'provider', label:'Anbieter'}, {key:'status', label:'Status'},
+    {key:'responsible', label:'Verantwortlicher'}, {key:'docs', label:'Dokumente'}, {key:'certs', label:'Zertifikate'}, {key:'invoice', label:'Rechnung'}, {key:'actions', label:'Aktionen'}
+  ];
+  const scopeLabel = scope === 'all' ? 'Alle Mitarbeiter' : scope === 'active' ? 'nur aktive Mitarbeiter' : scope === 'inactive' ? 'ausgeschiedene Mitarbeiter' : (employees.find(item => item.id === scope)?.name || emp.name);
+  const title = isAll ? 'Termine - alle Mitarbeiter' : `Termine (${scopeLabel})`;
+  const toggle = id => setSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  const statusClass = status => /vollständig|bestätigt/i.test(status) ? 'valid' : /nachbearbeitung|durchgeführt/i.test(status) ? 'warn' : /abgesagt|archiv/i.test(status) ? 'archived' : 'planned';
+  const renderCalendar = () => <div className="emp-personal-calendar">
+    {['Mo','Di','Mi','Do','Fr','Sa','So'].map(day => <div key={day} className="emp-personal-calendar__head">{day}</div>)}
+    {Array.from({length:35}, (_,index) => {
+      const day = index + 1;
+      const dayRows = visibleRows.filter(row => Number(row.date.slice(-2)) === day);
+      return <div key={day} className="emp-personal-calendar__cell"><b>{day}</b>{dayRows.map(row => <button key={row.id} onClick={() => row.status === 'Nachbearbeitung offen' ? setModal('post') : null}>{row.start} · {row.title}</button>)}</div>;
+    })}
+  </div>;
+  return <div className="emp-full emp-appointments-page">
+    <div className="emp-page-title emp-appointment-title">
+      <button className="emp-round-back" onClick={onBack}><Icon name="chevL" size={18}/></button>
+      <h1>{title}</h1>
+      <div className="emp-appointment-actions">
+        <label><span>Ansicht:</span><select value={scope} onChange={event => setScope(event.target.value)}>
+          <option value={emp.id}>{emp.name}</option>
+          {employees.filter(item => item.id !== emp.id).slice(0, 8).map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+          <option value="all">Alle Mitarbeiter</option>
+          <option value="active">nur aktive Mitarbeiter</option>
+          <option value="inactive">ausgeschiedene Mitarbeiter</option>
+        </select></label>
+        <div className="emp-segmented">{[['calendar','Kalender'],['list','Liste'],['archive','Archiv']].map(([id,label]) => <button key={id} className={mode === id ? 'is-active' : ''} onClick={() => setMode(id)}>{label}</button>)}</div>
+        <button className="btn btn--primary" onClick={() => setModal('new')}><Icon name="plus" size={14}/>Termin</button>
+      </div>
+    </div>
+    <div className="emp-appointment-filterbar">
+      {['Heute','Diese Woche','Dieser Monat','Kommende Termine','Vergangene Termine'].map((label,index) => {
+        const id = ['today','week','month','upcoming','past'][index];
+        return <button key={id} className={filter === id ? 'is-active' : ''} onClick={() => setFilter(id)}>{label}</button>;
+      })}
+      {isAll && ['Mitarbeiter','Firma','Terminart','Schulung','Anbieter','Status','Zeitraum','Verantwortlicher','Dokumente vollständig','Zertifikate vollständig','Rechnung offen','archiviert'].map(label => <button key={label}>{label}</button>)}
+    </div>
+    {selected.size > 0 && <div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14}/>Export</button><button>Archivieren</button><button className="is-clear" onClick={() => setSelected(new Set())}>×</button></div>}
+    {mode === 'calendar' && renderCalendar()}
+    {(mode === 'list' || mode === 'archive') && <div className="emp-table-wrap">
+      <table className="emp-appointments-table">
+        <thead><tr><th className="emp-check"><input type="checkbox" checked={visibleRows.length > 0 && selected.size === visibleRows.length} onChange={event => setSelected(event.target.checked ? new Set(visibleRows.map(row => row.id)) : new Set())}/></th>{columns.map(column => <th key={column.key}>
+          <button onClick={() => column.key !== 'actions' && setMenu(menu === column.key ? null : column.key)}>{column.label}<span>{column.key !== 'actions' ? (sort.key === column.key ? (sort.dir === 'asc' ? '↑' : '↓') : '⌄') : ''}</span></button>
+          {menu === column.key && <div className="emp-column-menu"><button onClick={() => {setSort({key:column.key, dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={() => {setSort({key:column.key, dir:'desc'});setMenu(null);}}>Z bis A</button><button>Filtern nach</button><button>Gruppieren nach "{column.label}"</button></div>}
+        </th>)}</tr></thead>
+        <tbody>{visibleRows.map(row => <tr key={row.id} className={selected.has(row.id) ? 'is-selected' : ''}>
+          <td className="emp-check" onClick={event => event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={() => toggle(row.id)} /></td>
+          {columns.map(column => <td key={column.key}>{column.key === 'employeeName' ? row.employeeName.split(' ').reverse().join(', ') : column.key === 'title' ? <strong>{row.title}</strong> : column.key === 'date' ? window.fmtDE(row.date) : column.key === 'status' ? <span className={'emp-status is-' + statusClass(row.status)}>{row.status}</span> : column.key === 'actions' ? <div className="training-row-actions"><button>Details</button><button>Bearbeiten</button>{row.status === 'Nachbearbeitung offen' && <button onClick={() => setModal('post')}>Termin nachbearbeiten</button>}<button>⋮</button></div> : row[column.key]}</td>)}
+        </tr>)}</tbody>
+      </table>
+    </div>}
+    {modal && <EmployeeAppointmentModal type={modal} onClose={() => setModal(null)} />}
   </div>;
 }
 

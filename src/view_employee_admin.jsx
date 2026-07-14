@@ -966,38 +966,100 @@ function EmployeeJobRecord({emp,record,onBack}) {
   </div>;
 }
 
-function employeeMedicalRecords() {
+function employeeMedicalRecords(emp) {
   return [
-    {id:'med-1',name:'G26 Atemschutz',type:'Pflichtvorsorge',last:'14.03.2025',next:'14.03.2026',days:-82,status:'expired',released:true,history:3,description:'Arbeitsmedizinische Vorsorge für Tätigkeiten mit Atemschutzgeräten.',document:'G26_Atemschutz_Bescheinigung.pdf'},
-    {id:'med-2',name:'G37 Lärmexposition',type:'Angebotsvorsorge',last:'08.01.2025',next:'08.01.2028',days:583,status:'valid',released:true,history:2,description:'Vorsorge bei Tätigkeiten in lärmbelasteten Arbeitsbereichen.',document:'G37_Laermexposition.pdf'},
-    {id:'med-3',name:'G25 Fahr- und Steuertätigkeiten',type:'Eignungsuntersuchung',last:'12.06.2024',next:'12.06.2026',days:8,status:'warn',released:false,history:4,description:'Eignungsuntersuchung für Fahr-, Steuer- und Überwachungstätigkeiten.',document:'G25_Fahrtaetigkeiten.pdf'},
-  ];
+    {baseId:'med-1',name:'G26 Atemschutz',type:'Pflichtvorsorge',reason:'Atemschutzgeräte und staubbelastete Tätigkeiten',last:'14.03.2025',next:'14.03.2026',days:-82,status:'expired',released:true,releaseScope:'nur Bescheinigung sichtbar',clinic:'Betriebsarzt Nordhorn',responsible:'Sabine Janning',history:3,description:'Arbeitsmedizinische Vorsorge für Tätigkeiten mit Atemschutzgeräten.',document:'G26_Atemschutz_Bescheinigung.pdf'},
+    {baseId:'med-2',name:'G37 Lärmexposition',type:'Angebotsvorsorge',reason:'Tätigkeiten in lärmbelasteten Arbeitsbereichen',last:'08.01.2025',next:'08.01.2028',days:583,status:'valid',released:true,releaseScope:'freigegeben',clinic:'Arbeitsmedizin Lingen',responsible:'Michael Janning',history:2,description:'Vorsorge bei Tätigkeiten in lärmbelasteten Arbeitsbereichen.',document:'G37_Laermexposition.pdf'},
+    {baseId:'med-3',name:'G25 Fahr- und Steuertätigkeiten',type:'Eignungsuntersuchung',reason:'Fahr-, Steuer- und Überwachungstätigkeiten',last:'12.06.2024',next:'12.06.2026',days:8,status:'warn',released:false,releaseScope:'nicht freigegeben',clinic:'Betriebsarzt Nordhorn',responsible:'Christian Janning',history:4,description:'Eignungsuntersuchung für Fahr-, Steuer- und Überwachungstätigkeiten.',document:'G25_Fahrtaetigkeiten.pdf'},
+  ].map((row,index)=>({
+    ...row,
+    id:`${emp.id}-${row.baseId}`,
+    employeeId:emp.id,
+    employee:emp,
+    employeeName:`${emp.lastName}, ${emp.firstName}`,
+    company:window.company(emp.company)?.name || emp.company,
+    companyShort:window.company(emp.company)?.short || emp.company,
+    department:emp.department,
+    position:emp.position,
+    documentMissing:index===1 && emp.status === 'aktiv',
+    remark:row.status==='expired' ? `${Math.abs(row.days)} Tage überfällig - noch kein neuer Termin geplant.` : row.status==='warn' ? 'Termin bald fällig, Einladung vorbereiten.' : 'Bescheinigung liegt vor.',
+    result:row.status==='valid' ? 'keine Bedenken' : row.status==='warn' ? 'Bescheinigung ausstehend' : 'Termin überfällig',
+  }));
 }
 
 function EmployeeMedicalArea({emp,onBack,onOpen}) {
-  const records=React.useMemo(()=>employeeMedicalRecords(),[]);
+  const [scope,setScope]=React.useState(emp.id);
+  const sourceEmployees=React.useMemo(()=>window.SEED.employees,[]);
+  const activeEmployees=React.useMemo(()=>{
+    if(scope==='all') return sourceEmployees;
+    if(scope==='active') return sourceEmployees.filter(item=>item.status==='aktiv');
+    if(scope==='inactive') return sourceEmployees.filter(item=>item.status!=='aktiv');
+    if(scope.startsWith('company:')) return sourceEmployees.filter(item=>item.company===scope.replace('company:',''));
+    if(scope.startsWith('department:')) return sourceEmployees.filter(item=>item.department===scope.replace('department:',''));
+    return sourceEmployees.filter(item=>item.id===scope);
+  },[scope,sourceEmployees]);
+  const isAllView=scope!==emp.id;
+  const currentEmployee=activeEmployees.length===1?activeEmployees[0]:emp;
+  const records=React.useMemo(()=>activeEmployees.flatMap(employeeMedicalRecords),[activeEmployees]);
   const [selected,setSelected]=React.useState(new Set());
   const [sort,setSort]=React.useState({key:'name',dir:'asc'});
   const [menu,setMenu]=React.useState(null);
   const [filter,setFilter]=React.useState('all');
   const [group,setGroup]=React.useState('');
-  const labels={valid:'Gültig',warn:'Termin bald fällig',expired:'Überfällig'};
+  const [hiddenColumns,setHiddenColumns]=React.useState(new Set());
+  const labels={valid:'Gültig',planned:'Termin geplant',warn:'Bald fällig',expired:'Überfällig',missing:'Dokument fehlt',archived:'Archiviert'};
   const value=(row,key)=>key==='status'?labels[row.status]:key==='history'?row.history:row[key];
-  let rows=filter==='all'?records:records.filter(row=>row.status===filter);
+  let rows=filter==='all'?records:filter==='missing'?records.filter(row=>row.documentMissing):records.filter(row=>row.status===filter);
   rows=[...rows].sort((a,b)=>(sort.dir==='asc'?1:-1)*String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
   const toggle=id=>setSelected(current=>{const next=new Set(current);next.has(id)?next.delete(id):next.add(id);return next;});
-  const columns=[['name','Untersuchung'],['type','Art'],['last','Letzte Untersuchung'],['next','Nächster Termin'],['days','Restzeit'],['status','Status'],['released','Freigabe für Mitarbeiter'],['history','Versionshistorie'],['description','Beschreibung'],['document','Dokument']];
+  const baseColumns=[
+    ...(isAllView?[['employeeName','Mitarbeiter'],['companyShort','Firma'],['department','Abteilung'],['position','Position']]:[]),
+    ['name','Vorsorge / Untersuchung'],['type','Art'],['reason','Anlass / Tätigkeit'],['last','Letzte Vorsorge'],['next','Nächster Termin'],['days','Restzeit'],['status','Terminstatus'],['clinic','Untersuchungsstelle'],['responsible','Verantwortliche Person'],['released','Freigabe für Mitarbeiter'],['document','Dokument'],['remark','Bemerkung'],['actions','Aktionen']
+  ];
+  const columns=baseColumns.filter(([key])=>!hiddenColumns.has(key));
+  const tabLabels={all:`Alle ${records.length}`,valid:`Gültig ${records.filter(row=>row.status==='valid').length}`,planned:'Termin geplant',warn:`Bald fällig ${records.filter(row=>row.status==='warn').length}`,expired:`Überfällig ${records.filter(row=>row.status==='expired').length}`,missing:`Dokument fehlt ${records.filter(row=>row.documentMissing).length}`,archived:'Archiviert'};
+  const kpi=[
+    ['Vorsorgen',records.length,'all'],
+    ['Gültig',records.filter(row=>row.status==='valid').length,'valid'],
+    ['Bald fällig',records.filter(row=>row.status==='warn').length,'warn'],
+    ['Überfällig',records.filter(row=>row.status==='expired').length,'expired'],
+    ['Dokument fehlt',records.filter(row=>row.documentMissing).length,'missing'],
+  ];
+  const cellValue=(row,key)=>{
+    if(key==='employeeName'||key==='name') return <strong>{row[key]}</strong>;
+    if(key==='days') return row.days<0?`${Math.abs(row.days)} Tage überfällig`:`in ${row.days} Tagen`;
+    if(key==='status') return <span className={'emp-status is-'+row.status}>{labels[row.status]}</span>;
+    if(key==='released') return <span className="emp-release" title={row.releaseScope}>{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</span>;
+    if(key==='document') return <span className={'emp-doc-count '+(row.documentMissing?'is-missing':'')}><Icon name="doc" size={13}/>{row.documentMissing?'fehlt':1}</span>;
+    if(key==='actions') return <button className="emp-row-menu-btn" onClick={event=>event.stopPropagation()}>⋮</button>;
+    return row[key];
+  };
   return <div className="emp-full">
-    <EmpPageTitle title={`Untersuchungsvorsorge (${emp.name})`} onBack={onBack}/>
-    <div className="emp-training-tabs">{['all','valid','warn','expired'].map(id=><button key={id} className={filter===id?'is-active':''} onClick={()=>setFilter(id)}>{id==='all'?`Alle ${records.length}`:labels[id]}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}</div>
-    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14}/>Als Excel exportieren</button><button><Icon name="edit" size={14}/>Status ändern</button><button className="is-danger"><Icon name="trash" size={14}/>Löschen</button></div>}
+    <EmpPageTitle title={isAllView?'Arbeitsmedizinische Vorsorge - alle Mitarbeiter':`Arbeitsmedizinische Vorsorge (${currentEmployee.name})`} onBack={onBack} action={
+      <div className="emp-training-toolbar">
+        <label>Mitarbeiter auswählen<select value={scope} onChange={event=>{setScope(event.target.value);setSelected(new Set());}}>
+          <option value={emp.id}>{emp.name}</option>
+          <option value="all">Alle Mitarbeiter</option>
+          <option value="active">Nur aktive Mitarbeiter</option>
+          <option value="inactive">Ausgeschiedene Mitarbeiter</option>
+          {window.SEED.companies.map(company=><option key={company.id} value={`company:${company.id}`}>{company.name}</option>)}
+          {window.SEED.departments.map(dept=><option key={dept} value={`department:${dept}`}>Abteilung: {dept}</option>)}
+          {sourceEmployees.filter(item=>item.id!==emp.id).slice().sort((a,b)=>a.lastName.localeCompare(b.lastName,'de')).map(item=><option key={item.id} value={item.id}>{item.lastName}, {item.firstName}</option>)}
+        </select></label>
+        <button><Icon name="settings" size={14}/>Filter</button>
+        <button><Icon name="plus" size={14}/>Vorsorge hinzufügen</button>
+      </div>
+    }/>
+    <div className="emp-training-kpis">{kpi.map(item=><button key={item[0]} className={filter===item[2]?'is-active':''} onClick={()=>setFilter(item[2])}><span>{item[0]}</span><strong>{item[1]}</strong><small>Klicken zum Filtern</small></button>)}</div>
+    <div className="emp-training-tabs">{['all','valid','planned','warn','expired','missing','archived'].map(id=><button key={id} className={filter===id?'is-active':''} onClick={()=>setFilter(id)}>{tabLabels[id]}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}{hiddenColumns.size>0&&<button className="emp-clear-group" onClick={()=>setHiddenColumns(new Set())}>Alle Spalten anzeigen</button>}</div>
+    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="cal" size={14}/>Termin planen</button><button><Icon name="users" size={14}/>Verantwortliche Person zuweisen</button><button><Icon name="mail" size={14}/>Erinnerung senden</button><button><Icon name="edit" size={14}/>Freigabe ändern</button><button><Icon name="download" size={14}/>Dokumente herunterladen</button></div>}
     <div className="emp-table-wrap"><table className="emp-medical-table">
-      <thead><tr><th className="emp-check"><input type="checkbox" checked={selected.size===records.length} onChange={()=>setSelected(selected.size===records.length?new Set():new Set(records.map(row=>row.id)))}/></th>
-        {columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>Aufsteigend sortieren</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Absteigend sortieren</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Nach „{label}“ gruppieren</button><button onClick={()=>setMenu(null)}>Spaltenfilter öffnen</button></div>}</th>)}
+      <thead><tr><th className="emp-check"><input type="checkbox" checked={rows.length>0&&selected.size===rows.length} onChange={()=>setSelected(selected.size===rows.length?new Set():new Set(rows.map(row=>row.id)))}/></th>
+        {columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={()=>setMenu(null)}>Filtern nach</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Gruppieren nach &quot;{label}&quot;</button><button onClick={()=>{setHiddenColumns(old=>new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button></div>}</th>)}
       </tr></thead>
-      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan="11">{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
+      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan={columns.length+1}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
         <tr className={row.status==='expired'?'is-expired':row.status==='warn'?'is-warn':''} onClick={()=>onOpen(row)}><td className="emp-check" onClick={event=>event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={()=>toggle(row.id)}/></td>
-          <td><strong>{row.name}</strong></td><td>{row.type}</td><td>{row.last}</td><td>{row.next}</td><td className={row.days<0?'is-overdue':''}>{row.days<0?`${Math.abs(row.days)} Tage überfällig`:`in ${row.days} Tagen`}</td><td><span className={'emp-status is-'+row.status}>{labels[row.status]}</span></td><td className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</td><td><span className="emp-version-chip"><Icon name="history" size={13}/>{row.history} Versionen</span></td><td className="emp-ellipsis">{row.description}</td><td><span className="emp-doc-count"><Icon name="doc" size={13}/>1</span></td>
+          {columns.map(([key])=><td key={key} className={(key==='remark'?'emp-ellipsis ':'')+(key==='days'&&row.days<0?'is-overdue':'')}>{cellValue(row,key)}</td>)}
         </tr></React.Fragment>)}</tbody>
     </table></div>
   </div>;
@@ -1008,19 +1070,29 @@ function EmployeeMedicalRecord({emp,record,onBack}) {
   const [docs,setDocs]=React.useState([record.document]);
   const [form,setForm]=React.useState({...record});
   const set=(key,value)=>setForm(current=>({...current,[key]:value}));
-  const statusName=form.status==='valid'?'Gültig':form.status==='warn'?'Termin bald fällig':'Überfällig';
+  const displayEmp=form.employee || emp;
+  const statusName=form.status==='valid'?'Gültig':form.status==='planned'?'Termin geplant':form.status==='warn'?'Termin bald fällig':form.status==='missing'?'Dokument fehlt':form.status==='archived'?'Archiviert':'Überfällig';
   return <div className="emp-full emp-training-record-page">
-    <EmpPageTitle title={`${record.name} (${emp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
-    <section className="emp-training-record-card"><header className="emp-training-record-hero"><span className="emp-training-record-icon emp-medical-record-icon"><Icon name="shield" size={27}/></span><div><span>Untersuchungsvorsorge</span><h2>{form.name}</h2></div><span className={'emp-status is-'+form.status}>{statusName}</span></header>
+    <EmpPageTitle title={`${record.name} (${displayEmp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
+    <section className="emp-training-record-card"><header className="emp-training-record-hero"><span className="emp-training-record-icon emp-medical-record-icon"><Icon name="shield" size={27}/></span><div><span>Arbeitsmedizinische Vorsorge</span><h2>{form.name}</h2></div><span className={'emp-status is-'+form.status}>{statusName}</span></header>
       <div className="emp-training-record-grid">
-        <TrainingRecordField label="Untersuchung" icon="shield" editing={editing} value={form.name}><input value={form.name} onChange={e=>set('name',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Art" icon="doc" editing={editing} value={form.type}><input value={form.type} onChange={e=>set('type',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Letzte Untersuchung" icon="cal" editing={editing} value={form.last}><input value={form.last} onChange={e=>set('last',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Mitarbeiter" icon="users" value={displayEmp.name}/>
+        <TrainingRecordField label="Firma" icon="building" value={window.company(displayEmp.company)?.name || displayEmp.company}/>
+        <TrainingRecordField label="Abteilung / Position" icon="flag" value={`${displayEmp.department} · ${displayEmp.position}`}/>
+        <TrainingRecordField label="Vorsorge / Untersuchung" icon="shield" editing={editing} value={form.name}><input value={form.name} onChange={e=>set('name',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Vorsorgeart" icon="doc" editing={editing} value={form.type}><select value={form.type} onChange={e=>set('type',e.target.value)}><option>Pflichtvorsorge</option><option>Angebotsvorsorge</option><option>Wunschvorsorge</option><option>Eignungsuntersuchung</option></select></TrainingRecordField>
+        <TrainingRecordField label="Anlass / Tätigkeit" icon="doc" editing={editing} value={form.reason || '-'}><input value={form.reason || ''} onChange={e=>set('reason',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Letzte Vorsorge" icon="cal" editing={editing} value={form.last}><input value={form.last} onChange={e=>set('last',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Nächster Termin" icon="cal" editing={editing} value={form.next}><input value={form.next} onChange={e=>set('next',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Restzeit" icon="clock" value={form.days<0?`${Math.abs(form.days)} Tage überfällig`:`in ${form.days} Tagen`}/>
-        <TrainingRecordField label="Status" icon="flag" editing={editing} value={statusName}><select value={form.status} onChange={e=>set('status',e.target.value)}><option value="valid">Gültig</option><option value="warn">Termin bald fällig</option><option value="expired">Überfällig</option></select></TrainingRecordField>
+        <TrainingRecordField label="Terminstatus" icon="flag" editing={editing} value={statusName}><select value={form.status} onChange={e=>set('status',e.target.value)}><option value="valid">Gültig</option><option value="planned">Termin geplant</option><option value="warn">Termin bald fällig</option><option value="expired">Termin überfällig</option><option value="missing">Dokument fehlt</option><option value="archived">Archiviert</option></select></TrainingRecordField>
+        <TrainingRecordField label="Untersuchungsstelle" icon="building" editing={editing} value={form.clinic || '-'}><input value={form.clinic || ''} onChange={e=>set('clinic',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Verantwortliche Person" icon="users" editing={editing} value={form.responsible || '-'}><input value={form.responsible || ''} onChange={e=>set('responsible',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Ergebnis für Arbeitgeber" icon="check" editing={editing} value={form.result || '-'}><select value={form.result || 'Bescheinigung liegt vor'} onChange={e=>set('result',e.target.value)}><option>keine Bedenken</option><option>Bedenken unter Voraussetzungen</option><option>weitere Prüfung erforderlich</option><option>Bescheinigung liegt vor</option><option>Bescheinigung ausstehend</option></select></TrainingRecordField>
         <TrainingRecordField label="Freigegeben durch Arbeitgeber" icon="users" editing={editing} value={form.released?'Freigegeben':'Nicht freigegeben'}><label className="emp-check-label"><input type="checkbox" checked={form.released} onChange={e=>set('released',e.target.checked)}/>Freigegeben</label></TrainingRecordField>
+        <TrainingRecordField label="Freigabeumfang" icon="shield" value={form.releaseScope || '-'}/>
         <TrainingRecordField label="Versionshistorie" icon="history" value={`${form.history} Versionen`}/>
+        <TrainingRecordField label="Bemerkung" icon="doc" editing={editing} value={form.remark || '-'} wide><textarea rows="2" value={form.remark || ''} onChange={e=>set('remark',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Beschreibung" icon="doc" editing={editing} value={form.description} wide><textarea rows="4" value={form.description} onChange={e=>set('description',e.target.value)}/></TrainingRecordField>
         <div className="emp-training-record-field is-wide emp-training-record-docs"><Icon name="link" size={20}/><div><label>Dokumente</label><div className="emp-file-list">{docs.map(doc=><span className="emp-file-chip" key={doc}><Icon name="doc" size={14}/><span>{doc}</span><button onClick={()=>setDocs(list=>list.filter(item=>item!==doc))}><Icon name="x" size={13}/></button></span>)}</div><label className="emp-training-add-file"><Icon name="plus" size={15}/>Dokument hinzufügen<input type="file" multiple onChange={e=>setDocs(old=>[...old,...Array.from(e.target.files||[]).map(file=>file.name)])}/></label></div></div>
       </div>{editing&&<footer className="emp-training-record-footer"><button className="btn btn--ghost" onClick={()=>setEditing(false)}>Abbrechen</button><button className="btn btn--primary" onClick={()=>setEditing(false)}>Speichern</button></footer>}
@@ -1028,38 +1100,102 @@ function EmployeeMedicalRecord({emp,record,onBack}) {
   </div>;
 }
 
-function employeeLicenseRecords() {
+function employeeLicenseRecords(emp) {
   return [
-    {id:'lic-1',licenseClass:'B, BE',origin:'Deutschland',last:'10.03.2025',next:'10.03.2026',expires:'10.03.2030',days:1375,status:'valid',released:true,history:4,description:'Fahrerlaubnis für Pkw und Anhänger.',document:'Fuehrerschein_B_BE.pdf'},
-    {id:'lic-2',licenseClass:'C, CE',origin:'EU',last:'15.01.2025',next:'15.01.2026',expires:'15.07.2026',days:41,status:'warn',released:true,history:3,description:'Fahrerlaubnis für Lkw und Lastzüge.',document:'Fuehrerschein_C_CE.pdf'},
-    {id:'lic-3',licenseClass:'L, T',origin:'Deutschland',last:'18.04.2024',next:'18.04.2025',expires:'18.04.2026',days:-47,status:'expired',released:false,history:2,description:'Fahrerlaubnis für land- und forstwirtschaftliche Zugmaschinen.',document:'Fuehrerschein_L_T.pdf'},
-  ];
+    {baseId:'lic-1',licenseClass:'B, BE',origin:'Deutschland',number:'FS-2036-BE-018',issued:'10.03.2020',validFrom:'10.03.2020',last:'10.03.2025',next:'10.03.2026',controlStatus:'current',expires:'10.03.2030',days:1375,status:'valid',released:true,drivingPermit:'Freigegeben',responsible:'Sabine Janning',history:4,description:'Fahrerlaubnis für Pkw und Anhänger.',document:'Fuehrerschein_B_BE.pdf'},
+    {baseId:'lic-2',licenseClass:'C, CE',origin:'EU',number:'FS-2036-CE-041',issued:'15.07.2021',validFrom:'15.07.2021',last:'15.01.2025',next:'15.01.2026',controlStatus:'due',expires:'15.07.2026',days:41,status:'warn',released:true,drivingPermit:'Prüfung erforderlich',responsible:'Rahim Ahangarzadeh',history:3,description:'Fahrerlaubnis für Lkw und Lastzüge.',document:'Fuehrerschein_C_CE.pdf'},
+    {baseId:'lic-3',licenseClass:'L, T',origin:'Deutschland',number:'FS-2036-LT-009',issued:'18.04.2019',validFrom:'18.04.2019',last:'18.04.2024',next:'18.04.2025',controlStatus:'overdue',expires:'18.04.2026',days:-47,status:'expired',released:false,drivingPermit:'Gesperrt',responsible:'Christian Janning',history:2,description:'Fahrerlaubnis für land- und forstwirtschaftliche Zugmaschinen.',document:'Fuehrerschein_L_T.pdf'},
+  ].map((row,index)=>({
+    ...row,
+    id:`${emp.id}-${row.baseId}`,
+    employeeId:emp.id,
+    employee:emp,
+    employeeName:`${emp.lastName}, ${emp.firstName}`,
+    company:window.company(emp.company)?.name || emp.company,
+    companyShort:window.company(emp.company)?.short || emp.company,
+    department:emp.department,
+    position:emp.position,
+    documentMissing:index===1 && emp.status === 'aktiv',
+    controlMissing:index===2,
+    remark:row.status==='expired' ? `Führerscheinklasse ${row.licenseClass} seit ${Math.abs(row.days)} Tagen abgelaufen.` : row.controlStatus==='due' ? 'Interne Kontrolle bald fällig.' : 'Kontrolle dokumentiert.',
+  }));
 }
 
 function EmployeeLicenseArea({emp,onBack,onOpen}) {
-  const records=React.useMemo(()=>employeeLicenseRecords(),[]);
+  const [scope,setScope]=React.useState(emp.id);
+  const sourceEmployees=React.useMemo(()=>window.SEED.employees,[]);
+  const activeEmployees=React.useMemo(()=>{
+    if(scope==='all') return sourceEmployees;
+    if(scope==='active') return sourceEmployees.filter(item=>item.status==='aktiv');
+    if(scope==='inactive') return sourceEmployees.filter(item=>item.status!=='aktiv');
+    if(scope.startsWith('company:')) return sourceEmployees.filter(item=>item.company===scope.replace('company:',''));
+    if(scope.startsWith('department:')) return sourceEmployees.filter(item=>item.department===scope.replace('department:',''));
+    return sourceEmployees.filter(item=>item.id===scope);
+  },[scope,sourceEmployees]);
+  const isAllView=scope!==emp.id;
+  const currentEmployee=activeEmployees.length===1?activeEmployees[0]:emp;
+  const records=React.useMemo(()=>activeEmployees.flatMap(employeeLicenseRecords),[activeEmployees]);
   const [selected,setSelected]=React.useState(new Set());
   const [sort,setSort]=React.useState({key:'licenseClass',dir:'asc'});
   const [menu,setMenu]=React.useState(null);
   const [filter,setFilter]=React.useState('all');
   const [group,setGroup]=React.useState('');
-  const labels={valid:'Gültig',warn:'Läuft bald ab',expired:'Abgelaufen'};
+  const [hiddenColumns,setHiddenColumns]=React.useState(new Set());
+  const labels={valid:'Gültig',warn:'Läuft bald ab',expired:'Abgelaufen',missing:'Dokument fehlt',archived:'Archiviert'};
+  const controlLabels={current:'Kontrolle aktuell',due:'Kontrolle bald fällig',overdue:'Kontrolle überfällig',planned:'Kontrolle geplant',done:'Kontrolle durchgeführt',missing:'Kontrollnachweis fehlt'};
   const value=(row,key)=>key==='status'?labels[row.status]:key==='history'?row.history:row[key];
-  let rows=filter==='all'?records:records.filter(row=>row.status===filter);
+  let rows=filter==='all'?records:filter==='controlDue'?records.filter(row=>['due','overdue'].includes(row.controlStatus)):filter==='missing'?records.filter(row=>row.documentMissing||row.controlMissing):records.filter(row=>row.status===filter);
   rows=[...rows].sort((a,b)=>(sort.dir==='asc'?1:-1)*String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
   const toggle=id=>setSelected(current=>{const next=new Set(current);next.has(id)?next.delete(id):next.add(id);return next;});
-  const columns=[['licenseClass','Führerscheinklasse'],['origin','Herkunft'],['last','Letzte Kontrolle'],['next','Nächste Kontrolle'],['expires','Führerschein läuft ab'],['days','Restzeit'],['status','Status'],['released','Freigabe für Mitarbeiter'],['history','Versionshistorie'],['description','Beschreibung'],['document','Dokument']];
+  const baseColumns=[
+    ...(isAllView?[['employeeName','Mitarbeiter'],['companyShort','Firma'],['department','Abteilung'],['position','Position']]:[]),
+    ['licenseClass','Führerscheinklasse'],['origin','Herkunft / Ausstellungsland'],['number','Führerscheinnummer'],['last','Letzte Kontrolle'],['next','Nächste Kontrolle'],['controlStatus','Kontrollstatus'],['expires','Führerschein gültig bis'],['days','Restlaufzeit'],['status','Gültigkeitsstatus'],['released','Freigabe für Mitarbeiter'],['document','Dokument'],['description','Beschreibung'],['actions','Aktionen']
+  ];
+  const columns=baseColumns.filter(([key])=>!hiddenColumns.has(key));
+  const tabLabels={all:`Alle ${records.length}`,valid:`Gültig ${records.filter(row=>row.status==='valid').length}`,warn:`Läuft bald ab ${records.filter(row=>row.status==='warn').length}`,expired:`Abgelaufen ${records.filter(row=>row.status==='expired').length}`,controlDue:`Kontrolle fällig ${records.filter(row=>['due','overdue'].includes(row.controlStatus)).length}`,missing:`Dokument fehlt ${records.filter(row=>row.documentMissing||row.controlMissing).length}`,archived:'Archiviert'};
+  const kpi=[
+    ['Führerscheine',records.length,'all'],
+    ['Gültig',records.filter(row=>row.status==='valid').length,'valid'],
+    ['Laufen bald ab',records.filter(row=>row.status==='warn').length,'warn'],
+    ['Abgelaufen',records.filter(row=>row.status==='expired').length,'expired'],
+    ['Kontrolle fällig',records.filter(row=>['due','overdue'].includes(row.controlStatus)).length,'controlDue'],
+  ];
+  const cellValue=(row,key)=>{
+    if(key==='employeeName'||key==='licenseClass') return <strong>{row[key]}</strong>;
+    if(key==='days') return row.days<0?`${Math.abs(row.days)} Tage abgelaufen`:`in ${row.days} Tagen`;
+    if(key==='status') return <span className={'emp-status is-'+row.status}>{labels[row.status]}</span>;
+    if(key==='controlStatus') return <span className={'emp-status is-'+(row.controlStatus==='current'||row.controlStatus==='done'?'valid':row.controlStatus==='due'||row.controlStatus==='planned'?'warn':'expired')}>{controlLabels[row.controlStatus]}</span>;
+    if(key==='released') return <span className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</span>;
+    if(key==='document') return <span className={'emp-doc-count '+(row.documentMissing||row.controlMissing?'is-missing':'')}><Icon name="doc" size={13}/>{row.documentMissing||row.controlMissing?'fehlt':1}</span>;
+    if(key==='actions') return <button className="emp-row-menu-btn" onClick={event=>event.stopPropagation()}>⋮</button>;
+    return row[key];
+  };
   return <div className="emp-full">
-    <EmpPageTitle title={`Führerschein (${emp.name})`} onBack={onBack}/>
-    <div className="emp-training-tabs">{['all','valid','warn','expired'].map(id=><button key={id} className={filter===id?'is-active':''} onClick={()=>setFilter(id)}>{id==='all'?`Alle ${records.length}`:labels[id]}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}</div>
-    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14}/>Als Excel exportieren</button><button><Icon name="edit" size={14}/>Status ändern</button><button className="is-danger"><Icon name="trash" size={14}/>Löschen</button></div>}
+    <EmpPageTitle title={isAllView?'Führerscheine - alle Mitarbeiter':`Führerschein (${currentEmployee.name})`} onBack={onBack} action={
+      <div className="emp-training-toolbar">
+        <label>Mitarbeiter auswählen<select value={scope} onChange={event=>{setScope(event.target.value);setSelected(new Set());}}>
+          <option value={emp.id}>{emp.name}</option>
+          <option value="all">Alle Mitarbeiter</option>
+          <option value="active">Nur aktive Mitarbeiter</option>
+          <option value="inactive">Ausgeschiedene Mitarbeiter</option>
+          {window.SEED.companies.map(company=><option key={company.id} value={`company:${company.id}`}>{company.name}</option>)}
+          {window.SEED.departments.map(dept=><option key={dept} value={`department:${dept}`}>Abteilung: {dept}</option>)}
+          {sourceEmployees.filter(item=>item.id!==emp.id).slice().sort((a,b)=>a.lastName.localeCompare(b.lastName,'de')).map(item=><option key={item.id} value={item.id}>{item.lastName}, {item.firstName}</option>)}
+        </select></label>
+        <button><Icon name="settings" size={14}/>Filter</button>
+        <button><Icon name="plus" size={14}/>Führerschein hinzufügen</button>
+      </div>
+    }/>
+    <div className="emp-training-kpis">{kpi.map(item=><button key={item[0]} className={filter===item[2]?'is-active':''} onClick={()=>setFilter(item[2])}><span>{item[0]}</span><strong>{item[1]}</strong><small>Klicken zum Filtern</small></button>)}</div>
+    <div className="emp-training-tabs">{['all','valid','warn','expired','controlDue','missing','archived'].map(id=><button key={id} className={filter===id?'is-active':''} onClick={()=>setFilter(id)}>{tabLabels[id]}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}{hiddenColumns.size>0&&<button className="emp-clear-group" onClick={()=>setHiddenColumns(new Set())}>Alle Spalten anzeigen</button>}</div>
+    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="check" size={14}/>Kontrolle durchführen</button><button><Icon name="cal" size={14}/>Kontrolltermin planen</button><button><Icon name="download" size={14}/>Dokumente herunterladen</button><button><Icon name="edit" size={14}/>Freigabe ändern</button><button><Icon name="mail" size={14}/>Erinnerung senden</button></div>}
     <div className="emp-table-wrap"><table className="emp-license-table">
-      <thead><tr><th className="emp-check"><input type="checkbox" checked={selected.size===records.length} onChange={()=>setSelected(selected.size===records.length?new Set():new Set(records.map(row=>row.id)))}/></th>
-        {columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>Aufsteigend sortieren</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Absteigend sortieren</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Nach „{label}“ gruppieren</button><button onClick={()=>setMenu(null)}>Spaltenfilter öffnen</button></div>}</th>)}
+      <thead><tr><th className="emp-check"><input type="checkbox" checked={rows.length>0&&selected.size===rows.length} onChange={()=>setSelected(selected.size===rows.length?new Set():new Set(rows.map(row=>row.id)))}/></th>
+        {columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={()=>setMenu(null)}>Filtern nach</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Gruppieren nach &quot;{label}&quot;</button><button onClick={()=>{setHiddenColumns(old=>new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button></div>}</th>)}
       </tr></thead>
-      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan="12">{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
+      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan={columns.length+1}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
         <tr className={row.status==='expired'?'is-expired':row.status==='warn'?'is-warn':''} onClick={()=>onOpen(row)}><td className="emp-check" onClick={event=>event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={()=>toggle(row.id)}/></td>
-          <td><strong>{row.licenseClass}</strong></td><td>{row.origin}</td><td>{row.last}</td><td>{row.next}</td><td>{row.expires}</td><td className={row.days<0?'is-overdue':''}>{row.days<0?`${Math.abs(row.days)} Tage abgelaufen`:`in ${row.days} Tagen`}</td><td><span className={'emp-status is-'+row.status}>{labels[row.status]}</span></td><td className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</td><td><span className="emp-version-chip"><Icon name="history" size={13}/>{row.history} Versionen</span></td><td className="emp-ellipsis">{row.description}</td><td><span className="emp-doc-count"><Icon name="doc" size={13}/>1</span></td>
+          {columns.map(([key])=><td key={key} className={(key==='description'?'emp-ellipsis ':'')+(key==='days'&&row.days<0?'is-overdue':'')}>{cellValue(row,key)}</td>)}
         </tr></React.Fragment>)}</tbody>
     </table></div>
   </div>;
@@ -1070,20 +1206,32 @@ function EmployeeLicenseRecord({emp,record,onBack}) {
   const [docs,setDocs]=React.useState([record.document]);
   const [form,setForm]=React.useState({...record});
   const set=(key,value)=>setForm(current=>({...current,[key]:value}));
-  const statusName=form.status==='valid'?'Gültig':form.status==='warn'?'Läuft bald ab':'Abgelaufen';
+  const displayEmp=form.employee || emp;
+  const statusName=form.status==='valid'?'Gültig':form.status==='warn'?'Läuft bald ab':form.status==='missing'?'Dokument fehlt':form.status==='archived'?'Archiviert':'Abgelaufen';
+  const controlName={current:'Kontrolle aktuell',due:'Kontrolle bald fällig',overdue:'Kontrolle überfällig',planned:'Kontrolle geplant',done:'Kontrolle durchgeführt',missing:'Kontrollnachweis fehlt'}[form.controlStatus] || 'Kontrolle aktuell';
   return <div className="emp-full emp-training-record-page">
-    <EmpPageTitle title={`Führerschein ${record.licenseClass} (${emp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
-    <section className="emp-training-record-card"><header className="emp-training-record-hero"><span className="emp-training-record-icon emp-license-record-icon"><Icon name="cal" size={27}/></span><div><span>Führerschein</span><h2>Klasse {form.licenseClass}</h2></div><span className={'emp-status is-'+form.status}>{statusName}</span></header>
+    <EmpPageTitle title={`Führerschein ${record.licenseClass} (${displayEmp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
+    <section className="emp-training-record-card">
       <div className="emp-training-record-grid">
+        <TrainingRecordField label="Mitarbeiter" icon="users" value={displayEmp.name}/>
+        <TrainingRecordField label="Firma" icon="building" value={form.company || window.company(displayEmp.company)?.name || displayEmp.company}/>
+        <TrainingRecordField label="Abteilung / Position" icon="group" value={`${form.department || displayEmp.department} · ${form.position || displayEmp.position}`}/>
         <TrainingRecordField label="Führerscheinklasse" icon="doc" editing={editing} value={form.licenseClass}><input value={form.licenseClass} onChange={e=>set('licenseClass',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Herkunft" icon="pin" editing={editing} value={form.origin}><input value={form.origin} onChange={e=>set('origin',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Herkunft / Ausstellungsland" icon="pin" editing={editing} value={form.origin}><input value={form.origin} onChange={e=>set('origin',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Führerscheinnummer" icon="doc" editing={editing} value={form.number}><input value={form.number || ''} onChange={e=>set('number',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Ausstellungsdatum" icon="cal" editing={editing} value={form.issued || '-'}><input value={form.issued || ''} onChange={e=>set('issued',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Gültig ab" icon="cal" editing={editing} value={form.validFrom || '-'}><input value={form.validFrom || ''} onChange={e=>set('validFrom',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Letzte Kontrolle" icon="cal" editing={editing} value={form.last}><input value={form.last} onChange={e=>set('last',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Nächste Kontrolle" icon="cal" editing={editing} value={form.next}><input value={form.next} onChange={e=>set('next',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Führerschein läuft ab" icon="cal" editing={editing} value={form.expires}><input value={form.expires} onChange={e=>set('expires',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Kontrollstatus" icon="check" editing={editing} value={controlName}><select value={form.controlStatus || 'current'} onChange={e=>set('controlStatus',e.target.value)}><option value="current">Kontrolle aktuell</option><option value="due">Kontrolle bald fällig</option><option value="overdue">Kontrolle überfällig</option><option value="planned">Kontrolle geplant</option><option value="done">Kontrolle durchgeführt</option><option value="missing">Kontrollnachweis fehlt</option></select></TrainingRecordField>
+        <TrainingRecordField label="Führerschein gültig bis" icon="cal" editing={editing} value={form.expires}><input value={form.expires} onChange={e=>set('expires',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Restzeit" icon="clock" value={form.days<0?`${Math.abs(form.days)} Tage abgelaufen`:`in ${form.days} Tagen`}/>
-        <TrainingRecordField label="Status" icon="flag" editing={editing} value={statusName}><select value={form.status} onChange={e=>set('status',e.target.value)}><option value="valid">Gültig</option><option value="warn">Läuft bald ab</option><option value="expired">Abgelaufen</option></select></TrainingRecordField>
-        <TrainingRecordField label="Freigegeben durch Arbeitgeber" icon="users" editing={editing} value={form.released?'Freigegeben':'Nicht freigegeben'}><label className="emp-check-label"><input type="checkbox" checked={form.released} onChange={e=>set('released',e.target.checked)}/>Freigegeben</label></TrainingRecordField>
-        <TrainingRecordField label="Versionshistorie" icon="history" value={`${form.history} Versionen`} wide/>
+        <TrainingRecordField label="Gültigkeitsstatus" icon="flag" editing={editing} value={statusName}><select value={form.status} onChange={e=>set('status',e.target.value)}><option value="valid">Gültig</option><option value="warn">Läuft bald ab</option><option value="expired">Abgelaufen</option><option value="missing">Dokument fehlt</option><option value="archived">Archiviert</option></select></TrainingRecordField>
+        <TrainingRecordField label="Freigabe für Mitarbeiter" icon="users" editing={editing} value={form.released?'Freigegeben':'Nicht freigegeben'}><label className="emp-check-label"><input type="checkbox" checked={form.released} onChange={e=>set('released',e.target.checked)}/>Freigegeben</label></TrainingRecordField>
+        <TrainingRecordField label="Fahrberechtigung im Unternehmen" icon="shield" editing={editing} value={form.drivingPermit || '-'}><select value={form.drivingPermit || 'Freigegeben'} onChange={e=>set('drivingPermit',e.target.value)}><option>Freigegeben</option><option>Prüfung erforderlich</option><option>Gesperrt</option><option>Nur intern freigegeben</option></select></TrainingRecordField>
+        <TrainingRecordField label="Verantwortliche Person" icon="users" editing={editing} value={form.responsible || '-'}><input value={form.responsible || ''} onChange={e=>set('responsible',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Kontrollhistorie" icon="history" value={`${form.history} Versionen`}/>
+        <TrainingRecordField label="Bemerkung" icon="doc" editing={editing} value={form.remark || '-'} wide><textarea rows="2" value={form.remark || ''} onChange={e=>set('remark',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Beschreibung" icon="doc" editing={editing} value={form.description} wide><textarea rows="4" value={form.description} onChange={e=>set('description',e.target.value)}/></TrainingRecordField>
         <div className="emp-training-record-field is-wide emp-training-record-docs"><Icon name="link" size={20}/><div><label>Dokumente</label><div className="emp-file-list">{docs.map(doc=><span className="emp-file-chip" key={doc}><Icon name="doc" size={14}/><span>{doc}</span><button onClick={()=>setDocs(list=>list.filter(item=>item!==doc))}><Icon name="x" size={13}/></button></span>)}</div><label className="emp-training-add-file"><Icon name="plus" size={15}/>Dokument hinzufügen<input type="file" multiple onChange={e=>setDocs(old=>[...old,...Array.from(e.target.files||[]).map(file=>file.name)])}/></label></div></div>
       </div>{editing&&<footer className="emp-training-record-footer"><button className="btn btn--ghost" onClick={()=>setEditing(false)}>Abbrechen</button><button className="btn btn--primary" onClick={()=>setEditing(false)}>Speichern</button></footer>}
@@ -1091,38 +1239,107 @@ function EmployeeLicenseRecord({emp,record,onBack}) {
   </div>;
 }
 
-function employeeOperatorRecords() {
+function employeeOperatorRecords(emp) {
   return [
-    {id:'op-1',device:'Bagger',training:'Ausbildung Erdbaumaschinenführer',issued:'12.05.2024',expires:'12.05.2027',days:342,status:'valid',released:true,history:3,description:'Berechtigung zum Führen von Hydraulikbaggern bis 30 t.',document:'Geraetefuehrer_Bagger.pdf'},
-    {id:'op-2',device:'Radlader',training:'Betriebliche Einweisung Radlader',issued:'08.08.2025',expires:'08.08.2026',days:65,status:'warn',released:true,history:2,description:'Betriebliche Einweisung für Radlader auf Baustellen und Betriebshof.',document:'Einweisung_Radlader.pdf'},
-    {id:'op-3',device:'Gabelstapler',training:'Fahrausweis Flurförderzeuge',issued:'18.04.2023',expires:'18.04.2026',days:-47,status:'expired',released:false,history:4,description:'Fahrausweis und jährliche Unterweisung für Flurförderzeuge.',document:'Fahrausweis_Gabelstapler.pdf'},
-  ];
+    {baseId:'op-1',device:'Bagger',manufacturer:'Hydraulikbagger bis 30 t',training:'Ausbildung Erdbaumaschinenführer',instruction:'Einweisung Baustelle / Betriebshof',authorization:'vorhanden',issued:'12.05.2024',validFrom:'12.05.2024',expires:'12.05.2027',nextInstruction:'12.05.2026',days:342,status:'valid',trainingStatus:'gültig',instructionStatus:'aktuell',authorizationStatus:'vorhanden',released:true,trainingCenter:'DEKRA Akademie',instructor:'Frau Möller',responsible:'Alexander Petersen',operationArea:'Baustellen Tiefbau',restriction:'bis 30 t',history:6,description:'Berechtigung zum Führen von Hydraulikbaggern bis 30 t.',document:'Geraetefuehrer_Bagger.pdf'},
+    {baseId:'op-2',device:'Radlader',manufacturer:'Volvo L30 / RL-04',training:'Betriebliche Einweisung Radlader',instruction:'Einweisung bestimmtes Gerät',authorization:'vorhanden',issued:'08.08.2025',validFrom:'08.08.2025',expires:'08.08.2026',nextInstruction:'08.08.2026',days:65,status:'warn',trainingStatus:'gültig',instructionStatus:'fällig',authorizationStatus:'vorhanden',released:true,trainingCenter:'Interne Schulung',instructor:'Markus Brinker',responsible:'Michael Janning',operationArea:'Betriebshof und Baustellen',restriction:'nur RL-04',history:4,description:'Betriebliche Einweisung für Radlader auf Baustellen und Betriebshof.',document:'Einweisung_Radlader.pdf'},
+    {baseId:'op-3',device:'Gabelstapler',manufacturer:'Flurförderzeuge',training:'Fahrausweis für Flurförderzeuge',instruction:'Jährliche Unterweisung fehlt',authorization:'abgelaufen',issued:'18.04.2023',validFrom:'18.04.2023',expires:'18.04.2026',nextInstruction:'18.04.2025',days:-47,status:'expired',trainingStatus:'abgelaufen',instructionStatus:'überfällig',authorizationStatus:'abgelaufen',released:false,trainingCenter:'TÜV Nord Akademie',instructor:'Herr Schneider',responsible:'Christian Janning',operationArea:'Lager und Betriebshof',restriction:'Einsatz derzeit gesperrt',history:5,description:'Fahrausweis und jährliche Unterweisung für Flurförderzeuge.',document:'Fahrausweis_Gabelstapler.pdf'},
+  ].map((row,index)=>({
+    ...row,
+    id:`${emp.id}-${row.baseId}`,
+    employeeId:emp.id,
+    employee:emp,
+    employeeName:`${emp.lastName}, ${emp.firstName}`,
+    company:window.company(emp.company)?.name || emp.company,
+    companyShort:window.company(emp.company)?.short || emp.company,
+    department:emp.department,
+    position:emp.position,
+    documentMissing:index===1 && emp.status === 'aktiv',
+    authorizationMissing:row.authorizationStatus==='abgelaufen' || row.authorizationStatus==='fehlt',
+    warning:row.status==='expired' ? `${row.device}-Berechtigung seit ${Math.abs(row.days)} Tagen abgelaufen. Einsatz derzeit nicht freigegeben.` : row.instructionStatus==='fällig' ? 'Jährliche Unterweisung bald fällig.' : 'Nachweise vollständig dokumentiert.',
+  }));
 }
 
 function EmployeeOperatorArea({emp,onBack,onOpen}) {
-  const records=React.useMemo(()=>employeeOperatorRecords(),[]);
+  const [scope,setScope]=React.useState(emp.id);
+  const sourceEmployees=React.useMemo(()=>window.SEED.employees,[]);
+  const activeEmployees=React.useMemo(()=>{
+    if(scope==='all') return sourceEmployees;
+    if(scope==='active') return sourceEmployees.filter(item=>item.status==='aktiv');
+    if(scope==='inactive') return sourceEmployees.filter(item=>item.status!=='aktiv');
+    if(scope.startsWith('company:')) return sourceEmployees.filter(item=>item.company===scope.replace('company:',''));
+    if(scope.startsWith('department:')) return sourceEmployees.filter(item=>item.department===scope.replace('department:',''));
+    return sourceEmployees.filter(item=>item.id===scope);
+  },[scope,sourceEmployees]);
+  const isAllView=scope!==emp.id;
+  const currentEmployee=activeEmployees.length===1?activeEmployees[0]:emp;
+  const records=React.useMemo(()=>activeEmployees.flatMap(employeeOperatorRecords),[activeEmployees]);
   const [selected,setSelected]=React.useState(new Set());
   const [sort,setSort]=React.useState({key:'device',dir:'asc'});
   const [menu,setMenu]=React.useState(null);
   const [filter,setFilter]=React.useState('all');
   const [group,setGroup]=React.useState('');
-  const labels={valid:'Gültig',warn:'Läuft bald ab',expired:'Abgelaufen'};
+  const [hiddenColumns,setHiddenColumns]=React.useState(new Set());
+  const labels={valid:'Gültig',warn:'Läuft bald ab',expired:'Abgelaufen',instructionDue:'Unterweisung fällig',authorizationMissing:'Beauftragung fehlt',documentMissing:'Dokument fehlt',blocked:'Gesperrt',archived:'Archiviert'};
   const value=(row,key)=>key==='status'?labels[row.status]:key==='history'?row.history:row[key];
-  let rows=filter==='all'?records:records.filter(row=>row.status===filter);
+  let rows=filter==='all'?records:
+    filter==='instructionDue'?records.filter(row=>['fällig','überfällig'].includes(row.instructionStatus)):
+    filter==='authorizationMissing'?records.filter(row=>row.authorizationMissing):
+    filter==='documentMissing'?records.filter(row=>row.documentMissing):
+    records.filter(row=>row.status===filter);
   rows=[...rows].sort((a,b)=>(sort.dir==='asc'?1:-1)*String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
   const toggle=id=>setSelected(current=>{const next=new Set(current);next.has(id)?next.delete(id):next.add(id);return next;});
-  const columns=[['device','Typ Gerät'],['training','Ausbildung / Einweisung'],['issued','Ausstellungsdatum'],['expires','Ablaufdatum'],['days','Restlaufzeit'],['status','Status'],['released','Freigabe für Mitarbeiter'],['history','Versionshistorie'],['description','Beschreibung'],['document','Dokument']];
+  const baseColumns=[
+    ...(isAllView?[['employeeName','Mitarbeiter'],['companyShort','Firma'],['department','Abteilung'],['position','Position']]:[]),
+    ['device','Gerätetyp'],['manufacturer','Hersteller / Gerätegruppe'],['training','Ausbildung'],['instruction','Betriebliche Einweisung'],['authorization','Schriftliche Beauftragung'],['issued','Ausstellungsdatum'],['expires','Ablaufdatum'],['nextInstruction','Nächste Unterweisung'],['days','Restlaufzeit'],['status','Gesamtstatus'],['operationArea','Einsatzbereich'],['restriction','Einschränkungen'],['released','Freigabe für Mitarbeiter'],['history','Nachweis- und Änderungshistorie'],['document','Dokumente'],['actions','Aktionen']
+  ];
+  const columns=baseColumns.filter(([key])=>!hiddenColumns.has(key));
+  const tabLabels={all:`Alle ${records.length}`,valid:`Gültig ${records.filter(row=>row.status==='valid').length}`,warn:`Läuft bald ab ${records.filter(row=>row.status==='warn').length}`,expired:`Abgelaufen ${records.filter(row=>row.status==='expired').length}`,instructionDue:`Unterweisung fällig ${records.filter(row=>['fällig','überfällig'].includes(row.instructionStatus)).length}`,authorizationMissing:`Beauftragung fehlt ${records.filter(row=>row.authorizationMissing).length}`,documentMissing:`Dokument fehlt ${records.filter(row=>row.documentMissing).length}`,archived:'Archiviert'};
+  const statusClass=status=>status==='valid'?'valid':status==='warn'||status==='instructionDue'||status==='documentMissing'?'warn':status==='archived'?'archived':'expired';
+  const kpi=[
+    ['Geräteberechtigungen',records.length,'all'],
+    ['Gültig',records.filter(row=>row.status==='valid').length,'valid'],
+    ['Laufen bald ab',records.filter(row=>row.status==='warn').length,'warn'],
+    ['Unterweisung fällig',records.filter(row=>['fällig','überfällig'].includes(row.instructionStatus)).length,'instructionDue'],
+    ['Beauftragung fehlt',records.filter(row=>row.authorizationMissing).length,'authorizationMissing'],
+  ];
+  const cellValue=(row,key)=>{
+    if(key==='employeeName'||key==='device') return <strong>{row[key]}</strong>;
+    if(key==='days') return row.days<0?`${Math.abs(row.days)} Tage abgelaufen`:`in ${row.days} Tagen`;
+    if(key==='status') return <span className={'emp-status is-'+statusClass(row.status)}>{labels[row.status]}</span>;
+    if(key==='authorization') return <span className={'emp-status is-'+(row.authorizationStatus==='vorhanden'?'valid':row.authorizationStatus==='widerrufen'||row.authorizationStatus==='abgelaufen'?'expired':'warn')}>{row.authorization}</span>;
+    if(key==='released') return <span className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</span>;
+    if(key==='history') return <span className="emp-version-chip"><Icon name="history" size={13}/>{row.history} Ereignisse</span>;
+    if(key==='document') return <span className={'emp-doc-count '+(row.documentMissing?'is-missing':'')}><Icon name="doc" size={13}/>{row.documentMissing?'fehlt':1}</span>;
+    if(key==='actions') return <button className="emp-row-menu-btn" onClick={event=>event.stopPropagation()}>⋮</button>;
+    return row[key];
+  };
   return <div className="emp-full">
-    <EmpPageTitle title={`Geräteführer (${emp.name})`} onBack={onBack}/>
-    <div className="emp-training-tabs">{['all','valid','warn','expired'].map(id=><button key={id} className={filter===id?'is-active':''} onClick={()=>setFilter(id)}>{id==='all'?`Alle ${records.length}`:labels[id]}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}</div>
-    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14}/>Als Excel exportieren</button><button><Icon name="edit" size={14}/>Status ändern</button><button className="is-danger"><Icon name="trash" size={14}/>Löschen</button></div>}
+    <EmpPageTitle title={isAllView?'Geräteführer - alle Mitarbeiter':`Geräteführer (${currentEmployee.name})`} onBack={onBack} action={
+      <div className="emp-training-toolbar">
+        <label>Mitarbeiter auswählen<select value={scope} onChange={event=>{setScope(event.target.value);setSelected(new Set());}}>
+          <option value={emp.id}>{emp.name}</option>
+          <option value="all">Alle Mitarbeiter</option>
+          <option value="active">Nur aktive Mitarbeiter</option>
+          <option value="inactive">Ausgeschiedene Mitarbeiter</option>
+          {window.SEED.companies.map(company=><option key={company.id} value={`company:${company.id}`}>{company.name}</option>)}
+          {window.SEED.departments.map(dept=><option key={dept} value={`department:${dept}`}>Abteilung: {dept}</option>)}
+          {sourceEmployees.filter(item=>item.id!==emp.id).slice().sort((a,b)=>a.lastName.localeCompare(b.lastName,'de')).map(item=><option key={item.id} value={item.id}>{item.lastName}, {item.firstName}</option>)}
+        </select></label>
+        <button><Icon name="settings" size={14}/>Filter</button>
+        <button><Icon name="plus" size={14}/>Geräteberechtigung hinzufügen</button>
+      </div>
+    }/>
+    <div className="emp-training-kpis">{kpi.map(item=><button key={item[0]} className={filter===item[2]?'is-active':''} onClick={()=>setFilter(item[2])}><span>{item[0]}</span><strong>{item[1]}</strong><small>Klicken zum Filtern</small></button>)}</div>
+    <div className="emp-training-tabs">{['all','valid','warn','expired','instructionDue','authorizationMissing','documentMissing','archived'].map(id=><button key={id} className={filter===id?'is-active':''} onClick={()=>setFilter(id)}>{tabLabels[id]}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}{hiddenColumns.size>0&&<button className="emp-clear-group" onClick={()=>setHiddenColumns(new Set())}>Alle Spalten anzeigen</button>}</div>
+    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="cal" size={14}/>Unterweisung planen</button><button><Icon name="check" size={14}/>Einweisung erfassen</button><button><Icon name="doc" size={14}/>Beauftragung erstellen</button><button><Icon name="users" size={14}/>Verantwortliche Person zuweisen</button><button><Icon name="edit" size={14}/>Freigabe ändern</button><button><Icon name="download" size={14}/>Dokumente herunterladen</button><button><Icon name="history" size={14}/>Archivieren</button></div>}
     <div className="emp-table-wrap"><table className="emp-operator-table">
-      <thead><tr><th className="emp-check"><input type="checkbox" checked={selected.size===records.length} onChange={()=>setSelected(selected.size===records.length?new Set():new Set(records.map(row=>row.id)))}/></th>
-        {columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>Aufsteigend sortieren</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Absteigend sortieren</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Nach „{label}“ gruppieren</button><button onClick={()=>setMenu(null)}>Spaltenfilter öffnen</button></div>}</th>)}
+      <thead><tr><th className="emp-check"><input type="checkbox" checked={rows.length>0&&selected.size===rows.length} onChange={()=>setSelected(selected.size===rows.length?new Set():new Set(rows.map(row=>row.id)))}/></th>
+        {columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={()=>setMenu(null)}>Filtern nach</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Gruppieren nach &quot;{label}&quot;</button><button onClick={()=>{setHiddenColumns(old=>new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button></div>}</th>)}
       </tr></thead>
-      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan="11">{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
+      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan={columns.length+1}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
         <tr className={row.status==='expired'?'is-expired':row.status==='warn'?'is-warn':''} onClick={()=>onOpen(row)}><td className="emp-check" onClick={event=>event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={()=>toggle(row.id)}/></td>
-          <td><strong>{row.device}</strong></td><td>{row.training}</td><td>{row.issued}</td><td>{row.expires}</td><td className={row.days<0?'is-overdue':''}>{row.days<0?`${Math.abs(row.days)} Tage abgelaufen`:`in ${row.days} Tagen`}</td><td><span className={'emp-status is-'+row.status}>{labels[row.status]}</span></td><td className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</td><td><span className="emp-version-chip"><Icon name="history" size={13}/>{row.history} Versionen</span></td><td className="emp-ellipsis">{row.description}</td><td><span className="emp-doc-count"><Icon name="doc" size={13}/>1</span></td>
+          {columns.map(([key])=><td key={key} className={(key==='description'||key==='restriction'?'emp-ellipsis ':'')+(key==='days'&&row.days<0?'is-overdue':'')}>{cellValue(row,key)}</td>)}
         </tr></React.Fragment>)}</tbody>
     </table></div>
   </div>;
@@ -1133,19 +1350,39 @@ function EmployeeOperatorRecord({emp,record,onBack}) {
   const [docs,setDocs]=React.useState([record.document]);
   const [form,setForm]=React.useState({...record});
   const set=(key,value)=>setForm(current=>({...current,[key]:value}));
-  const statusName=form.status==='valid'?'Gültig':form.status==='warn'?'Läuft bald ab':'Abgelaufen';
+  const displayEmp=form.employee || emp;
+  const statusName=form.status==='valid'?'Gültig':form.status==='warn'?'Läuft bald ab':form.status==='instructionDue'?'Unterweisung fällig':form.status==='authorizationMissing'?'Beauftragung fehlt':form.status==='documentMissing'?'Dokument fehlt':form.status==='blocked'?'Gesperrt':form.status==='archived'?'Archiviert':'Abgelaufen';
+  const statusClass=form.status==='valid'?'valid':form.status==='warn'||form.status==='instructionDue'||form.status==='documentMissing'?'warn':form.status==='archived'?'archived':'expired';
   return <div className="emp-full emp-training-record-page">
-    <EmpPageTitle title={`${record.device} (${emp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
-    <section className="emp-training-record-card"><header className="emp-training-record-hero"><span className="emp-training-record-icon emp-operator-record-icon"><Icon name="settings" size={27}/></span><div><span>Geräteführer</span><h2>{form.device}</h2></div><span className={'emp-status is-'+form.status}>{statusName}</span></header>
+    <EmpPageTitle title={`${record.device} (${displayEmp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all" onClick={()=>setEditing(true)}><Icon name="edit" size={15}/>Alle bearbeiten</button><button className="emp-delete-record"><Icon name="trash" size={15}/>Löschen</button></div>}/>
+    <section className="emp-training-record-card"><header className="emp-training-record-hero"><span className="emp-training-record-icon emp-operator-record-icon"><Icon name="settings" size={27}/></span><div><span>Geräteführer</span><h2>{form.device}</h2></div><span className={'emp-status is-'+statusClass}>{statusName}</span></header>
       <div className="emp-training-record-grid">
-        <TrainingRecordField label="Typ Gerät" icon="settings" editing={editing} value={form.device}><input value={form.device} onChange={e=>set('device',e.target.value)}/></TrainingRecordField>
-        <TrainingRecordField label="Ausbildung / Einweisung" icon="cap" editing={editing} value={form.training}><input value={form.training} onChange={e=>set('training',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Mitarbeiter" icon="users" value={displayEmp.name}/>
+        <TrainingRecordField label="Firma" icon="building" value={form.company || window.company(displayEmp.company)?.name || displayEmp.company}/>
+        <TrainingRecordField label="Abteilung / Position" icon="users" value={`${form.department || displayEmp.department} · ${form.position || displayEmp.position}`}/>
+        <TrainingRecordField label="Gerätetyp" icon="settings" editing={editing} value={form.device}><input value={form.device} onChange={e=>set('device',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Hersteller oder Gerätegruppe" icon="settings" editing={editing} value={form.manufacturer || '-'}><input value={form.manufacturer || ''} onChange={e=>set('manufacturer',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Ausbildung" icon="cap" editing={editing} value={form.training}><input value={form.training} onChange={e=>set('training',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Betriebliche Einweisung" icon="check" editing={editing} value={form.instruction || '-'}><input value={form.instruction || ''} onChange={e=>set('instruction',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Schriftliche Beauftragung" icon="doc" editing={editing} value={form.authorization || '-'}><select value={form.authorization || 'vorhanden'} onChange={e=>set('authorization',e.target.value)}><option>vorhanden</option><option>fehlt</option><option>widerrufen</option><option>abgelaufen</option></select></TrainingRecordField>
         <TrainingRecordField label="Ausstellungsdatum" icon="cal" editing={editing} value={form.issued}><input value={form.issued} onChange={e=>set('issued',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Gültig ab" icon="cal" editing={editing} value={form.validFrom || '-'}><input value={form.validFrom || ''} onChange={e=>set('validFrom',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Ablaufdatum" icon="cal" editing={editing} value={form.expires}><input value={form.expires} onChange={e=>set('expires',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Nächste Unterweisung" icon="cal" editing={editing} value={form.nextInstruction || '-'}><input value={form.nextInstruction || ''} onChange={e=>set('nextInstruction',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Restlaufzeit" icon="clock" value={form.days<0?`${Math.abs(form.days)} Tage abgelaufen`:`in ${form.days} Tagen`}/>
-        <TrainingRecordField label="Status" icon="flag" editing={editing} value={statusName}><select value={form.status} onChange={e=>set('status',e.target.value)}><option value="valid">Gültig</option><option value="warn">Läuft bald ab</option><option value="expired">Abgelaufen</option></select></TrainingRecordField>
-        <TrainingRecordField label="Freigegeben durch Arbeitgeber" icon="users" editing={editing} value={form.released?'Freigegeben':'Nicht freigegeben'}><label className="emp-check-label"><input type="checkbox" checked={form.released} onChange={e=>set('released',e.target.checked)}/>Freigegeben</label></TrainingRecordField>
-        <TrainingRecordField label="Versionshistorie" icon="history" value={`${form.history} Versionen`}/>
+        <TrainingRecordField label="Ausbildungsstatus" icon="flag" editing={editing} value={form.trainingStatus || '-'}><input value={form.trainingStatus || ''} onChange={e=>set('trainingStatus',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Unterweisungsstatus" icon="flag" editing={editing} value={form.instructionStatus || '-'}><input value={form.instructionStatus || ''} onChange={e=>set('instructionStatus',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Beauftragungsstatus" icon="flag" editing={editing} value={form.authorizationStatus || '-'}><select value={form.authorizationStatus || 'vorhanden'} onChange={e=>set('authorizationStatus',e.target.value)}><option>vorhanden</option><option>fehlt</option><option>widerrufen</option><option>abgelaufen</option></select></TrainingRecordField>
+        <TrainingRecordField label="Gesamtstatus" icon="flag" editing={editing} value={statusName}><select value={form.status} onChange={e=>set('status',e.target.value)}><option value="valid">Gültig</option><option value="warn">Läuft bald ab</option><option value="expired">Abgelaufen</option><option value="instructionDue">Unterweisung fällig</option><option value="authorizationMissing">Beauftragung fehlt</option><option value="documentMissing">Dokument fehlt</option><option value="blocked">Gesperrt</option><option value="archived">Archiviert</option></select></TrainingRecordField>
+        <TrainingRecordField label="Ausbildungsstelle" icon="building" editing={editing} value={form.trainingCenter || '-'}><input value={form.trainingCenter || ''} onChange={e=>set('trainingCenter',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Ausbilder oder Einweiser" icon="users" editing={editing} value={form.instructor || '-'}><input value={form.instructor || ''} onChange={e=>set('instructor',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Verantwortliche Führungskraft" icon="users" editing={editing} value={form.responsible || '-'}><input value={form.responsible || ''} onChange={e=>set('responsible',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Einsatzbereich" icon="pin" editing={editing} value={form.operationArea || '-'}><input value={form.operationArea || ''} onChange={e=>set('operationArea',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Einschränkungen" icon="shield" editing={editing} value={form.restriction || '-'}><input value={form.restriction || ''} onChange={e=>set('restriction',e.target.value)}/></TrainingRecordField>
+        <TrainingRecordField label="Freigabe für Mitarbeiter" icon="users" editing={editing} value={form.released?'Freigegeben':'Nicht freigegeben'}><label className="emp-check-label"><input type="checkbox" checked={form.released} onChange={e=>set('released',e.target.checked)}/>Freigegeben</label></TrainingRecordField>
+        <TrainingRecordField label="Nachweis- und Änderungshistorie" icon="history" value={`${form.history} Ereignisse`}/>
+        <TrainingRecordField label="Warnung" icon="flag" value={form.warning || '-' } wide/>
+        <TrainingRecordField label="Bemerkung" icon="doc" editing={editing} value={form.remark || '-'} wide><textarea rows="2" value={form.remark || ''} onChange={e=>set('remark',e.target.value)}/></TrainingRecordField>
         <TrainingRecordField label="Beschreibung" icon="doc" editing={editing} value={form.description} wide><textarea rows="4" value={form.description} onChange={e=>set('description',e.target.value)}/></TrainingRecordField>
         <div className="emp-training-record-field is-wide emp-training-record-docs"><Icon name="link" size={20}/><div><label>Dokumente</label><div className="emp-file-list">{docs.map(doc=><span className="emp-file-chip" key={doc}><Icon name="doc" size={14}/><span>{doc}</span><button onClick={()=>setDocs(list=>list.filter(item=>item!==doc))}><Icon name="x" size={13}/></button></span>)}</div><label className="emp-training-add-file"><Icon name="plus" size={15}/>Dokument hinzufügen<input type="file" multiple onChange={e=>setDocs(old=>[...old,...Array.from(e.target.files||[]).map(file=>file.name)])}/></label></div></div>
       </div>{editing&&<footer className="emp-training-record-footer"><button className="btn btn--ghost" onClick={()=>setEditing(false)}>Abbrechen</button><button className="btn btn--primary" onClick={()=>setEditing(false)}>Speichern</button></footer>}

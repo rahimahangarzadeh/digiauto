@@ -11990,3 +11990,117 @@ a.subtle:hover { text-decoration: underline; }
   width: 76px;
   min-width: 76px;
 }
+
+/* Final: Mitarbeiter-Detail Navigation und Uebersicht kompakter */
+.emp-detail-body {
+  grid-template-columns: 210px minmax(0, 1fr) 190px;
+  gap: 14px;
+}
+
+.emp-detail-body .emp-section-nav {
+  gap: 3px;
+  min-height: 0;
+  padding: 7px;
+}
+
+.emp-detail-body .emp-section-nav button {
+  min-height: 40px;
+  grid-template-columns: 18px minmax(0, 1fr) 14px;
+  gap: 8px;
+  border-radius: 7px;
+  padding: 5px 10px;
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.emp-detail-body .emp-section-nav button svg:first-child {
+  width: 17px;
+  height: 17px;
+}
+
+.emp-detail-body .emp-section-nav button span {
+  min-width: 0;
+  white-space: normal;
+}
+
+.emp-detail-body .emp-section-nav button.is-active {
+  background: #f4e8e2;
+  color: var(--fg-1);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+}
+
+.emp-overview-center,
+.emp-overview-aside {
+  align-self: start;
+}
+
+.emp-overview-center {
+  gap: 14px;
+}
+
+.emp-overview-aside {
+  position: sticky;
+  top: 18px;
+  gap: 14px;
+  min-width: 0;
+}
+
+.emp-overview-card,
+.emp-overview-aside > section {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.emp-overview-card > header {
+  min-height: 48px;
+  padding: 0 15px;
+}
+
+.emp-overview-card h2,
+.emp-overview-aside h2 {
+  line-height: 1.15;
+}
+
+.emp-side-stat,
+.emp-next-check {
+  padding: 14px;
+}
+
+.emp-next-check {
+  min-height: 0;
+}
+
+.emp-next-check > strong {
+  font-size: 27px;
+}
+
+@media (max-width: 1180px) {
+  .emp-detail-body {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+
+  .emp-overview-aside {
+    position: static;
+    grid-column: 2;
+    grid-template-columns: 1fr;
+  }
+
+  .emp-workspace__content--wide {
+    grid-column: 2;
+  }
+}
+
+@media (max-width: 860px) {
+  .emp-detail-body {
+    grid-template-columns: 1fr;
+  }
+
+  .emp-detail-body .emp-section-nav {
+    grid-template-columns: 1fr;
+  }
+
+  .emp-overview-aside,
+  .emp-workspace__content--wide {
+    grid-column: auto;
+  }
+}

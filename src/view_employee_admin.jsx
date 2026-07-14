@@ -1539,59 +1539,65 @@ function EmployeeEquipmentCheckRecord({emp,record,onBack}) {
 function employeeSiteRecords(emp) {
   const companyName = window.company(emp.company)?.name || emp.company;
   return [
-    {id:'site-1',name:'Baustelle Alex Barum',projectName:'Kanalsanierung Nordhorn',company:'Janning Tiefbau GmbH',projectNr:'BAU-2026-014',client:'Stadt Nordhorn',manager:'Alexander Petersen',foreman:'Markus Brinker',address:'Lingener Straße 42, 48529 Nordhorn',ownRole:'Mitarbeiter',period:'15.04.2026 - 28.06.2026',releaseLevel:'Vollständiger Baustellenbereich sichtbar',released:true,documents:'Alarmplan, Baustellenaushang, Unterweisung',description:'Kanalsanierung Nordhorn mit Tiefbau-, Rohrbau- und Wiederherstellungsarbeiten.',document:'Baustelle_Alex_Barum.pdf',visibleFor:['all']},
-    {id:'site-2',name:'Rohrgraben Suedring',projectName:'Hausanschlüsse Suedring',company:'Janning Rohrbau GmbH',projectNr:'BAU-2026-021',client:'Wasserverband Nordhorn',manager:'Stefan Mueller',foreman:'Thomas Wegener',address:'Südring 18, 48527 Nordhorn',ownRole:'Geräteführer',period:'20.05.2026 - 10.07.2026',releaseLevel:'Stammdaten und Dokumente sichtbar',released:true,documents:'Alarmplan, Baustellenaushang',description:'Hausanschlüsse und Rohrleitungsarbeiten am Südring.',document:'Rohrgraben_Suedring.pdf',visibleFor:['rohrbau','all']},
-    {id:'site-3',name:'Bohrung Gewerbepark',projectName:'Horizontalbohrung Gewerbepark',company:'Janning Bohrtechnik GmbH',projectNr:'BAU-2026-028',client:'Gewerbepark Bentheim GmbH',manager:'Dirk Berg',foreman:'Mehmet Brinker',address:'Industriestraße 7, 48455 Bad Bentheim',ownRole:'Mitarbeiter',period:'03.02.2026 - 30.04.2026',releaseLevel:'Nicht freigegeben',released:false,documents:'-',description:'Horizontalbohrung und Leitungsverlegung im Gewerbepark.',document:'Bohrung_Gewerbepark.pdf',visibleFor:[]},
+    {id:'site-1',name:'Baustelle Alex Barum',projectName:'Kanalsanierung Nordhorn',company:'Janning Tiefbau GmbH',projectNr:'BAU-2026-014',client:'Stadt Nordhorn',manager:'Alexander Petersen',foreman:'Markus Brinker',address:'Lingener Straße 42, 48529 Nordhorn',ownRole:'Baumaschinist / Ersthelfer',start:'15.04.2026',end:'28.06.2026',assignmentStatus:'Im Einsatz',assignmentNotice:'Einsatz endet in 7 Tagen',siteStatus:'Aktiv',accessStatus:'Vollständiger Baustellenbereich',released:true,documentSummary:'4 Dokumente · 1 neu · 1 Bestätigung offen',documents:['Alarmplan_BAU-2026-014.pdf','Baustellenaushang_BGBAU.pdf','GBU_Kanalsanierung.pdf','Unterweisung_Baustelle.pdf'],lastUpdate:'12.07.2026 · Alarmplan aktualisiert',contacts:'Bauleiter: Alexander Petersen · Vorarbeiter: Markus Brinker',firstAid:'Markus Brinker, Dirk Jürgens',riskAssessment:'3 Gefährdungsbeurteilungen freigegeben',instruction:'Projektbezogene Unterweisung abgeschlossen',description:'Kanalsanierung Nordhorn mit Tiefbau-, Rohrbau- und Wiederherstellungsarbeiten.',visibleFor:['all']},
+    {id:'site-2',name:'Rohrgraben Suedring',projectName:'Hausanschlüsse Suedring',company:'Janning Rohrbau GmbH',projectNr:'BAU-2026-021',client:'Wasserverband Nordhorn',manager:'Stefan Mueller',foreman:'Thomas Wegener',address:'Südring 18, 48527 Nordhorn',ownRole:'Geräteführer',start:'20.05.2026',end:'10.07.2026',assignmentStatus:'Eingeplant',assignmentNotice:'Zugriff ab 20.05.2026',siteStatus:'Geplant',accessStatus:'Stammdaten und Dokumente',released:true,documentSummary:'2 Dokumente · Alarmplan freigegeben',documents:['Alarmplan_BAU-2026-021.pdf','Baustellenaushang_Suedring.pdf'],lastUpdate:'08.07.2026 · Baustellenaushang freigegeben',contacts:'Bauleiter: Stefan Mueller · Vorarbeiter: Thomas Wegener',firstAid:'Thomas Wegener',riskAssessment:'Gefährdungsbeurteilung noch nicht freigegeben',instruction:'Unterweisung geplant',description:'Hausanschlüsse und Rohrleitungsarbeiten am Südring.',visibleFor:['rohrbau','all']},
+    {id:'site-3',name:'Bohrung Gewerbepark',projectName:'Horizontalbohrung Gewerbepark',company:'Janning Bohrtechnik GmbH',projectNr:'BAU-2026-028',client:'Gewerbepark Bentheim GmbH',manager:'Dirk Berg',foreman:'Mehmet Brinker',address:'Industriestraße 7, 48455 Bad Bentheim',ownRole:'Mitarbeiter',start:'03.02.2026',end:'30.04.2026',assignmentStatus:'Einsatz beendet',assignmentNotice:'Einsatzzeitraum abgelaufen',siteStatus:'Abgeschlossen',accessStatus:'Keine Freigabe',released:false,documentSummary:'-',documents:[],lastUpdate:'-',contacts:'-',firstAid:'-',riskAssessment:'-',instruction:'-',description:'Horizontalbohrung und Leitungsverlegung im Gewerbepark.',visibleFor:[]},
   ].filter(row => row.released && (row.visibleFor.includes('all') || row.visibleFor.includes(emp.company) || row.company === companyName));
 }
 
 function EmployeeSiteArea({emp,onBack,onOpen}) {
   const records=React.useMemo(()=>employeeSiteRecords(emp),[emp]);
-  const [selected,setSelected]=React.useState(new Set());
   const [sort,setSort]=React.useState({key:'name',dir:'asc'});
   const [menu,setMenu]=React.useState(null);
   const [group,setGroup]=React.useState('');
-  const value=(row,key)=>key==='history'?row.history:row[key];
-  const rows=[...records].sort((a,b)=>(sort.dir==='asc'?1:-1)*String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
-  const toggle=id=>setSelected(current=>{const next=new Set(current);next.has(id)?next.delete(id):next.add(id);return next;});
-  const columns=[['name','Baustelle / Projektname'],['company','Firma'],['projectNr','Projekt-Nr.'],['client','Auftraggeber'],['manager','Bauleiter'],['foreman','Vorarbeiter'],['address','Adresse'],['ownRole','Eigene Rolle'],['period','Einsatzzeitraum'],['releaseLevel','Freigabe'],['documents','Dokumente']];
+  const [tab,setTab]=React.useState('Alle');
+  const statusTabs=['Alle','Aktiv','Geplant','Abgeschlossen','Archiviert'];
+  const tabRecords=tab==='Alle'?records:records.filter(row=>row.siteStatus===tab);
+  const value=(row,key)=>row[key] || '';
+  const rows=[...tabRecords].sort((a,b)=>(sort.dir==='asc'?1:-1)*String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
+  const columns=[['name','Baustelle / Projektname'],['company','Firma'],['projectNr','Projekt-Nr.'],['ownRole','Meine Rolle'],['start','Einsatzbeginn'],['end','Einsatzende'],['assignmentStatus','Mein Einsatzstatus'],['manager','Bauleiter'],['foreman','Vorarbeiter'],['address','Adresse'],['siteStatus','Baustellenstatus'],['accessStatus','Meine Zugriffsrechte'],['documentSummary','Dokumente'],['lastUpdate','Letzte Aktualisierung'],['actions','Aktionen']];
+  const statusTone=status=>status==='Aktiv'?'valid':status==='Geplant'?'warn':'missing';
+  const assignmentTone=status=>status==='Im Einsatz'?'valid':status==='Eingeplant'||status==='Vertretung'?'warn':'missing';
+  const accessTone=status=>status==='Vollständiger Baustellenbereich'?'valid':status==='Stammdaten und Dokumente'||status==='Nur Dokumente'||status==='Nur Stammdaten'?'warn':'missing';
   return <div className="emp-full">
     <EmpPageTitle title={`Baustellen (${emp.name})`} onBack={onBack}/>
-    <div className="emp-training-tabs"><button className="is-active">Alle {records.length}</button>{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}</div>
-    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="eye" size={14}/>Freigegebene Dokumente ansehen</button><button><Icon name="download" size={14}/>Dokumente herunterladen</button></div>}
+    <div className="emp-training-tabs">{statusTabs.map(item=><button key={item} className={tab===item?'is-active':''} onClick={()=>setTab(item)}>{item} {item==='Alle'?records.length:records.filter(row=>row.siteStatus===item).length}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}</div>
     <div className="emp-table-wrap"><table className="emp-site-table">
-      <thead><tr><th className="emp-check"><input type="checkbox" checked={selected.size===records.length} onChange={()=>setSelected(selected.size===records.length?new Set():new Set(records.map(row=>row.id)))}/></th>
-        {columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>Aufsteigend sortieren</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Absteigend sortieren</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Nach „{label}“ gruppieren</button><button onClick={()=>setMenu(null)}>Spaltenfilter öffnen</button></div>}</th>)}
+      <thead><tr>{columns.map(([key,label])=><th key={key}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>Aufsteigend sortieren</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Absteigend sortieren</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Nach „{label}“ gruppieren</button><button onClick={()=>setMenu(null)}>Spaltenfilter öffnen</button></div>}</th>)}
       </tr></thead>
-      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan={columns.length+1}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
-        <tr onClick={()=>onOpen(row)}><td className="emp-check" onClick={event=>event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={()=>toggle(row.id)}/></td>
-          <td><strong>{row.name}</strong><small>{row.projectName}</small></td><td>{row.company}</td><td>{row.projectNr}</td><td>{row.client}</td><td>{row.manager}</td><td>{row.foreman}</td><td>{row.address}</td><td>{row.ownRole}</td><td>{row.period}</td><td><span className="badge badge--valid"><span className="badge__dot" />{row.releaseLevel}</span></td><td><span className="emp-doc-count"><Icon name="doc" size={13}/>{row.documents}</span></td>
+      <tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan={columns.length}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
+        <tr onClick={()=>onOpen(row)}>
+          <td><strong>{row.name}</strong><small>{row.projectName}</small></td><td>{row.company}</td><td>{row.projectNr}</td><td>{row.ownRole}</td><td>{row.start}</td><td>{row.end}</td><td><span className={`badge badge--${assignmentTone(row.assignmentStatus)}`}><span className="badge__dot" />{row.assignmentStatus}</span><small>{row.assignmentNotice}</small></td><td>{row.manager}</td><td>{row.foreman}</td><td>{row.address}</td><td><span className={`badge badge--${statusTone(row.siteStatus)}`}><span className="badge__dot" />{row.siteStatus}</span></td><td><span className={`badge badge--${accessTone(row.accessStatus)}`}><span className="badge__dot" />{row.accessStatus}</span></td><td><span className="emp-doc-count"><Icon name="doc" size={13}/>{row.documentSummary}</span></td><td>{row.lastUpdate}</td><td><button className="mini-icon-btn" onClick={event=>{event.stopPropagation();onOpen(row);}} title="Baustelle öffnen" aria-label="Baustelle öffnen"><Icon name="eye" size={14}/></button></td>
         </tr></React.Fragment>)}</tbody>
     </table></div>
   </div>;
 }
 
 function EmployeeSiteRecord({emp,record,onBack}) {
-  const [editing,setEditing]=React.useState(false);
-  const [docs,setDocs]=React.useState([record.document]);
-  const [form,setForm]=React.useState({...record});
-  const set=(key,value)=>setForm(current=>({...current,[key]:value}));
+  const [form]=React.useState({...record});
   return <div className="emp-full emp-training-record-page">
     <EmpPageTitle title={`${record.name} (${emp.name})`} onBack={onBack}/>
-    <section className="emp-training-record-card"><header className="emp-training-record-hero"><span className="emp-training-record-icon emp-site-record-icon"><Icon name="building" size={27}/></span><div><span>Baustelle / Projekt</span><h2>{form.name}</h2></div><span className="emp-status is-valid">Aktiv</span></header>
+    <section className="emp-training-record-card"><header className="emp-training-record-hero"><span className="emp-training-record-icon emp-site-record-icon"><Icon name="building" size={27}/></span><div><span>Persönliche Baustellenansicht</span><h2>{form.name}</h2><small>{form.projectName}</small></div><span className="emp-status is-valid">{form.releaseStatus}</span></header>
       <div className="emp-training-record-grid">
-        <TrainingRecordField label="Baustelle / Projektname" icon="building" value={form.name}/>
+        <TrainingRecordField label="Baustelle / Projektname" icon="building" value={`${form.name} · ${form.projectName}`}/>
         <TrainingRecordField label="Firma" icon="building" value={form.company}/>
         <TrainingRecordField label="Projekt-Nr." icon="doc" value={form.projectNr}/>
-        <TrainingRecordField label="Auftraggeber" icon="users" value={form.client}/>
-        <TrainingRecordField label="Bauleiter" icon="users" value={form.manager}/>
-        <TrainingRecordField label="Vorarbeiter" icon="users" value={form.foreman}/>
-        <TrainingRecordField label="Adresse" icon="pin" value={form.address}/>
         <TrainingRecordField label="Eigene Rolle" icon="users" value={form.ownRole}/>
-        <TrainingRecordField label="Einsatzzeitraum" icon="cal" value={form.period}/>
-        <TrainingRecordField label="Freigabe" icon="shield" value={form.releaseLevel}/>
+        <TrainingRecordField label="Einsatzbeginn" icon="cal" value={form.start}/>
+        <TrainingRecordField label="Einsatzende" icon="cal" value={form.end}/>
+        <TrainingRecordField label="Mein Einsatzstatus" icon="flag" value={`${form.assignmentStatus} · ${form.assignmentNotice}`}/>
+        <TrainingRecordField label="Baustellenstatus" icon="flag" value={form.siteStatus}/>
+        <TrainingRecordField label="Meine Zugriffsrechte" icon="shield" value={form.accessStatus}/>
+        <TrainingRecordField label="Adresse" icon="pin" value={form.address}/>
+        <TrainingRecordField label="Ansprechpartner" icon="users" value={form.contacts} wide/>
+        <TrainingRecordField label="Ersthelfer" icon="users" value={form.firstAid}/>
+        <TrainingRecordField label="Alarmplan" icon="doc" value="freigegeben"/>
+        <TrainingRecordField label="Baustellenaushang" icon="doc" value="freigegeben"/>
+        <TrainingRecordField label="Gefährdungsbeurteilungen" icon="shield" value={form.riskAssessment}/>
+        <TrainingRecordField label="Eigene Unterweisungen" icon="flag" value={form.instruction}/>
+        <TrainingRecordField label="Letzte Aktualisierung" icon="history" value={form.lastUpdate}/>
         <TrainingRecordField label="Beschreibung" icon="doc" value={form.description} wide/>
-        <div className="emp-training-record-field is-wide emp-training-record-docs"><Icon name="link" size={20}/><div><label>Freigegebene Dokumente</label><div className="emp-file-list">{docs.map(doc=><span className="emp-file-chip" key={doc}><Icon name="doc" size={14}/><span>{doc}</span></span>)}</div></div></div>
+        <div className="emp-training-record-field is-wide emp-training-record-docs"><Icon name="link" size={20}/><div><label>Freigegebene Dokumente</label><div className="emp-file-list">{(form.documents||[]).map(doc=><span className="emp-file-chip" key={doc}><Icon name="doc" size={14}/><span>{doc}</span></span>)}</div></div></div>
       </div>
     </section>
   </div>;

@@ -8271,12 +8271,15 @@ a.subtle:hover { text-decoration: underline; }
 .emp-equipment-check-table tbody tr:not(.emp-group-row){cursor:pointer}.emp-equipment-check-table tbody tr:not(.emp-group-row):hover{background:#faf9f6}.emp-equipment-check-table tbody tr.is-warn,.emp-equipment-check-table tbody tr.is-warn:hover{background:#fff9eb}.emp-equipment-check-table tbody tr.is-expired,.emp-equipment-check-table tbody tr.is-expired:hover{background:#fff0ee}.emp-equipment-check-table tbody tr.is-expired td{border-color:#efccc7}.emp-equipment-check-table td strong{color:var(--fg-1);font-weight:750}.emp-equipment-check-table .is-overdue{color:#a13232;font-weight:750}
 
 /* Employee construction site list */
-.emp-site-table { width:100%; min-width:2420px; border-collapse:collapse; table-layout:fixed; }
+.emp-site-table { width:100%; min-width:2920px; border-collapse:collapse; table-layout:fixed; }
 .emp-site-table th,.emp-site-table td { border-bottom:1px solid var(--border-1); padding:10px 11px; color:var(--fg-2); font-size:10.5px; line-height:1.35; text-align:left; vertical-align:middle; }
 .emp-site-table th { position:relative; background:var(--color-parchment); color:var(--fg-3); font-size:9px; font-weight:800; letter-spacing:.3px; text-transform:uppercase; white-space:nowrap; }
 .emp-site-table th > button { display:inline-flex; align-items:center; gap:5px; border:0; background:transparent; padding:0; color:inherit; font:inherit; text-transform:inherit; cursor:pointer; }
-.emp-site-table th:nth-child(2){width:205px}.emp-site-table th:nth-child(3){width:190px}.emp-site-table th:nth-child(4){width:120px}.emp-site-table th:nth-child(5){width:190px}.emp-site-table th:nth-child(6),.emp-site-table th:nth-child(7){width:150px}.emp-site-table th:nth-child(8){width:250px}.emp-site-table th:nth-child(9){width:125px}.emp-site-table th:nth-child(10){width:260px}.emp-site-table th:nth-child(11){width:145px}.emp-site-table th:nth-child(12){width:130px}.emp-site-table th:nth-child(13){width:300px}.emp-site-table th:nth-child(14){width:90px}
+.emp-site-table th:nth-child(1){width:215px}.emp-site-table th:nth-child(2){width:190px}.emp-site-table th:nth-child(3){width:125px}.emp-site-table th:nth-child(4){width:165px}.emp-site-table th:nth-child(5),.emp-site-table th:nth-child(6){width:115px}.emp-site-table th:nth-child(7){width:180px}.emp-site-table th:nth-child(8),.emp-site-table th:nth-child(9){width:145px}.emp-site-table th:nth-child(10){width:260px}.emp-site-table th:nth-child(11){width:140px}.emp-site-table th:nth-child(12){width:205px}.emp-site-table th:nth-child(13){width:205px}.emp-site-table th:nth-child(14){width:245px}.emp-site-table th:nth-child(15){width:85px}
 .emp-site-table tbody tr:not(.emp-group-row){cursor:pointer}.emp-site-table tbody tr:not(.emp-group-row):hover{background:#faf9f6}.emp-site-table td strong{color:var(--fg-1);font-weight:750}
+.emp-site-table td small{display:block;margin-top:3px;color:var(--fg-3);font-size:10px}
+.emp-site-table .mini-icon-btn{width:30px;height:30px;border:1px solid var(--border-1);border-radius:7px;background:#fff;color:var(--fg-2);display:inline-grid;place-items:center;cursor:pointer}
+.emp-site-table .mini-icon-btn:hover{border-color:rgba(201,100,66,.35);color:var(--color-terracotta);background:#fff8f4}
 
 /* Employee appointments reuse the main training calendar */
 .emp-calendar-shell { min-width:0; border:1px solid var(--border-1); border-radius:8px; background:#fff; padding:18px; box-shadow:0 5px 18px rgba(32,32,30,.045); }

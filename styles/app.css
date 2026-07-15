@@ -12104,3 +12104,388 @@ a.subtle:hover { text-decoration: underline; }
     grid-column: auto;
   }
 }
+
+/* Mitarbeiter-Detail: Schulungen rework */
+.emp-training-toolbar .emp-current-picker-btn {
+  border-color: #d9cac3;
+  background: #fff;
+  color: var(--fg-1);
+}
+
+.emp-active-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0 0 10px;
+}
+
+.emp-active-filter-chips button {
+  border: 1px solid #e3d6cd;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--fg-2);
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.emp-table-wrap {
+  max-height: calc(100vh - 315px);
+  min-height: 360px;
+}
+
+.emp-training-table th {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+}
+
+.emp-training-table th.emp-check,
+.emp-training-table td.emp-check {
+  position: sticky;
+  left: 0;
+  z-index: 7;
+  width: 34px;
+  min-width: 34px;
+  background: inherit;
+  box-shadow: 1px 0 0 var(--border-1);
+}
+
+.emp-training-table thead th.emp-check {
+  z-index: 9;
+  background: #f4f1ea;
+}
+
+.emp-training-table th:nth-child(2),
+.emp-training-table td:nth-child(2) {
+  position: sticky;
+  left: 35px;
+  z-index: 7;
+  background: inherit;
+  box-shadow: 1px 0 0 var(--border-1);
+}
+
+.emp-training-table thead th:nth-child(2) {
+  z-index: 9;
+  background: #f4f1ea;
+}
+
+.emp-training-table th:last-child,
+.emp-training-table td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 7;
+  background: inherit;
+  box-shadow: -1px 0 0 var(--border-1);
+}
+
+.emp-training-table thead th:last-child {
+  z-index: 9;
+  background: #f4f1ea;
+}
+
+.emp-row-actions {
+  position: relative;
+  display: inline-flex;
+}
+
+.emp-row-action-menu {
+  position: absolute;
+  right: 0;
+  top: 36px;
+  z-index: 80;
+  min-width: 235px;
+  padding: 6px;
+  border: 1px solid var(--border-1);
+  border-radius: 9px;
+  background: #fff;
+  box-shadow: 0 16px 38px rgba(32, 32, 30, .16);
+}
+
+.emp-row-action-menu button {
+  width: 100%;
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 0 10px;
+  text-align: left;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.emp-row-action-menu button:hover {
+  background: #f6eee9;
+  color: #a3482e;
+}
+
+.emp-picker-backdrop,
+.emp-training-filter-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 3200;
+  background: rgba(17, 17, 16, .38);
+}
+
+.emp-picker-backdrop {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.emp-picker-modal,
+.emp-assign-modal {
+  width: min(980px, 96vw);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border-1);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(32, 32, 30, .28);
+}
+
+.emp-picker-modal header,
+.emp-assign-modal header,
+.emp-training-filter-panel header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  background: #111;
+  color: #fff;
+  padding: 22px 24px;
+}
+
+.emp-picker-modal header span,
+.emp-assign-modal header span,
+.emp-training-filter-panel header span {
+  color: #b7d7e4;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .55px;
+  text-transform: uppercase;
+}
+
+.emp-picker-modal header h2,
+.emp-assign-modal header h2,
+.emp-training-filter-panel header h2 {
+  margin: 4px 0 0;
+  font-family: var(--font-serif);
+  font-size: 26px;
+  font-weight: 500;
+}
+
+.emp-picker-modal header button,
+.emp-assign-modal header button,
+.emp-training-filter-panel header button {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.emp-picker-filters {
+  display: grid;
+  grid-template-columns: 1.4fr repeat(4, minmax(0, 1fr)) auto;
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid var(--border-1);
+  background: #faf8f3;
+}
+
+.emp-picker-filters input,
+.emp-picker-filters select,
+.emp-picker-filters button,
+.emp-assign-modal input,
+.emp-assign-modal select,
+.emp-assign-modal textarea,
+.emp-training-filter-panel input,
+.emp-training-filter-panel select {
+  width: 100%;
+  min-height: 38px;
+  box-sizing: border-box;
+  border: 1px solid var(--border-1);
+  border-radius: 7px;
+  background: #fff;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.emp-picker-filters button {
+  background: #c96442;
+  color: #fff;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.emp-picker-table {
+  overflow: auto;
+}
+
+.emp-picker-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.emp-picker-table th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f4f1ea;
+  color: var(--fg-3);
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .35px;
+}
+
+.emp-picker-table td {
+  padding: 13px 14px;
+  border-bottom: 1px solid var(--border-1);
+  cursor: pointer;
+}
+
+.emp-picker-table small {
+  display: block;
+  color: var(--fg-3);
+  margin-top: 3px;
+}
+
+.emp-picker-table tr:hover td {
+  background: #fff8f4;
+}
+
+.emp-training-filter-shell {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.emp-training-filter-panel {
+  width: 430px;
+  max-width: 96vw;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  box-shadow: -18px 0 48px rgba(32, 32, 30, .2);
+}
+
+.emp-training-filter-panel main {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  overflow: auto;
+}
+
+.emp-training-filter-panel label,
+.emp-assign-modal label {
+  display: grid;
+  gap: 6px;
+  color: var(--fg-3);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .35px;
+  text-transform: uppercase;
+}
+
+.emp-training-filter-panel label input,
+.emp-training-filter-panel label select,
+.emp-assign-modal label input,
+.emp-assign-modal label select,
+.emp-assign-modal label textarea {
+  color: var(--fg-1);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.emp-checkline {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 9px !important;
+  color: var(--fg-2) !important;
+  font-size: 12px !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.emp-checkline input {
+  width: auto !important;
+  min-height: auto !important;
+}
+
+.emp-training-filter-panel footer,
+.emp-assign-modal footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border-1);
+  background: #faf8f3;
+}
+
+.emp-training-filter-panel footer button,
+.emp-assign-modal footer button {
+  min-height: 36px;
+  border: 1px solid var(--border-1);
+  border-radius: 7px;
+  background: #fff;
+  padding: 0 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.emp-training-filter-panel footer .btn--primary,
+.emp-assign-modal footer .btn--primary {
+  border-color: #c96442;
+  background: #c96442;
+  color: #fff;
+}
+
+.emp-assign-modal {
+  width: min(1080px, 96vw);
+}
+
+.emp-assign-modal main {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  overflow: auto;
+}
+
+.emp-assign-modal fieldset {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  border: 1px solid var(--border-1);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.emp-assign-modal legend {
+  padding: 0 6px;
+  color: #c96442;
+  font-weight: 900;
+}
+
+.emp-assign-modal label.is-wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+  .emp-picker-filters,
+  .emp-assign-modal fieldset {
+    grid-template-columns: 1fr;
+  }
+}

@@ -681,6 +681,20 @@ function employeeTrainingRecords(emp) {
 
 function EmployeeTrainingArea({ emp, onBack, onOpen }) {
   const [scope, setScope] = React.useState(emp.id);
+  const [employeePickerOpen, setEmployeePickerOpen] = React.useState(false);
+  const [filterPanelOpen, setFilterPanelOpen] = React.useState(false);
+  const [assignOpen, setAssignOpen] = React.useState(false);
+  const [employeeSearch, setEmployeeSearch] = React.useState('');
+  const [employeeCompanyFilter, setEmployeeCompanyFilter] = React.useState('all');
+  const [employeeDepartmentFilter, setEmployeeDepartmentFilter] = React.useState('all');
+  const [employeeGroupFilter, setEmployeeGroupFilter] = React.useState('all');
+  const [employeeStatusFilter, setEmployeeStatusFilter] = React.useState('aktiv');
+  const [rowActionMenu, setRowActionMenu] = React.useState(null);
+  const [filters, setFilters] = React.useState({
+    employee:'', company:'all', department:'all', position:'', training:'', status:'all',
+    issuedFrom:'', expiresTo:'', expiryWindow:'all', document:'all', release:'all',
+    planned:false, archived:false,
+  });
   const sourceEmployees = React.useMemo(() => window.SEED.employees, []);
   const activeEmployees = React.useMemo(() => {
     if (scope === 'all') return sourceEmployees;
@@ -689,7 +703,7 @@ function EmployeeTrainingArea({ emp, onBack, onOpen }) {
     if (scope.startsWith('company:')) return sourceEmployees.filter(item => item.company === scope.replace('company:',''));
     return sourceEmployees.filter(item => item.id === scope);
   }, [scope, sourceEmployees]);
-  const isAllView = scope !== emp.id;
+  const isAllView = scope === 'all' || scope === 'active' || scope === 'inactive' || scope.startsWith('company:');
   const currentEmployee = activeEmployees.length === 1 ? activeEmployees[0] : emp;
   const records = React.useMemo(() => activeEmployees.flatMap(employeeTrainingRecords), [activeEmployees]);
   const [selected, setSelected] = React.useState(new Set());
@@ -699,6 +713,11 @@ function EmployeeTrainingArea({ emp, onBack, onOpen }) {
   const [group, setGroup] = React.useState('');
   const [hiddenColumns, setHiddenColumns] = React.useState(new Set());
   const labels = { valid:'Gültig', warn:'Läuft bald ab', expired:'Abgelaufen', planned:'Geplant', archived:'Archiviert' };
+  const departments = [...new Set(sourceEmployees.map(item => item.department).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
+  const groups = [...new Set(sourceEmployees.map(item => item.group || (item.position?.toLowerCase().includes('azubi') ? 'Azubi' : item.position?.toLowerCase().includes('kaufm') ? 'Angestellte' : 'Gewerbliche')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
+  const currentScopeLabel = scope === 'all' ? 'Alle Mitarbeiter' : scope === 'active' ? 'Aktive Mitarbeiter' : scope === 'inactive' ? 'Inaktive Mitarbeiter' : scope.startsWith('company:') ? (window.company(scope.replace('company:',''))?.name || 'Firma') : (sourceEmployees.find(item => item.id === scope)?.name || emp.name);
+  const activeFilterCount = [filters.employee, filters.company !== 'all', filters.department !== 'all', filters.position, filters.training, filters.status !== 'all', filters.issuedFrom, filters.expiresTo, filters.expiryWindow !== 'all', filters.document !== 'all', filters.release !== 'all', filters.planned, filters.archived].filter(Boolean).length;
+  const resetFilters = () => setFilters({ employee:'', company:'all', department:'all', position:'', training:'', status:'all', issuedFrom:'', expiresTo:'', expiryWindow:'all', document:'all', release:'all', planned:false, archived:false });
   const value = (row, key) => key === 'status' ? labels[row.status] : row[key];
   const filterRow = row => {
     if (filter === 'all') return true;
@@ -707,7 +726,24 @@ function EmployeeTrainingArea({ emp, onBack, onOpen }) {
     if (filter === 'archived') return row.status === 'archived';
     return row.status === filter;
   };
-  let rows = records.filter(filterRow);
+  const panelFilterRow = row => {
+    const employeeText = `${row.employeeName} ${row.employee.personalNr || ''}`.toLowerCase();
+    if (filters.employee && !employeeText.includes(filters.employee.toLowerCase())) return false;
+    if (filters.company !== 'all' && row.employee.company !== filters.company) return false;
+    if (filters.department !== 'all' && row.department !== filters.department) return false;
+    if (filters.position && !row.position.toLowerCase().includes(filters.position.toLowerCase())) return false;
+    if (filters.training && !row.name.toLowerCase().includes(filters.training.toLowerCase())) return false;
+    if (filters.status !== 'all' && row.status !== filters.status) return false;
+    if (filters.expiryWindow !== 'all' && !row.noExpiry && row.days > Number(filters.expiryWindow)) return false;
+    if (filters.document === 'missing' && !row.documentMissing) return false;
+    if (filters.document === 'available' && row.documentMissing) return false;
+    if (filters.release === 'released' && !row.released) return false;
+    if (filters.release === 'blocked' && row.released) return false;
+    if (filters.planned && !row.planned) return false;
+    if (!filters.archived && row.status === 'archived') return false;
+    return true;
+  };
+  let rows = records.filter(filterRow).filter(panelFilterRow);
   rows = [...rows].sort((a,b) => (sort.dir === 'asc' ? 1 : -1) * String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
   const toggle = id => setSelected(current => { const next = new Set(current); next.has(id) ? next.delete(id) : next.add(id); return next; });
   const baseColumns = [
@@ -715,21 +751,31 @@ function EmployeeTrainingArea({ emp, onBack, onOpen }) {
     ['name','Zertifikat / Schulung'],['issued','Ausstellungsdatum'],['expires','Ablaufdatum'],['days','Restlaufzeit'],['status','Status'],['released','Freigabe für Mitarbeiter'],['changed','Zuletzt geändert'],['description','Beschreibung'],['documents','Dokumente'],['actions','Aktionen']
   ];
   const columns = baseColumns.filter(([key]) => !hiddenColumns.has(key));
-  const kpi = [
-    ['Mitarbeiter mit Schulungen', new Set(records.map(row => row.employeeId)).size, 'all'],
-    ['Gültige Nachweise', records.filter(row => row.status === 'valid').length, 'valid'],
-    ['Laufen bald ab', records.filter(row => row.status === 'warn').length, 'warn'],
-    ['Abgelaufen', records.filter(row => row.status === 'expired').length, 'expired'],
-    ['Dokumente fehlen', records.filter(row => row.documentMissing).length, 'documentMissing'],
-    ['Verlängerungen geplant', records.filter(row => row.planned).length, 'warn'],
-  ];
-  const tabLabels = { all:`Alle ${records.length}`, valid:'Gültig', warn:'Läuft bald ab', expired:'Abgelaufen', documentMissing:'Dokument fehlt', noExpiry:'Ohne Ablaufdatum', archived:'Archiviert' };
+  const tabLabels = {
+    all:`Alle ${records.length}`,
+    valid:`Gültig ${records.filter(row => row.status === 'valid').length}`,
+    warn:`Läuft bald ab ${records.filter(row => row.status === 'warn').length}`,
+    expired:`Abgelaufen ${records.filter(row => row.status === 'expired').length}`,
+    documentMissing:`Dokument fehlt ${records.filter(row => row.documentMissing).length}`,
+    noExpiry:`Ohne Ablaufdatum ${records.filter(row => row.noExpiry).length}`,
+    archived:`Archiviert ${records.filter(row => row.status === 'archived').length}`,
+  };
+  const pickerEmployees = sourceEmployees.filter(item => {
+    const text = `${item.lastName}, ${item.firstName} ${item.personalNr}`.toLowerCase();
+    const groupName = item.group || (item.position?.toLowerCase().includes('azubi') ? 'Azubi' : item.position?.toLowerCase().includes('kaufm') ? 'Angestellte' : 'Gewerbliche');
+    if (employeeSearch && !text.includes(employeeSearch.toLowerCase())) return false;
+    if (employeeCompanyFilter !== 'all' && item.company !== employeeCompanyFilter) return false;
+    if (employeeDepartmentFilter !== 'all' && item.department !== employeeDepartmentFilter) return false;
+    if (employeeGroupFilter !== 'all' && groupName !== employeeGroupFilter) return false;
+    if (employeeStatusFilter !== 'all' && item.status !== employeeStatusFilter) return false;
+    return true;
+  }).slice().sort((a,b)=>a.lastName.localeCompare(b.lastName,'de'));
   const columnValue = (row, key) => {
     if (key === 'days') return row.noExpiry ? 'ohne Ablaufdatum' : row.days < 0 ? `${Math.abs(row.days)} Tage überfällig` : `in ${row.days} Tagen`;
     if (key === 'status') return <span className={'emp-status is-' + row.status}>{labels[row.status]}</span>;
     if (key === 'released') return <span className="emp-release">{row.released ? <Icon name="check" size={17} stroke={2.4} /> : '-'}</span>;
     if (key === 'documents') return <span className={'emp-doc-count ' + (row.documentMissing ? 'is-missing' : '')}><Icon name="doc" size={13} />{row.documentMissing ? 'fehlt' : row.documents}</span>;
-    if (key === 'actions') return <button className="emp-row-menu-btn" onClick={event => event.stopPropagation()}>⋮</button>;
+    if (key === 'actions') return <div className="emp-row-actions" onClick={event => event.stopPropagation()}><button className="emp-row-menu-btn" onClick={() => setRowActionMenu(rowActionMenu === row.id ? null : row.id)}>⋮</button>{rowActionMenu === row.id && <div className="emp-row-action-menu">{['Details anzeigen','Bearbeiten','Dokument öffnen', row.documentMissing ? 'Dokument hochladen' : 'Dokument ersetzen','Verlängerung planen','Neue Version erfassen','Freigabe ändern','Zum Schulungstermin hinzufügen','Archivieren','Löschen'].map(label => <button key={label} onClick={() => { if (label === 'Details anzeigen' || label === 'Bearbeiten') onOpen(row); setRowActionMenu(null); }}>{label}</button>)}</div>}</div>;
     if (key === 'employeeName') return <strong>{row.employeeName}</strong>;
     if (key === 'name') return <strong>{row.name}</strong>;
     return row[key];
@@ -739,25 +785,25 @@ function EmployeeTrainingArea({ emp, onBack, onOpen }) {
     <div className="emp-full">
       <EmpPageTitle title={isAllView ? 'Schulungen - alle Mitarbeiter' : `Schulungen (${currentEmployee.name})`} onBack={onBack} action={
         <div className="emp-training-toolbar">
-          <label>Mitarbeiter auswählen<select value={scope} onChange={event => { setScope(event.target.value); setSelected(new Set()); }}>
-            <option value={emp.id}>{emp.name}</option>
-            <option value="all">Alle Mitarbeiter</option>
-            <option value="active">Nur aktive Mitarbeiter</option>
-            <option value="inactive">Ausgeschiedene Mitarbeiter</option>
-            {window.SEED.companies.map(company => <option key={company.id} value={`company:${company.id}`}>{company.name}</option>)}
-            {sourceEmployees.filter(item => item.id !== emp.id).slice().sort((a,b)=>a.lastName.localeCompare(b.lastName,'de')).map(item => <option key={item.id} value={item.id}>{item.lastName}, {item.firstName}</option>)}
-          </select></label>
-          <button><Icon name="settings" size={14}/>Filter</button>
-          <button><Icon name="plus" size={14}/>Schulung zuordnen</button>
+          <button type="button" className="emp-current-picker-btn" onClick={() => setEmployeePickerOpen(true)}><Icon name="users" size={14}/>Mitarbeiter: {currentScopeLabel}</button>
+          <button type="button" onClick={() => setScope(sourceEmployees[(sourceEmployees.findIndex(item => item.id === currentEmployee.id) - 1 + sourceEmployees.length) % sourceEmployees.length]?.id || emp.id)}><Icon name="chevL" size={14}/>Vorheriger Mitarbeiter</button>
+          <button type="button" onClick={() => setScope(sourceEmployees[(sourceEmployees.findIndex(item => item.id === currentEmployee.id) + 1) % sourceEmployees.length]?.id || emp.id)}>Nächster Mitarbeiter<Icon name="chevR" size={14}/></button>
+          <button type="button" onClick={() => setFilterPanelOpen(true)}><Icon name="settings" size={14}/>Filter{activeFilterCount ? ` (${activeFilterCount})` : ''}</button>
+          <button type="button" onClick={() => setAssignOpen(true)}><Icon name="plus" size={14}/>Schulung zuordnen</button>
         </div>
       } />
-      <div className="emp-training-kpis">{kpi.map(item => <button key={item[0]} className={filter === item[2] ? 'is-active' : ''} onClick={() => setFilter(item[2])}><span>{item[0]}</span><strong>{item[1]}</strong><small>Klicken zum Filtern</small></button>)}</div>
       <div className="emp-training-tabs">
         {['all','valid','warn','expired','documentMissing','noExpiry','archived'].map(id => <button key={id} className={filter === id ? 'is-active' : ''} onClick={() => setFilter(id)}>{tabLabels[id]}</button>)}
         {group && <button className="emp-clear-group" onClick={() => setGroup('')}>Gruppierung aufheben</button>}
         {hiddenColumns.size > 0 && <button className="emp-clear-group" onClick={() => setHiddenColumns(new Set())}>Alle Spalten anzeigen</button>}
       </div>
-      {selected.size > 0 && <div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14} />Dokumente herunterladen</button><button><Icon name="edit" size={14} />Freigabe ändern</button><button><Icon name="cal" size={14} />Schulungstermin erstellen</button><button><Icon name="clock" size={14} />Verlängerung planen</button><button className="is-danger"><Icon name="trash" size={14} />Löschen</button></div>}
+      {activeFilterCount > 0 && <div className="emp-active-filter-chips">
+        {filters.company !== 'all' && <button onClick={() => setFilters(old => ({...old, company:'all'}))}>Firma: {window.company(filters.company)?.short || filters.company} ×</button>}
+        {filters.status !== 'all' && <button onClick={() => setFilters(old => ({...old, status:'all'}))}>Status: {labels[filters.status]} ×</button>}
+        {filters.document !== 'all' && <button onClick={() => setFilters(old => ({...old, document:'all'}))}>Dokument {filters.document === 'missing' ? 'fehlt' : 'vorhanden'} ×</button>}
+        {filters.training && <button onClick={() => setFilters(old => ({...old, training:''}))}>Schulung: {filters.training} ×</button>}
+      </div>}
+      {selected.size > 0 && <div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14} />Dokumente herunterladen</button><button><Icon name="edit" size={14} />Freigabe ändern</button><button><Icon name="clock" size={14} />Verlängerung planen</button><button><Icon name="cal" size={14} />Schulungstermin erstellen</button><button><Icon name="users" size={14} />Verantwortliche Person</button><button className="is-danger"><Icon name="trash" size={14} />Archivieren</button></div>}
       <div className="emp-table-wrap"><table className="emp-training-table">
         <thead><tr><th className="emp-check"><input type="checkbox" checked={rows.length > 0 && selected.size === rows.length} onChange={() => setSelected(selected.size === rows.length ? new Set() : new Set(rows.map(row => row.id)))} /></th>
           {columns.map(([key,label]) => <th key={key}><button onClick={() => setMenu(menu === key ? null : key)}>{label}<span>{sort.key === key ? (sort.dir === 'asc' ? '↑' : '↓') : '⌄'}</span></button>
@@ -770,6 +816,9 @@ function EmployeeTrainingArea({ emp, onBack, onOpen }) {
             {columns.map(([key]) => <td key={key} className={(key === 'description' ? 'emp-ellipsis ' : '') + (key === 'days' && row.days < 0 ? 'is-overdue' : '')}>{columnValue(row,key)}</td>)}
           </tr></React.Fragment>)}</tbody>
       </table></div>
+      {employeePickerOpen && <div className="emp-picker-backdrop" onClick={() => setEmployeePickerOpen(false)}><section className="emp-picker-modal" onClick={event => event.stopPropagation()}><header><div><span>Mitarbeiterauswahl</span><h2>Mitarbeiter auswählen</h2></div><button onClick={() => setEmployeePickerOpen(false)}>×</button></header><div className="emp-picker-filters"><input placeholder="Name oder Personalnummer" value={employeeSearch} onChange={event => setEmployeeSearch(event.target.value)} /><select value={employeeCompanyFilter} onChange={event => setEmployeeCompanyFilter(event.target.value)}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select><select value={employeeDepartmentFilter} onChange={event => setEmployeeDepartmentFilter(event.target.value)}><option value="all">Alle Abteilungen</option>{departments.map(item => <option key={item}>{item}</option>)}</select><select value={employeeGroupFilter} onChange={event => setEmployeeGroupFilter(event.target.value)}><option value="all">Alle Gruppen</option>{groups.map(item => <option key={item}>{item}</option>)}</select><select value={employeeStatusFilter} onChange={event => setEmployeeStatusFilter(event.target.value)}><option value="all">Alle Status</option><option value="aktiv">Aktiv</option><option value="inaktiv">Inaktiv</option></select><button type="button" onClick={() => { setScope('all'); setEmployeePickerOpen(false); setSelected(new Set()); }}>Alle Mitarbeiter</button></div><div className="emp-picker-table"><table><thead><tr><th>Mitarbeiter</th><th>Firma</th><th>Abteilung</th><th>Position</th></tr></thead><tbody>{pickerEmployees.map(item => <tr key={item.id} onClick={() => { setScope(item.id); setEmployeePickerOpen(false); setSelected(new Set()); }}><td><strong>{item.lastName}, {item.firstName}</strong><small>PN {item.personalNr}</small></td><td>{window.company(item.company)?.name || item.company}</td><td>{item.department}</td><td>{item.position}</td></tr>)}</tbody></table></div></section></div>}
+      {filterPanelOpen && <div className="emp-training-filter-shell" onClick={() => setFilterPanelOpen(false)}><aside className="emp-training-filter-panel" onClick={event => event.stopPropagation()}><header><div><span>Schulungen</span><h2>Filter</h2></div><button onClick={() => setFilterPanelOpen(false)}>×</button></header><main><label><span>Mitarbeiter</span><input value={filters.employee} onChange={event => setFilters(old => ({...old, employee:event.target.value}))} placeholder="Name oder PN" /></label><label><span>Firma</span><select value={filters.company} onChange={event => setFilters(old => ({...old, company:event.target.value}))}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label><label><span>Abteilung</span><select value={filters.department} onChange={event => setFilters(old => ({...old, department:event.target.value}))}><option value="all">Alle Abteilungen</option>{departments.map(item => <option key={item}>{item}</option>)}</select></label><label><span>Position</span><input value={filters.position} onChange={event => setFilters(old => ({...old, position:event.target.value}))} /></label><label><span>Schulung / Zertifikat</span><input value={filters.training} onChange={event => setFilters(old => ({...old, training:event.target.value}))} /></label><label><span>Status</span><select value={filters.status} onChange={event => setFilters(old => ({...old, status:event.target.value}))}><option value="all">Alle</option><option value="valid">Gültig</option><option value="warn">Läuft bald ab</option><option value="expired">Abgelaufen</option></select></label><label><span>Ausstellungsdatum ab</span><input type="date" value={filters.issuedFrom} onChange={event => setFilters(old => ({...old, issuedFrom:event.target.value}))} /></label><label><span>Ablaufdatum bis</span><input type="date" value={filters.expiresTo} onChange={event => setFilters(old => ({...old, expiresTo:event.target.value}))} /></label><label><span>Ablauf innerhalb von</span><select value={filters.expiryWindow} onChange={event => setFilters(old => ({...old, expiryWindow:event.target.value}))}><option value="all">Alle</option><option value="30">30 Tagen</option><option value="60">60 Tagen</option><option value="90">90 Tagen</option></select></label><label><span>Dokument</span><select value={filters.document} onChange={event => setFilters(old => ({...old, document:event.target.value}))}><option value="all">Alle</option><option value="available">Vorhanden</option><option value="missing">Fehlt</option></select></label><label><span>Freigabe</span><select value={filters.release} onChange={event => setFilters(old => ({...old, release:event.target.value}))}><option value="all">Alle</option><option value="released">Freigegeben</option><option value="blocked">Nicht freigegeben</option></select></label><label className="emp-checkline"><input type="checkbox" checked={filters.planned} onChange={event => setFilters(old => ({...old, planned:event.target.checked}))} />Verlängerung geplant</label><label className="emp-checkline"><input type="checkbox" checked={filters.archived} onChange={event => setFilters(old => ({...old, archived:event.target.checked}))} />Archivierte Einträge anzeigen</label></main><footer><button onClick={resetFilters}>Filter zurücksetzen</button><button onClick={() => setFilterPanelOpen(false)}>Filter schließen</button><button className="btn btn--primary" onClick={() => setFilterPanelOpen(false)}>Filter anwenden</button></footer></aside></div>}
+      {assignOpen && <div className="emp-picker-backdrop" onClick={() => setAssignOpen(false)}><section className="emp-assign-modal" onClick={event => event.stopPropagation()}><header><div><span>Schulungen</span><h2>Schulung zuordnen</h2></div><button onClick={() => setAssignOpen(false)}>×</button></header><main><fieldset><legend>1. Mitarbeiter</legend><label><span>Auswahl</span><select defaultValue={scope}><option value={scope}>{currentScopeLabel}</option><option value="multi">Mehrere Mitarbeiter auswählen</option><option value="department">Ganze Abteilung auswählen</option><option value="group">Mitarbeitergruppe auswählen</option></select></label></fieldset><fieldset><legend>2. Schulung oder Zertifikat</legend><label><span>Schulung aus Liste</span><select><option>Erste Hilfe</option><option>Brandschutzhelfer</option><option>SCC 016</option><option>SCC 017</option><option>Gabelstaplerschein</option><option>PSA gegen Absturz</option></select></label><label><span>Neue Bezeichnung</span><input placeholder="Manuell eintragen" /></label><label><span>Kategorie</span><select><option>Sicherheit</option><option>SCC</option><option>DVGW</option><option>Fahrerlaubnis</option></select></label><label className="is-wide"><span>Beschreibung</span><textarea /></label></fieldset><fieldset><legend>3. Nachweisdaten</legend><label><span>Ausstellungsdatum</span><input type="date" /></label><label><span>Ablaufdatum</span><input type="date" /></label><label><span>Gültigkeitsdauer</span><input placeholder="z.B. 24 Monate" /></label><label><span>Zertifikatsnummer</span><input /></label><label><span>Ausstellende Stelle</span><input /></label><label><span>Status</span><select><option>Gültig</option><option>Läuft bald ab</option><option>Abgelaufen</option><option>Dokument fehlt</option></select></label><label className="emp-checkline"><input type="checkbox" defaultChecked />Freigabe für Mitarbeiter</label><label><span>Verantwortliche Person</span><input defaultValue="Sabine Janning" /></label></fieldset><fieldset><legend>4. Dokumente</legend><label><span>Zertifikat PDF</span><input type="file" /></label><label><span>Vorderseite</span><input type="file" /></label><label><span>Rückseite</span><input type="file" /></label><label><span>Weitere Anlage</span><input type="file" /></label><label className="is-wide"><span>Bemerkung</span><textarea /></label></fieldset></main><footer><button onClick={() => setAssignOpen(false)}>Abbrechen</button><button className="btn btn--primary" onClick={() => setAssignOpen(false)}>Schulung zuordnen</button></footer></section></div>}
     </div>
   );
 }

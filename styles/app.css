@@ -10532,6 +10532,7 @@ a.subtle:hover { text-decoration: underline; }
 /* Employee overview inspired by the compact portal dashboard */
 .emp-detail-dashboard { display:grid; gap:16px; min-width:0; }
 .emp-detail-top { display:grid; grid-template-columns:280px minmax(360px,1fr); align-items:stretch; gap:16px; }
+.emp-detail-top--compact { grid-template-columns:minmax(0,1fr); margin-bottom:8px; }
 .emp-detail-intro { align-self:center; padding:10px 0; }
 .emp-detail-intro > div { display:flex; align-items:center; gap:12px; }
 .emp-detail-intro h1 { margin:0; font-family:var(--font-serif); font-size:25px; font-weight:500; }

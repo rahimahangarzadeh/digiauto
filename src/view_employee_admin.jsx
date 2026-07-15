@@ -109,12 +109,12 @@ function EmployeeAdminDetail({ emp, onBack }) {
 
   return (
     <div className="emp-detail-dashboard">
-      <div className="emp-detail-top">
+      <div className={`emp-detail-top ${area !== 'dashboard' ? 'emp-detail-top--compact' : ''}`}>
         <div className="emp-detail-intro">
           <div><button className="emp-round-back" onClick={onBack} title="Zurück"><Icon name="chevL" size={18} stroke={2} /></button><h1>Mitarbeiter-Detail</h1></div>
           <p>Alle personenbezogenen Daten im Überblick</p>
         </div>
-        <section className="emp-profile-card">
+        {area === 'dashboard' && <section className="emp-profile-card">
           <div className={'avatar avatar--' + emp.color}>{emp.initials}</div>
           <div className="emp-profile-card__main">
             <div className="emp-profile-card__name">
@@ -138,7 +138,7 @@ function EmployeeAdminDetail({ emp, onBack }) {
               <button type="button" onClick={() => goEmployee(1)}>Nächster<Icon name="chevR" size={15} /></button>
             </div>
           </div>
-        </section>
+        </section>}
       </div>
 
       <div className={`emp-detail-body ${navCollapsed ? 'is-nav-collapsed' : ''}`}>

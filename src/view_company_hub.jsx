@@ -178,24 +178,10 @@ function CompanyCreateDialog({ onClose }) {
 function CompanyDetail({ company, onBack }) {
   const [area, setArea] = React.useState('overview');
   const [calendarTrainingId, setCalendarTrainingId] = React.useState(null);
-  if (area === 'master') return <CompanyMasterRecord company={company} record={companyMasterRecord(company)} onBack={() => setArea('overview')} />;
-  if (area === 'matrix') return <CompanyMatrixPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'evaluation') return <CompanyEvaluationPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'sites') return <CompanySitesPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'subcontractors') return <CompanySubcontractorsPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'meetings') return <CompanyMeetingsPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'bgbau') return <CompanyBGBauPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'supervisors') return <CompanySupervisorsPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'accidents') return <CompanyAccidentsPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'organization') return <CompanyOrganizationPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'certification') return <CompanyCertificationPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'norms') return <CompanyNormsPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'infoMatrix') return <CompanyInformationMatrixPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'forms') return <CompanyFormsPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'calendar') return <CompanyCalendarPage company={company} onBack={() => { setCalendarTrainingId(null); setArea('overview'); }} initialTrainingId={calendarTrainingId} />;
-  if (area === 'authorized') return <CompanyAuthorizedPeoplePage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'documents') return <CompanyDocumentsPage company={company} onBack={() => setArea('overview')} />;
-  if (area === 'drive') return <CompanyDrivePage company={company} onBack={() => setArea('overview')} />;
+  const [navCollapsed, setNavCollapsed] = React.useState(() => window.localStorage?.getItem('company-detail-nav') === 'collapsed');
+  React.useEffect(() => {
+    window.localStorage?.setItem('company-detail-nav', navCollapsed ? 'collapsed' : 'open');
+  }, [navCollapsed]);
   const openCompanyAreaFromDashboard = (nav, detail = {}) => {
     if (nav === 'matrix') setArea('matrix');
     if (nav === 'calendar') {
@@ -203,7 +189,55 @@ function CompanyDetail({ company, onBack }) {
       setArea('calendar');
     }
   };
-  return <div className="company-detail"><header className="company-detail__top"><div className="company-detail__intro"><button className="emp-round-back" onClick={onBack} title="Zurück"><Icon name="chevL" size={18} stroke={2} /></button><div><h1>Firma-Detail</h1><p>Alle firmenspezifischen Daten im Überblick</p></div></div><section className="company-detail__profile"><img src={company.logo} alt={company.short} /><div><h2>{company.name}</h2><dl><div><dt>Geschäftsführer</dt><dd>{company.manager}</dd></div><div><dt>Mitarbeiter</dt><dd>{company.employees}</dd></div><div><dt>Telefon</dt><dd>{company.phone}</dd></div></dl></div></section></header><div className="company-detail__body"><nav className="emp-section-nav">{COMPANY_DETAIL_AREAS.map(([id, label, icon]) => <button key={id} className={area === id ? 'is-active' : ''} onClick={() => setArea(id)}><Icon name={icon} size={16} /><span>{label}</span><Icon name="chevR" size={13} /></button>)}</nav><main className="company-detail__content">{area === 'overview' ? <DashboardView activeCompany={company.id} setNav={openCompanyAreaFromDashboard} hideSummary /> : <CompanyAreaPlaceholder company={company} area={area} />}</main></div></div>;
+  const renderArea = () => {
+    if (area === 'overview') return <DashboardView activeCompany={company.id} setNav={openCompanyAreaFromDashboard} hideSummary />;
+    if (area === 'master') return <CompanyMasterRecord company={company} record={companyMasterRecord(company)} onBack={() => setArea('overview')} />;
+    if (area === 'matrix') return <CompanyMatrixPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'evaluation') return <CompanyEvaluationPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'sites') return <CompanySitesPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'subcontractors') return <CompanySubcontractorsPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'meetings') return <CompanyMeetingsPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'bgbau') return <CompanyBGBauPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'supervisors') return <CompanySupervisorsPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'accidents') return <CompanyAccidentsPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'organization') return <CompanyOrganizationPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'certification') return <CompanyCertificationPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'norms') return <CompanyNormsPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'infoMatrix') return <CompanyInformationMatrixPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'forms') return <CompanyFormsPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'calendar') return <CompanyCalendarPage company={company} onBack={() => { setCalendarTrainingId(null); setArea('overview'); }} initialTrainingId={calendarTrainingId} />;
+    if (area === 'authorized') return <CompanyAuthorizedPeoplePage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'documents') return <CompanyDocumentsPage company={company} onBack={() => setArea('overview')} />;
+    if (area === 'drive') return <CompanyDrivePage company={company} onBack={() => setArea('overview')} />;
+    return <CompanyAreaPlaceholder company={company} area={area} />;
+  };
+  return <div className="company-detail"><header className={`company-detail__top ${area !== 'overview' ? 'company-detail__top--compact' : ''}`}><div className="company-detail__intro"><button className="emp-round-back" onClick={onBack} title="Zurück"><Icon name="chevL" size={18} stroke={2} /></button><div><h1>Firma-Detail</h1><p>Alle firmenspezifischen Daten im Überblick</p></div></div>{area === 'overview' && <section className="company-detail__profile"><img src={company.logo} alt={company.short} /><div><h2>{company.name}</h2><dl><div><dt>Geschäftsführer</dt><dd>{company.manager}</dd></div><div><dt>Mitarbeiter</dt><dd>{company.employees}</dd></div><div><dt>Telefon</dt><dd>{company.phone}</dd></div></dl></div></section>}</header><div className={`company-detail__body ${navCollapsed ? 'is-nav-collapsed' : ''}`}><CompanyDetailNav area={area} collapsed={navCollapsed} onToggle={() => setNavCollapsed(value => !value)} onSelect={setArea} /><main className="company-detail__content">{renderArea()}</main></div></div>;
+}
+
+function CompanyDetailNav({ area, collapsed, onToggle, onSelect }) {
+  const groups = [
+    ['Übersicht', ['overview', 'master']],
+    ['Qualifikation', ['matrix', 'evaluation', 'certification', 'norms', 'infoMatrix', 'forms', 'calendar', 'authorized']],
+    ['Einsatz', ['sites', 'subcontractors', 'meetings', 'bgbau', 'supervisors', 'accidents']],
+    ['Struktur', ['organization', 'documents', 'drive']],
+  ];
+  const areaMap = Object.fromEntries(COMPANY_DETAIL_AREAS.map(item => [item[0], item]));
+  return <nav className={`emp-section-nav emp-section-nav--collapsible company-section-nav ${collapsed ? 'is-collapsed' : ''}`} aria-label="Firma Navigation">
+    <button className="emp-nav-toggle" type="button" onClick={onToggle} title={collapsed ? 'Navigation ausklappen' : 'Navigation einklappen'}>
+      <Icon name={collapsed ? 'chevR' : 'chevL'} size={16} />
+      <span>Navigation einklappen</span>
+      <Icon className="emp-nav-chevron" name={collapsed ? 'chevR' : 'chevL'} size={13} />
+    </button>
+    {groups.map(([groupLabel, ids]) => <div className="emp-nav-group" key={groupLabel}>
+      {!collapsed && <strong>{groupLabel}</strong>}
+      {ids.map(id => {
+        const item = areaMap[id];
+        if (!item) return null;
+        const [, label, icon] = item;
+        return <button key={id} className={area === id ? 'is-active' : ''} type="button" title={label} aria-label={label} onClick={() => onSelect(id)}><Icon name={icon} size={16} /><span>{label}</span><Icon className="emp-nav-chevron" name="chevR" size={13} /></button>;
+      })}
+    </div>)}
+  </nav>;
 }
 
 function CompanyMatrixPage({ company, onBack }) {

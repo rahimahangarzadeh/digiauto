@@ -32,7 +32,7 @@ function FormulareView({ activeCompany = 'all', extraAction = null, title = 'For
   ];
 
   const [rows, setRows] = React.useState(initialRows);
-  const [viewMode, setViewMode] = React.useState('cards');
+  const [viewMode, setViewMode] = React.useState(() => window.localStorage?.getItem('formulare-view-mode') || 'cards');
   const [companyFilter, setCompanyFilter] = React.useState(activeCompany);
   const [kpiFilter, setKpiFilter] = React.useState('total');
   const [selectedIds, setSelectedIds] = React.useState([]);
@@ -42,8 +42,11 @@ function FormulareView({ activeCompany = 'all', extraAction = null, title = 'For
   const [formDialog, setFormDialog] = React.useState(null);
   const [versionDialog, setVersionDialog] = React.useState(null);
   const [detail, setDetail] = React.useState(null);
+  const [filterOpen, setFilterOpen] = React.useState(false);
+  const [filters, setFilters] = React.useState({ name:'', internal:'', status:'all', version:'', language:'all', responsible:'', reviewer:'', approver:'', due:'all', pdf:'all', archived:false });
 
   React.useEffect(() => setCompanyFilter(activeCompany), [activeCompany]);
+  React.useEffect(() => window.localStorage?.setItem('formulare-view-mode', viewMode), [viewMode]);
 
   const enriched = rows.map(row => ({
     ...row,
@@ -51,7 +54,21 @@ function FormulareView({ activeCompany = 'all', extraAction = null, title = 'For
     warning: warningFor(row),
   }));
   const baseScoped = enriched.filter(row => companyFilter === 'all' || row.company === companyFilter);
-  const scoped = baseScoped.filter(row => {
+  const filteredBase = baseScoped.filter(row => {
+    const dueDays = daysUntil(row.nextCheck);
+    return (!filters.name || row.name.toLowerCase().includes(filters.name.toLowerCase()))
+      && (!filters.internal || row.internal.toLowerCase().includes(filters.internal.toLowerCase()))
+      && (filters.status === 'all' || row.status === filters.status)
+      && (!filters.version || row.version.toLowerCase().includes(filters.version.toLowerCase()))
+      && (filters.language === 'all' || row.language === filters.language)
+      && (!filters.responsible || row.responsible.toLowerCase().includes(filters.responsible.toLowerCase()))
+      && (!filters.reviewer || row.reviewer.toLowerCase().includes(filters.reviewer.toLowerCase()))
+      && (!filters.approver || row.approver.toLowerCase().includes(filters.approver.toLowerCase()))
+      && (filters.due === 'all' || (filters.due === '30' && dueDays <= 30) || (filters.due === '60' && dueDays <= 60) || (filters.due === '90' && dueDays <= 90))
+      && (filters.pdf === 'all' || (filters.pdf === 'yes' && row.pdf) || (filters.pdf === 'no' && !row.pdf))
+      && (filters.archived || kpiFilter === 'archived' || row.status !== 'Archiviert');
+  });
+  const scoped = filteredBase.filter(row => {
     if (kpiFilter === 'total') return true;
     if (kpiFilter === 'active') return row.status === 'Freigegeben';
     if (kpiFilter === 'review') return row.status === 'In Pruefung';
@@ -62,22 +79,14 @@ function FormulareView({ activeCompany = 'all', extraAction = null, title = 'For
     return true;
   });
   const columns = [
-    ['nr', 'Nummer'],
-    ['internal', 'interne Nummer'],
     ['name', 'Formularname'],
-    ['companyName', 'Firma'],
+    ['internal', 'interne Nummer'],
     ['version', 'Version'],
-    ['language', 'Sprache'],
-    ['validFrom', 'gueltig ab'],
-    ['updated', 'letzte Aktualisierung'],
-    ['nextCheck', 'naechste Pruefung'],
+    ['validFrom', 'gültig ab'],
+    ['nextCheck', 'nächste Prüfung'],
     ['responsible', 'verantwortliche Person'],
-    ['reviewer', 'Pruefer'],
-    ['approver', 'Freigeber'],
     ['status', 'Status'],
-    ['pages', 'Seitenanzahl'],
     ['pdf', 'PDF-Datei'],
-    ['description', 'Beschreibung'],
   ];
   const valueOf = (row, key) => row[key] || '';
   const sorted = [...scoped].sort((a, b) => {
@@ -100,23 +109,37 @@ function FormulareView({ activeCompany = 'all', extraAction = null, title = 'For
   const toggleAll = () => setSelectedIds(current => allSelected ? current.filter(id => !sorted.some(row => row.id === id)) : Array.from(new Set([...current, ...sorted.map(row => row.id)])));
   const setColumnSort = (key, dir) => { setSort({ key, dir }); setColumnMenu(null); };
   const statusClass = status => status === 'Freigegeben' ? 'badge--valid' : status === 'In Pruefung' || status === 'Pruefung faellig' ? 'badge--warn' : status === 'Ueberfaellig' || status === 'Entwurf' ? 'badge--expired' : '';
-  const statusBadge = status => <span className={'badge ' + statusClass(status)}><span className="badge__dot" />{status}</span>;
+  const statusText = status => ({ 'In Pruefung':'In Prüfung', 'Pruefung faellig':'Prüfung fällig', 'Ueberfaellig':'Überfällig' }[status] || status);
+  const statusBadge = status => <span className={'badge ' + statusClass(status)}><span className="badge__dot" />{statusText(status)}</span>;
   const menuFor = key => columnMenu === key && <div className="company-column-menu form-pdf-column-menu" onClick={event => event.stopPropagation()}>
     <button onClick={() => setColumnSort(key, 'asc')}>A bis Z</button>
     <button onClick={() => setColumnSort(key, 'desc')}>Z bis A</button>
     <button onClick={() => setColumnMenu(null)}>Filtern nach</button>
     <button onClick={() => { setGroupBy(key); setColumnMenu(null); }}>Gruppieren nach "{columns.find(column => column[0] === key)?.[1] || key}"</button>
+    <button onClick={() => setColumnMenu(null)}>Spalte ausblenden</button>
+    <button onClick={() => setColumnMenu(null)}>Spalten verwalten</button>
+    <button onClick={() => { setGroupBy(''); setColumnMenu(null); }}>Standardansicht wiederherstellen</button>
     <button onClick={() => setGroupBy('')}>Gruppierung aufheben</button>
   </div>;
   const counts = {
-    total: baseScoped.length,
-    active: baseScoped.filter(row => row.status === 'Freigegeben').length,
-    review: baseScoped.filter(row => row.status === 'In Pruefung').length,
-    due: baseScoped.filter(row => row.warning.includes('faellig')).length,
-    overdue: baseScoped.filter(row => row.warning.includes('ueberfaellig')).length,
-    drafts: baseScoped.filter(row => row.status === 'Entwurf').length,
-    archived: baseScoped.filter(row => row.status === 'Archiviert').length,
+    total: filteredBase.length,
+    active: filteredBase.filter(row => row.status === 'Freigegeben').length,
+    review: filteredBase.filter(row => row.status === 'In Pruefung').length,
+    due: filteredBase.filter(row => row.warning.includes('faellig')).length,
+    overdue: filteredBase.filter(row => row.warning.includes('ueberfaellig')).length,
+    drafts: filteredBase.filter(row => row.status === 'Entwurf').length,
+    archived: filteredBase.filter(row => row.status === 'Archiviert').length,
   };
+  const activeFilterCount = Object.entries(filters).filter(([key, value]) => key === 'archived' ? value : value && value !== 'all').length;
+  const tabs = [
+    ['total', 'Alle', counts.total],
+    ['active', 'Aktiv', counts.active],
+    ['review', 'In Prüfung', counts.review],
+    ['due', 'Prüfung fällig', counts.due],
+    ['overdue', 'Überfällig', counts.overdue],
+    ['drafts', 'Entwurf', counts.drafts],
+    ['archived', 'Archiviert', counts.archived],
+  ];
 
   if (detail) return <>
     <FormDetailPage row={detail} onBack={() => setDetail(null)} onEdit={() => setFormDialog(detail)} onVersion={() => setVersionDialog(detail)} statusBadge={statusBadge} fmt={fmt} />
@@ -134,9 +157,9 @@ function FormulareView({ activeCompany = 'all', extraAction = null, title = 'For
         <button className={viewMode === 'cards' ? 'is-active' : ''} onClick={() => setViewMode('cards')}><Icon name="dashboard" size={14} />Kacheln</button>
         <button className={viewMode === 'list' ? 'is-active' : ''} onClick={() => setViewMode('list')}><Icon name="matrix" size={14} />Liste</button>
       </div>
-      <button className="btn btn--ghost"><Icon name="filter" size={14} />Filter</button>
+      <button className="btn btn--ghost" onClick={() => setFilterOpen(true)}><Icon name="filter" size={14} />Filter{activeFilterCount ? ` (${activeFilterCount})` : ''}</button>
       <button className="btn btn--ghost"><Icon name="download" size={14} />Export</button>
-      <button className="btn btn--primary" onClick={() => setFormDialog({})}><Icon name="plus" size={14} />Formular erstellen</button>
+      <button className="btn btn--primary" onClick={() => setFormDialog({})}><Icon name="plus" size={14} />PDF-Formular hinzufügen</button>
     </div>;
 
   return <div className="form-pdf-page">
@@ -144,14 +167,8 @@ function FormulareView({ activeCompany = 'all', extraAction = null, title = 'For
       ? <CompanyPageTitle title={title} onBack={onBack} action={actions} />
       : <div className="view__header form-pdf-header"><div><h1 className="view__title">{title}</h1></div>{actions}</div>}
 
-    <div className="form-pdf-kpis">
-      <button className={kpiFilter === 'total' ? 'is-active' : ''} onClick={() => setKpiFilter('total')}><span>Formulare gesamt</span><strong>{counts.total}</strong></button>
-      <button className={kpiFilter === 'active' ? 'is-active' : ''} onClick={() => setKpiFilter('active')}><span>Aktiv</span><strong>{counts.active}</strong></button>
-      <button className={kpiFilter === 'review' ? 'is-active' : ''} onClick={() => setKpiFilter('review')}><span>In Pruefung</span><strong>{counts.review}</strong></button>
-      <button className={kpiFilter === 'due' ? 'is-active' : ''} onClick={() => setKpiFilter('due')}><span>Pruefung faellig</span><strong>{counts.due}</strong></button>
-      <button className={kpiFilter === 'overdue' ? 'is-active' : ''} onClick={() => setKpiFilter('overdue')}><span>Ueberfaellig</span><strong>{counts.overdue}</strong></button>
-      <button className={kpiFilter === 'drafts' ? 'is-active' : ''} onClick={() => setKpiFilter('drafts')}><span>Entwuerfe</span><strong>{counts.drafts}</strong></button>
-      <button className={kpiFilter === 'archived' ? 'is-active' : ''} onClick={() => setKpiFilter('archived')}><span>Archiviert</span><strong>{counts.archived}</strong></button>
+    <div className="form-pdf-tabs">
+      {tabs.map(([key, label, count]) => <button key={key} className={kpiFilter === key ? 'is-active' : ''} onClick={() => setKpiFilter(key)}>{label}<span>{count}</span></button>)}
     </div>
 
     {selectedIds.length > 0 && <div className="company-bulkbar form-pdf-bulkbar">
@@ -184,22 +201,14 @@ function FormulareView({ activeCompany = 'all', extraAction = null, title = 'For
           groupBy && <tr key={'group-' + group} className="company-group-row"><td colSpan={columns.length + 2}>{columns.find(column => column[0] === groupBy)?.[1]}: {group} <span>{items.length}</span></td></tr>,
           ...items.map(row => <tr key={row.id} onClick={() => setDetail(row)}>
             <td onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleRow(row.id)} /></td>
-            <td>{row.nr}</td>
+            <td className="form-name-cell"><strong>{row.name}</strong><small>{row.internal} · {row.language} · {row.pages} Seiten</small></td>
             <td><strong>{row.internal}</strong></td>
-            <td><strong>{row.name}</strong><small>{row.warning}</small></td>
-            <td>{row.companyName}</td>
             <td>{row.version}</td>
-            <td>{row.language}</td>
             <td>{fmt(row.validFrom)}</td>
-            <td>{fmt(row.updated)}</td>
             <td>{fmt(row.nextCheck)}</td>
             <td>{row.responsible}</td>
-            <td>{row.reviewer}</td>
-            <td>{row.approver}</td>
             <td>{statusBadge(row.status)}</td>
-            <td>{row.pages}</td>
             <td>{row.pdf ? <button className="btn btn--ghost" onClick={event => event.stopPropagation()}><Icon name="doc" size={13} />{row.pdf}</button> : <span className="muted">fehlt</span>}</td>
-            <td>{row.description}</td>
             <td onClick={event => event.stopPropagation()}><FormActions row={row} onOpen={() => setDetail(row)} onEdit={() => setFormDialog(row)} onVersion={() => setVersionDialog(row)} /></td>
           </tr>)
         ])}</tbody>
@@ -208,6 +217,7 @@ function FormulareView({ activeCompany = 'all', extraAction = null, title = 'For
 
     {formDialog && <FormCreateDialog row={formDialog.id ? formDialog : null} companies={companies} onClose={() => setFormDialog(null)} />}
     {versionDialog && <FormVersionDialog row={versionDialog} onClose={() => setVersionDialog(null)} />}
+    {filterOpen && <FormFilterPanel filters={filters} setFilters={setFilters} companies={companies} onClose={() => setFilterOpen(false)} />}
   </div>;
 }
 
@@ -231,29 +241,79 @@ function FormActions({ row, onOpen, onEdit, onVersion }) {
   </div>;
 }
 
+function FormFilterPanel({ filters, setFilters, onClose }) {
+  const set = (key, value) => setFilters(current => ({ ...current, [key]: value }));
+  const reset = () => setFilters({ name:'', internal:'', status:'all', version:'', language:'all', responsible:'', reviewer:'', approver:'', due:'all', pdf:'all', archived:false });
+  return <div className="form-filter-backdrop" onClick={onClose}>
+    <aside className="form-filter-panel" onClick={event => event.stopPropagation()}>
+      <header><div><span>Filter</span><h2>PDF-Formulare filtern</h2></div><button onClick={onClose}><Icon name="x" size={18} /></button></header>
+      <main>
+        <FormField label="Formularname"><input value={filters.name} onChange={event => set('name', event.target.value)} /></FormField>
+        <FormField label="interne Nummer"><input value={filters.internal} onChange={event => set('internal', event.target.value)} /></FormField>
+        <FormField label="Status"><select value={filters.status} onChange={event => set('status', event.target.value)}><option value="all">Alle Status</option><option value="Entwurf">Entwurf</option><option value="In Pruefung">In Prüfung</option><option value="Freigegeben">Freigegeben</option><option value="Pruefung faellig">Prüfung fällig</option><option value="Ueberfaellig">Überfällig</option><option value="Ersetzt">Ersetzt</option><option value="Archiviert">Archiviert</option></select></FormField>
+        <FormField label="Version"><input value={filters.version} onChange={event => set('version', event.target.value)} /></FormField>
+        <FormField label="Sprache"><select value={filters.language} onChange={event => set('language', event.target.value)}><option value="all">Alle Sprachen</option><option>Deutsch</option><option>Englisch</option><option>Mehrsprachig</option></select></FormField>
+        <FormField label="verantwortliche Person"><input value={filters.responsible} onChange={event => set('responsible', event.target.value)} /></FormField>
+        <FormField label="Prüfer"><input value={filters.reviewer} onChange={event => set('reviewer', event.target.value)} /></FormField>
+        <FormField label="Freigeber"><input value={filters.approver} onChange={event => set('approver', event.target.value)} /></FormField>
+        <FormField label="Prüfung fällig"><select value={filters.due} onChange={event => set('due', event.target.value)}><option value="all">Alle Zeiträume</option><option value="30">innerhalb von 30 Tagen</option><option value="60">innerhalb von 60 Tagen</option><option value="90">innerhalb von 90 Tagen</option></select></FormField>
+        <FormField label="PDF-Datei"><select value={filters.pdf} onChange={event => set('pdf', event.target.value)}><option value="all">Alle</option><option value="yes">PDF vorhanden</option><option value="no">PDF fehlt</option></select></FormField>
+        <label className="form-check"><input type="checkbox" checked={filters.archived} onChange={event => set('archived', event.target.checked)} />archivierte Formulare anzeigen</label>
+      </main>
+      <footer><button className="btn btn--ghost" onClick={reset}>Zurücksetzen</button><button className="btn btn--primary" onClick={onClose}>Anwenden</button></footer>
+    </aside>
+  </div>;
+}
+
 function FormCreateDialog({ row, companies, onClose }) {
+  const [step, setStep] = React.useState(1);
   const [form, setForm] = React.useState(row || { name:'', internal:'', version:'001', company:'tiefbau', type:'PDF-Formular', language:'Deutsch', description:'', pages:1, validFrom:'2026-07-13', updated:'2026-07-13', nextCheck:'2027-07-13', interval:'jaehrlich', responsible:'', reviewer:'', approver:'', status:'Entwurf', pdf:'', notes:'' });
   const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
-  return <FormDialogShell title={row ? 'Formular bearbeiten' : 'Formular erstellen'} subtitle="PDF-Formular verwalten" onClose={onClose}>
-    <FormField label="Formularname"><input value={form.name} onChange={event => set('name', event.target.value)} /></FormField>
-    <FormField label="interne Nummer"><input value={form.internal} onChange={event => set('internal', event.target.value)} /></FormField>
-    <FormField label="Version"><input value={form.version} onChange={event => set('version', event.target.value)} /></FormField>
-    <FormField label="Firma"><select value={form.company} onChange={event => set('company', event.target.value)}>{companies.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></FormField>
-    <FormField label="Formularart"><input value={form.type} onChange={event => set('type', event.target.value)} /></FormField>
-    <FormField label="Sprache"><select value={form.language} onChange={event => set('language', event.target.value)}><option>Deutsch</option><option>Englisch</option><option>12 Sprache</option></select></FormField>
-    <FormField label="Seitenanzahl"><input type="number" value={form.pages} onChange={event => set('pages', event.target.value)} /></FormField>
-    <FormField label="gueltig ab"><input type="date" value={form.validFrom} onChange={event => set('validFrom', event.target.value)} /></FormField>
-    <FormField label="letzte Aktualisierung"><input type="date" value={form.updated} onChange={event => set('updated', event.target.value)} /></FormField>
-    <FormField label="naechste Pruefung"><input type="date" value={form.nextCheck} onChange={event => set('nextCheck', event.target.value)} /></FormField>
-    <FormField label="Pruefintervall"><select value={form.interval} onChange={event => set('interval', event.target.value)}><option>halbjaehrlich</option><option>jaehrlich</option><option>alle 2 Jahre</option><option>alle 3 Jahre</option></select></FormField>
-    <FormField label="verantwortliche Person"><input value={form.responsible} onChange={event => set('responsible', event.target.value)} /></FormField>
-    <FormField label="Pruefer"><input value={form.reviewer} onChange={event => set('reviewer', event.target.value)} /></FormField>
-    <FormField label="Freigeber"><input value={form.approver} onChange={event => set('approver', event.target.value)} /></FormField>
-    <FormField label="Status"><select value={form.status} onChange={event => set('status', event.target.value)}><option>Entwurf</option><option>In Pruefung</option><option>Freigegeben</option><option>Ueberfaellig</option><option>Archiviert</option></select></FormField>
-    <FormField label="PDF-Datei hochladen"><button type="button" className="info-upload"><Icon name="upload" size={15} />PDF-Datei hochladen</button></FormField>
-    <FormField label="Beschreibung" wide><textarea value={form.description} onChange={event => set('description', event.target.value)} /></FormField>
-    <FormField label="Bemerkungen" wide><textarea value={form.notes} onChange={event => set('notes', event.target.value)} /></FormField>
-    <footer><button className="btn btn--ghost" onClick={onClose}>Abbrechen</button><button className="btn btn--primary" onClick={onClose}>Speichern</button></footer>
+  const steps = ['Grunddaten', 'Version und Gueltigkeit', 'Verantwortlichkeiten', 'PDF-Datei', 'Zusammenfassung'];
+  return <FormDialogShell title={row ? 'PDF-Formular bearbeiten' : 'PDF-Formular hinzufügen'} subtitle={`Schritt ${step} von 5`} onClose={onClose}>
+    <div className="form-dialog-steps">{steps.map((item, index) => <button key={item} className={step === index + 1 ? 'is-active' : ''} onClick={() => setStep(index + 1)}>{index + 1}. {item}</button>)}</div>
+    {step === 1 && <React.Fragment>
+      <FormField label="Firma *"><select value={form.company} onChange={event => set('company', event.target.value)}>{companies.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></FormField>
+      <FormField label="Formularname *"><input value={form.name} onChange={event => set('name', event.target.value)} /></FormField>
+      <FormField label="interne Nummer *"><input value={form.internal} onChange={event => set('internal', event.target.value)} /></FormField>
+      <FormField label="Formulartyp *"><select value={form.type} onChange={event => set('type', event.target.value)}><option>QM-Formular</option><option>SGU-Formular</option><option>Checkliste</option><option>Nachweis</option><option>Protokoll</option><option>Antrag</option><option>Vorlage</option><option>sonstiges PDF-Formular</option></select></FormField>
+      <FormField label="Sprache *"><select value={form.language} onChange={event => set('language', event.target.value)}><option>Deutsch</option><option>Englisch</option><option>Mehrsprachig</option></select></FormField>
+      <FormField label="Beschreibung" wide><textarea value={form.description} onChange={event => set('description', event.target.value)} /></FormField>
+    </React.Fragment>}
+    {step === 2 && <React.Fragment>
+      <FormField label="Version *"><input value={form.version} onChange={event => set('version', event.target.value)} /></FormField>
+      <FormField label="gültig ab *"><input type="date" value={form.validFrom} onChange={event => set('validFrom', event.target.value)} /></FormField>
+      <FormField label="letzte Aktualisierung *"><input type="date" value={form.updated} onChange={event => set('updated', event.target.value)} /></FormField>
+      <FormField label="nächste Prüfung *"><input type="date" value={form.nextCheck} onChange={event => set('nextCheck', event.target.value)} /></FormField>
+      <FormField label="Prüfintervall *"><select value={form.interval} onChange={event => set('interval', event.target.value)}><option>halbjährlich</option><option>jährlich</option><option>zweijährlich</option><option>benutzerdefiniert</option></select></FormField>
+      <FormField label="Status *"><select value={form.status} onChange={event => set('status', event.target.value)}><option value="Entwurf">Entwurf</option><option value="In Pruefung">In Prüfung</option><option value="Freigegeben">Freigegeben</option><option value="Pruefung faellig">Prüfung fällig</option><option value="Ueberfaellig">Überfällig</option><option value="Ersetzt">Ersetzt</option><option value="Archiviert">Archiviert</option></select></FormField>
+    </React.Fragment>}
+    {step === 3 && <React.Fragment>
+      <FormField label="verantwortliche Person *"><input value={form.responsible} onChange={event => set('responsible', event.target.value)} /></FormField>
+      <FormField label="Prüfer *"><input value={form.reviewer} onChange={event => set('reviewer', event.target.value)} /></FormField>
+      <FormField label="Freigeber *"><input value={form.approver} onChange={event => set('approver', event.target.value)} /></FormField>
+      <FormField label="Vertretung"><input /></FormField>
+      <label className="form-check"><input type="checkbox" />Erinnerung aktivieren</label>
+    </React.Fragment>}
+    {step === 4 && <React.Fragment>
+      <FormField label="PDF-Datei *" wide><button type="button" className="info-upload"><Icon name="upload" size={15} />PDF-Datei hochladen</button></FormField>
+      <div className="form-upload-preview">
+        <Icon name="doc" size={24} />
+        <strong>{form.pdf || 'Noch keine PDF-Datei ausgewählt'}</strong>
+        <span>Dateigroesse, Seitenanzahl, Upload-Datum und Vorschau werden nach dem Upload angezeigt.</span>
+      </div>
+      <FormField label="Seitenanzahl"><input type="number" value={form.pages} onChange={event => set('pages', event.target.value)} /></FormField>
+      <FormField label="Bemerkung" wide><textarea value={form.notes} onChange={event => set('notes', event.target.value)} /></FormField>
+    </React.Fragment>}
+    {step === 5 && <div className="form-create-summary">
+      {[['Firma', companies.find(item => item.id === form.company)?.name], ['Formularname', form.name || '-'], ['interne Nummer', form.internal || '-'], ['Version', form.version], ['gültig ab', form.validFrom], ['nächste Prüfung', form.nextCheck], ['verantwortliche Person', form.responsible || '-'], ['Prüfer', form.reviewer || '-'], ['Freigeber', form.approver || '-'], ['PDF-Datei', form.pdf || 'noch nicht hochgeladen']].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
+    </div>}
+    <footer>
+      <button className="btn btn--ghost" onClick={onClose}>Abbrechen</button>
+      <button className="btn btn--ghost" onClick={onClose}>Als Entwurf speichern</button>
+      {step > 1 && <button className="btn btn--ghost" onClick={() => setStep(current => current - 1)}>Zurück</button>}
+      {step < 5 ? <button className="btn btn--primary" onClick={() => setStep(current => current + 1)}>Weiter</button> : <button className="btn btn--primary" onClick={onClose}>PDF-Formular hinzufügen</button>}
+    </footer>
   </FormDialogShell>;
 }
 

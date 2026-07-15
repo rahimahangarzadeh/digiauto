@@ -8,7 +8,7 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
   const baseCerts = React.useMemo(() => ([
     cert('c-scc', 'SCC** Sicherheits Certificat Contractors', 'tiefbau', 'SCC-2026-014', 'SCC-VAC 2007', 'Tiefbau, Kanalbau und Baustellenleitung', '2025-05-28', '2025-05-28', '2026-05-28', 'DEKRA Certification GmbH', 'Sabine Janning', '60 Tage', ['SCC_Zertifikat_2025.pdf'], 'Verlängerung in Vorbereitung', 'Audit geplant'),
     cert('c-gw301', 'DVGW GW 301', 'tiefbau', 'GW301-2026-018', 'GW 301', 'Rohrnetzbauten Gas/Wasser', '2025-10-19', '2025-10-19', '2026-10-19', 'DVGW Cert GmbH', 'Christian Janning', '90 Tage', ['GW301_Nachweis.pdf'], 'Noch nicht begonnen', 'Audit erforderlich'),
-    cert('c-awsv', 'Paragraph 62 AwSV', 'tiefbau', 'AWSV-2024-009', 'AwSV', 'Arbeiten an wassergefährdenden Stoffen', '2024-03-31', '2024-03-31', '2026-03-31', 'TÜV Nord', 'Rahim Ahangarzadeh', '30 Tage', ['AwSV_Pruefung.pdf'], 'Noch nicht begonnen', 'Abgelaufen'),
+    cert('c-awsv', 'Paragraph 62 AwSV', 'tiefbau', 'AWSV-2024-009', 'AwSV', 'Arbeiten an wassergefährdenden Stoffen', '2024-03-31', '2024-03-31', '2026-03-31', 'TÜV Nord', 'Rahim Ahangarzadeh', '30 Tage', ['AwSV_Prüfung.pdf'], 'Noch nicht begonnen', 'Abgelaufen'),
     cert('c-iso9001-b', 'DIN EN ISO 9001:2015', 'bohrtechnik', 'ISO-B-091', 'ISO 9001', 'Horizontalbohrungen und grabenlose Verlegetechnik', '2025-09-15', '2025-09-15', '2027-09-15', 'TÜV Rheinland', 'Andreas Janning', '90 Tage', ['ISO9001_Bohrtechnik.pdf'], 'Abgeschlossen', 'Freigegeben'),
     cert('c-iso45001-b', 'ISO 45001:2018', 'bohrtechnik', 'ISO45-B-044', 'ISO 45001', 'Arbeitsschutzmanagement', '2025-03-22', '2025-03-22', '2027-03-22', 'TÜV Rheinland', 'Annika Tholen', '90 Tage', [], 'In Vorbereitung', 'Dokument fehlt'),
     cert('c-iso3834-r', 'EN ISO 3834', 'rohrbau', 'ISO3834-R-203', 'EN ISO 3834', 'Schweißtechnische Qualitätsanforderungen', '2025-07-12', '2025-07-12', '2027-07-12', 'GSI SLV', 'Stefan Janning', '90 Tage', ['ISO3834_Rohrbau.pdf'], 'Abgeschlossen', 'Freigegeben'),
@@ -24,7 +24,7 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
     audit('a-iso45', 'ISO 45001 Review', 'bohrtechnik', 'c-iso45001-b', 'ISO 45001', 'Rezertifizierung', '2026-06-15', '09:00', '14:30', 'Herr Kramer', 'TÜV Rheinland', 'Nordhorn', 'Annika Tholen', 'Bestätigt'),
   ]), []);
 
-  const [viewMode, setViewMode] = React.useState('cards');
+  const [showAudits, setShowAudits] = React.useState(false);
   const [certs, setCerts] = React.useState(baseCerts);
   const [audits, setAudits] = React.useState(baseAudits);
   const [selectedCertIds, setSelectedCertIds] = React.useState([]);
@@ -41,7 +41,7 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
   const [groupBy, setGroupBy] = React.useState('');
   const [hiddenCols, setHiddenCols] = React.useState([]);
   const [filters, setFilters] = React.useState({
-    firma: activeCompany === 'all' ? 'all' : activeCompany,
+    firma: activeCompany === 'all'  ? 'all' : activeCompany,
     status: 'all',
     rule: 'all',
     owner: 'all',
@@ -50,15 +50,18 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
     due: 'all',
     docs: 'all',
     audit: 'all',
+    renewal: 'all',
+    measures: 'all',
     archive: 'active',
   });
 
+
   React.useEffect(() => {
-    setFilters(current => ({ ...current, firma: activeCompany === 'all' ? 'all' : activeCompany }));
+    setFilters(current => ({ ...current, firma: activeCompany === 'all'  ? 'all' : activeCompany }));
     setSelectedCertIds([]);
   }, [activeCompany]);
 
-  const scopedCompanies = activeCompany === 'all' ? companies : companies.filter(company => company.id === activeCompany);
+  const scopedCompanies = activeCompany === 'all'  ? companies : companies.filter(company => company.id === activeCompany);
   const companyMap = Object.fromEntries(companies.map(company => [company.id, company]));
   const certMap = Object.fromEntries(certs.map(item => [item.id, item]));
 
@@ -72,12 +75,14 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
     .filter(item => filters.issuer === 'all' || item.issuer === filters.issuer)
     .filter(item => filters.year === 'all' || String(new Date(item.validUntil).getFullYear()) === filters.year)
     .filter(item => filters.due === 'all' || (filters.due === '30' && item.days <= 30 && item.days >= 0) || (filters.due === '60' && item.days <= 60 && item.days >= 0) || (filters.due === '90' && item.days <= 90 && item.days >= 0))
-    .filter(item => filters.docs === 'all' || (filters.docs === 'missing' ? item.documents.length === 0 : item.documents.length > 0))
-    .filter(item => filters.audit === 'all' || (filters.audit === 'required' ? item.auditNote.includes('erforderlich') || item.auditNote.includes('Abgelaufen') : !item.auditNote.includes('erforderlich')))
-    .filter(item => filters.archive === 'all' || (filters.archive === 'archived' ? item.statusKey === 'archived' : item.statusKey !== 'archived'))
+    .filter(item => filters.docs === 'all' || (filters.docs === 'missing'  ? item.documents.length === 0 : item.documents.length > 0))
+    .filter(item => filters.audit === 'all' || (filters.audit === 'required'  ? item.auditNote.includes('erforderlich') || item.auditNote.includes('Abgelaufen') : !item.auditNote.includes('erforderlich')))
+    .filter(item => filters.renewal === 'all' || (filters.renewal === 'open'  ? !['Abgeschlossen', 'Zertifikat erhalten', 'Verlängert'].includes(item.renewalStatus) : item.renewalStatus === filters.renewal))
+    .filter(item => filters.measures === 'all' || (filters.measures === 'open'  ? item.measures.length > 0 : item.measures.length === 0))
+    .filter(item => filters.archive === 'all' || (filters.archive === 'archived'  ? item.statusKey === 'archived' : item.statusKey !== 'archived'))
     .sort((a, b) => compareValues(a, b, sortBy));
 
-  const groupedCerts = groupBy ? groupItems(visibleCerts, groupBy) : [['Alle Zertifikate', visibleCerts]];
+  const groupedCerts = groupBy  ? groupItems(visibleCerts, groupBy) : [['Alle Zertifikate', visibleCerts]];
   const visibleAudits = audits
     .map(item => ({ ...item, companyName: companyMap[item.companyId]?.name || item.companyId, certificateName: certMap[item.certificateId]?.name || 'Nicht verknüpft' }))
     .filter(item => scopedCompanies.some(company => company.id === item.companyId))
@@ -110,6 +115,21 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
       documents: target.documents?.slice(1).join(', ') || '',
       note: target.note || '',
     });
+  };
+
+  const applyKpiFilter = (kpi) => {
+    setFilters(current => ({
+      ...current,
+      status: 'all',
+      due: 'all',
+      docs: 'all',
+      audit: 'all',
+      renewal: 'all',
+      measures: 'all',
+      archive: 'active',
+      ...(kpi.filter || {}),
+    }));
+    setSelectedCertIds([]);
   };
 
   const openAuditDialog = (mode, item = null) => {
@@ -179,11 +199,11 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
         comments: ['Bitte Ablaufwarnung aktiv halten.'],
         measures: ['Verlängerung prüfen'],
       };
-      setCerts(current => dialog.mode === 'edit' ? current.map(item => item.id === dialog.id ? { ...item, ...next, id: item.id } : item) : [...current, next]);
+      setCerts(current => dialog.mode === 'edit'  ? current.map(item => item.id === dialog.id  ? { ...item, ...next, id: item.id } : item) : [...current, next]);
     }
     if (dialog.type === 'audit') {
       const next = { id: dialog.id || `audit-${Date.now()}`, ...form };
-      setAudits(current => dialog.mode === 'edit' ? current.map(item => item.id === dialog.id ? { ...item, ...next, id: item.id } : item) : [...current, next]);
+      setAudits(current => dialog.mode === 'edit'  ? current.map(item => item.id === dialog.id  ? { ...item, ...next, id: item.id } : item) : [...current, next]);
     }
     setDialog(null);
     setForm({});
@@ -211,10 +231,7 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
       </div>
       <div className="cert-admin-actions">
         {extraAction}
-        <div className="segmented">
-          <button className={viewMode === 'cards' ? 'is-active' : ''} onClick={() => setViewMode('cards')} type="button"><Icon name="dashboard" size={15} />Kacheln</button>
-          <button className={viewMode === 'list' ? 'is-active' : ''} onClick={() => setViewMode('list')} type="button"><Icon name="matrix" size={15} />Liste</button>
-        </div>
+        <button className={`btn btn--ghost ${showAudits ? 'is-active' : ''}`} onClick={() => setShowAudits(current => !current)} type="button"><Icon name="calendar" size={15} />Auditliste</button>
         <button className="btn btn--ghost" onClick={() => setFilterOpen(true)} type="button"><Icon name="filter" size={15} />Filter</button>
         <button className="btn btn--ghost" type="button"><Icon name="download" size={15} />Excel</button>
         <button className="btn btn--ghost" type="button"><Icon name="download" size={15} />PDF</button>
@@ -222,10 +239,10 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
       </div>
     </div>
 
-    <section className="cert-kpis">
-      {kpis.map(kpi => <button key={kpi.label} type="button" className="cert-kpi-card">
+    <section className="cert-kpis cert-kpis--six">
+      {kpis.map(kpi => <button key={kpi.label} type="button" className="cert-kpi-card" onClick={() => applyKpiFilter(kpi)}>
         <span>{kpi.label}</span>
-        <strong className={kpi.tone ? `tone-${kpi.tone}` : ''}>{kpi.value}</strong>
+        <strong className={kpi.tone  ? `tone-${kpi.tone}` : ''}>{kpi.value}</strong>
         <small>{kpi.hint}</small>
       </button>)}
     </section>
@@ -241,47 +258,26 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
       <button type="button" className="icon-btn" onClick={() => setSelectedCertIds([])}><Icon name="x" size={15} /></button>
     </div>}
 
-    <div className="cert-admin-layout">
-      <aside className="cert-company-panel">
-        <div className="cert-panel-head">
-          <div>
-            <span className="eyebrow">Firmen</span>
-            <h2>Zertifikate je Firma</h2>
-          </div>
-          <span className="count-pill">{selectedCompanyCards.length}</span>
-        </div>
-        <div className="cert-company-cards">
-          {selectedCompanyCards.map(company => <article key={company.id} className={`cert-company-card ${filters.firma === company.id ? 'is-selected' : ''}`} onClick={() => setFilters(current => ({ ...current, firma: company.id }))}>
-            <button className="dots-btn" type="button" onClick={(event) => { event.stopPropagation(); setCompanyMenu(companyMenu === company.id ? null : company.id); }}>⋮</button>
-            {companyMenu === company.id && <Menu onClose={() => setCompanyMenu(null)} items={['Firma öffnen', 'Zertifikate anzeigen', 'Firma bearbeiten', 'Zertifikat hinzufügen', 'Excel exportieren', 'PDF exportieren', 'Archivieren']} />}
-            <h3>{company.name}</h3>
-            <p>{company.short}</p>
-            <div className="mini-status-row"><span><b>{company.total}</b> Zertifikate</span><span className="tone-success">{company.valid} gültig</span><span className="tone-warning">{company.soon} bald</span><span className="tone-danger">{company.expired} abgelaufen</span></div>
-          </article>)}
-        </div>
-      </aside>
-
+    <div className={`cert-admin-layout cert-admin-layout--certs ${showAudits ? 'has-audits' : ''}`}>
       <main className="cert-main-panel">
-        {viewMode === 'cards'
-          ? <div className="cert-card-grid">{visibleCerts.map(item => <CertificateCard key={item.id} item={item} onOpen={() => setSelectedCert(item.id)} onEdit={() => openCertDialog('edit', item)} onRenew={() => openRenewalDialog(item)} openMenu={certMenu === item.id} setMenu={() => setCertMenu(certMenu === item.id ? null : item.id)} />)}</div>
-          : <CertificateTable
-              groups={groupedCerts}
-              selectedIds={selectedCertIds}
-              setSelectedIds={setSelectedCertIds}
-              onOpen={setSelectedCert}
-              onEdit={openCertDialog}
-              columnMenu={columnMenu}
-              setColumnMenu={setColumnMenu}
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              groupBy={groupBy}
-              setGroupBy={setGroupBy}
-              hiddenCols={hiddenCols}
-              setHiddenCols={setHiddenCols}
-            />}
+        <CertificateTable
+          groups={groupedCerts}
+          selectedIds={selectedCertIds}
+          setSelectedIds={setSelectedCertIds}
+          onOpen={setSelectedCert}
+          onEdit={openCertDialog}
+          columnMenu={columnMenu}
+          setColumnMenu={setColumnMenu}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          groupBy={groupBy}
+          setGroupBy={setGroupBy}
+          hiddenCols={hiddenCols}
+          setHiddenCols={setHiddenCols}
+        />
       </main>
 
-      <aside className="cert-audit-panel">
+      {showAudits && <aside className="cert-audit-panel">
         <div className="cert-panel-head">
           <div>
             <span className="eyebrow">Audits</span>
@@ -294,7 +290,7 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
         </div>
         <div className="cert-audit-list">
           {visibleAudits.map(item => <article key={item.id} className="cert-audit-card" onClick={() => setSelectedAudit(item.id)}>
-            <button className="dots-btn" type="button" onClick={(event) => { event.stopPropagation(); setAuditMenu(auditMenu === item.id ? null : item.id); }}>⋮</button>
+            <button className="dots-btn" type="button" onClick={(event) => { event.stopPropagation(); setAuditMenu(auditMenu === item.id  ? null : item.id); }}>⋮</button>
             {auditMenu === item.id && <Menu onClose={() => setAuditMenu(null)} items={['Details anzeigen', 'Bearbeiten', 'Termin ändern', 'Zertifikat verknüpfen', 'Teilnehmer hinzufügen', 'Dokument hochladen', 'Maßnahmen erstellen', 'als erledigt markieren', 'archivieren', 'löschen']} />}
             <div>
               <strong>{window.fmtDE(item.date)}</strong>
@@ -308,7 +304,7 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
             </div>
           </article>)}
         </div>
-      </aside>
+      </aside>}
     </div>
 
     {filterOpen && <FilterDialog filters={filters} setFilters={setFilters} companies={scopedCompanies} certs={enrichedCerts} onClose={() => setFilterOpen(false)} />}
@@ -319,7 +315,7 @@ function CertOverviewView({ activeCompany = 'all', extraAction = null }) {
 }
 
 function cert(id, name, companyId, number, rule, scope, issuedAt, validFrom, validUntil, issuer, owner, reminder, documents, renewalStatus, auditNote) {
-  return { id, name, companyId, number, rule, scope, issuedAt, validFrom, validUntil, issuer, owner, reminder, documents, renewalStatus, auditNote, note: 'Zertifikat wird zentral überwacht.', history: ['Angelegt von Sabine Janning', 'Ablaufdatum geprüft', 'Dokument hochgeladen'], comments: ['Verantwortliche Person wurde informiert.'], measures: auditNote === 'Abgelaufen' ? ['Verlängerung starten', 'Audit terminieren'] : ['Frist überwachen'] };
+  return { id, name, companyId, number, rule, scope, issuedAt, validFrom, validUntil, issuer, owner, reminder, documents, renewalStatus, auditNote, note: 'Zertifikat wird zentral überwacht.', history: ['Angelegt von Sabine Janning', 'Ablaufdatum geprüft', 'Dokument hochgeladen'], comments: ['Verantwortliche Person wurde informiert.'], measures: auditNote === 'Abgelaufen'  ? ['Verlängerung starten', 'Audit terminieren'] : ['Frist überwachen'] };
 }
 
 function audit(id, title, companyId, certificateId, rule, type, date, start, end, auditor, organization, location, contact, status) {
@@ -328,12 +324,12 @@ function audit(id, title, companyId, certificateId, rule, type, date, start, end
 
 function enrichCert(item, today, companyMap) {
   const hasValidDate = !!item.validUntil && !Number.isNaN(new Date(item.validUntil).getTime());
-  const days = hasValidDate ? Math.round((new Date(item.validUntil) - today) / 86400000) : 9999;
+  const days = hasValidDate  ? Math.round((new Date(item.validUntil) - today) / 86400000) : 9999;
   let statusKey = 'valid';
   let status = 'Gültig';
   if (item.manualStatus && !['Automatisch', 'Gültig'].includes(item.manualStatus)) {
     status = item.manualStatus;
-    statusKey = item.manualStatus === 'Archiviert' ? 'archived' : item.manualStatus === 'Zur Prüfung' ? 'review' : item.manualStatus === 'In Bearbeitung' ? 'progress' : item.manualStatus === 'Abgelaufen' ? 'expired' : item.manualStatus === 'Läuft bald ab' ? 'soon' : 'valid';
+    statusKey = item.manualStatus === 'Archiviert'  ? 'archived' : item.manualStatus === 'Zur Prüfung'  ? 'review' : item.manualStatus === 'In Bearbeitung'  ? 'progress' : item.manualStatus === 'Abgelaufen'  ? 'expired' : item.manualStatus === 'Läuft bald ab'  ? 'soon' : 'valid';
   } else if (days < 0) {
     statusKey = 'expired';
     status = 'Abgelaufen';
@@ -341,13 +337,13 @@ function enrichCert(item, today, companyMap) {
     statusKey = 'soon';
     status = 'Läuft bald ab';
   }
-  const restlaufzeit = hasValidDate ? (days < 0 ? `${Math.abs(days)} Tage überzogen` : `in ${days} Tagen`) : 'kein Ablaufdatum';
-  const warning = item.documents.length === 0 ? 'Dokument fehlt' : !hasValidDate ? 'Ablaufdatum fehlt' : days <= 7 ? 'läuft in 7 Tagen ab' : days <= 30 ? 'läuft in 30 Tagen ab' : days <= 60 ? 'läuft in 60 Tagen ab' : days <= 90 ? 'läuft in 90 Tagen ab' : 'Keine Warnung';
+  const restlaufzeit = hasValidDate  ? (days < 0  ? `${Math.abs(days)} Tage überzogen` : `in ${days} Tagen`) : 'kein Ablaufdatum';
+  const warning = item.documents.length === 0  ? 'Dokument fehlt' : !hasValidDate  ? 'Ablaufdatum fehlt' : days <= 7  ? 'läuft in 7 Tagen ab' : days <= 30  ? 'läuft in 30 Tagen ab' : days <= 60  ? 'läuft in 60 Tagen ab' : days <= 90  ? 'läuft in 90 Tagen ab' : 'Keine Warnung';
   return { ...item, days, status, statusKey, restlaufzeit, warning, companyName: companyMap[item.companyId]?.name || item.companyId };
 }
 
 function compareValues(a, b, sortBy) {
-  const factor = sortBy.direction === 'desc' ? -1 : 1;
+  const factor = sortBy.direction === 'desc'  ? -1 : 1;
   if (sortBy.key === 'validUntil') return factor * (new Date(a.validUntil) - new Date(b.validUntil));
   return factor * String(a[sortBy.key] || '').localeCompare(String(b[sortBy.key] || ''), 'de');
 }
@@ -364,17 +360,14 @@ function groupItems(items, key) {
 
 function getCertificateKpis(certs, audits) {
   return [
-    { label: 'Zertifikate gesamt', value: certs.length, hint: 'im aktuellen Filter' },
-    { label: 'Gültig', value: certs.filter(item => item.statusKey === 'valid').length, tone: 'success', hint: 'ohne Handlungsbedarf' },
-    { label: 'Laufen bald ab', value: certs.filter(item => item.statusKey === 'soon').length, tone: 'warning', hint: '60 Tage' },
-    { label: 'Abgelaufen', value: certs.filter(item => item.statusKey === 'expired').length, tone: 'danger', hint: 'archivieren oder verlängern' },
-    { label: 'Verlängerungen offen', value: certs.filter(item => !['Abgeschlossen', 'Zertifikat erhalten'].includes(item.renewalStatus)).length, tone: 'warning', hint: 'Workflow offen' },
-    { label: 'Audits geplant', value: audits.filter(item => ['Geplant', 'Bestätigt', 'In Vorbereitung'].includes(item.status)).length, hint: 'kommende Termine' },
-    { label: 'Dokumente fehlen', value: certs.filter(item => item.documents.length === 0).length, tone: 'danger', hint: 'Datei nachreichen' },
-    { label: 'Maßnahmen offen', value: certs.reduce((sum, item) => sum + item.measures.length, 0), hint: 'aus Audits' },
+    { label: 'Zertifikate gesamt', value: certs.length, hint: 'im Filter', filter: {} },
+    { label: 'Gültig', value: certs.filter(item => item.statusKey === 'valid').length, tone: 'success', hint: 'ohne Handlungsbedarf', filter: { status: 'valid' } },
+    { label: 'Laufen bald ab', value: certs.filter(item => item.statusKey === 'soon').length, tone: 'warning', hint: '60 Tage', filter: { status: 'soon' } },
+    { label: 'Abgelaufen', value: certs.filter(item => item.statusKey === 'expired').length, tone: 'danger', hint: 'verlängern', filter: { status: 'expired' } },
+    { label: 'Verlängerungen offen', value: certs.filter(item => !['Abgeschlossen', 'Zertifikat erhalten', 'Verlängert'].includes(item.renewalStatus)).length, tone: 'warning', hint: 'Workflow offen', filter: { renewal: 'open' } },
+    { label: 'Maßnahmen offen', value: certs.reduce((sum, item) => sum + item.measures.length, 0), tone: 'danger', hint: 'aus Audits', filter: { measures: 'open' } },
   ];
 }
-
 function daysCountdown(date, today) {
   return Math.max(0, Math.round((new Date(date) - today) / 86400000));
 }
@@ -405,55 +398,64 @@ function CertificateCard({ item, onOpen, onEdit, onRenew, openMenu, setMenu }) {
 }
 
 function CertificateTable({ groups, selectedIds, setSelectedIds, onOpen, onEdit, columnMenu, setColumnMenu, sortBy, setSortBy, groupBy, setGroupBy, hiddenCols, setHiddenCols }) {
+  const [rowMenu, setRowMenu] = React.useState(null);
   const columns = [
-    ['name', 'Zertifikat'], ['companyName', 'Firma'], ['number', 'Zertifikatsnummer'], ['rule', 'Regelwerk'], ['scope', 'Geltungsbereich'], ['issuedAt', 'Ausstellungsdatum'], ['validUntil', 'gültig bis'], ['restlaufzeit', 'Restlaufzeit'], ['issuer', 'ausstellende Stelle'], ['owner', 'zuständige Person'], ['status', 'Status'], ['documents', 'Dokument'], ['actions', 'Aktionen'],
+    ['name', 'Zertifikat'], ['companyName', 'Firma'], ['number', 'Nr.'], ['rule', 'Regelwerk'], ['validUntil', 'Gültig bis'], ['status', 'Status'], ['owner', 'Zuständig'], ['renewalStatus', 'Verlängerung'], ['documents', 'Dokumente'], ['actions', ''],
   ];
+  const columnWidths = { name: 320, companyName: 190, number: 150, rule: 130, validUntil: 118, status: 142, owner: 160, renewalStatus: 190, documents: 118, actions: 68 };
   const flat = groups.flatMap(([, items]) => items);
-  const toggleAll = (checked) => setSelectedIds(checked ? flat.map(item => item.id) : []);
-  const toggle = (id) => setSelectedIds(selectedIds.includes(id) ? selectedIds.filter(item => item !== id) : [...selectedIds, id]);
-  return <div className="cert-table-wrap">
-    <table className="admin-table cert-admin-table">
-      <thead><tr>
-        <th><input type="checkbox" checked={flat.length > 0 && selectedIds.length === flat.length} onChange={event => toggleAll(event.target.checked)} /></th>
-        {columns.filter(([key]) => !hiddenCols.includes(key)).map(([key, label]) => <th key={key}>
-          <button className="column-head-btn" type="button" onClick={() => setColumnMenu(columnMenu === key ? null : key)}>{label}⌄</button>
-          {columnMenu === key && <ColumnMenu label={label} colKey={key} sortBy={sortBy} setSortBy={setSortBy} groupBy={groupBy} setGroupBy={setGroupBy} hiddenCols={hiddenCols} setHiddenCols={setHiddenCols} />}
-        </th>)}
-      </tr></thead>
-      {groups.map(([label, items]) => <tbody key={label}>
-        {groups.length > 1 && <tr className="group-row"><td colSpan={columns.length + 1}>{label} · {items.length}</td></tr>}
-        {items.map(item => <tr key={item.id} className={item.statusKey === 'expired' ? 'is-danger-row' : ''} onClick={() => onOpen(item.id)}>
-          <td onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggle(item.id)} /></td>
-          {!hiddenCols.includes('name') && <td><strong>{item.name}</strong><small>{item.scope}</small></td>}
-          {!hiddenCols.includes('companyName') && <td>{item.companyName}</td>}
-          {!hiddenCols.includes('number') && <td>{item.number}</td>}
-          {!hiddenCols.includes('rule') && <td>{item.rule}</td>}
-          {!hiddenCols.includes('scope') && <td>{item.scope}</td>}
-          {!hiddenCols.includes('issuedAt') && <td>{window.fmtDE(item.issuedAt)}</td>}
-          {!hiddenCols.includes('validUntil') && <td>{window.fmtDE(item.validUntil)}</td>}
-          {!hiddenCols.includes('restlaufzeit') && <td>{item.restlaufzeit}</td>}
-          {!hiddenCols.includes('issuer') && <td>{item.issuer}</td>}
-          {!hiddenCols.includes('owner') && <td>{item.owner}</td>}
-          {!hiddenCols.includes('status') && <td><span className={`cert-status-pill cert-status-pill--${item.statusKey}`}>{item.status}</span></td>}
-          {!hiddenCols.includes('documents') && <td>{item.documents.length ? `${item.documents.length} Datei(en)` : <span className="tone-danger">fehlt</span>}</td>}
-          {!hiddenCols.includes('actions') && <td onClick={event => event.stopPropagation()}><button className="btn btn--ghost btn--compact" onClick={() => onEdit('edit', item)}><Icon name="edit" size={14} />Bearbeiten</button></td>}
-        </tr>)}
-      </tbody>)}
-    </table>
+  const visibleColumns = columns.filter(([key]) => !hiddenCols.includes(key));
+  const toggleAll = (checked) => setSelectedIds(checked  ? flat.map(item => item.id) : []);
+  const toggle = (id) => setSelectedIds(selectedIds.includes(id)  ? selectedIds.filter(item => item !== id) : [...selectedIds, id]);
+  const renderValue = (item, key) => {
+    if (key === 'name') return <button className="table-primary-link" type="button" onClick={(event) => { event.stopPropagation(); onOpen(item.id); }}><strong>{item.name}</strong><small>{item.scope}</small></button>;
+    if (key === 'companyName') return <span className="cert-company-cell">{item.companyName}</span>;
+    if (key === 'number') return <span className="cert-number-cell">{item.number}</span>;
+    if (key === 'validUntil') return window.fmtDE(item.validUntil);
+    if (key === 'status') return <div className="cert-status-stack"><span className={`cert-status-pill cert-status-pill--${item.statusKey}`}>{item.status}</span><small>{item.days < 0  ? `seit ${Math.abs(item.days)} Tagen` : item.restlaufzeit}</small></div>;
+    if (key === 'owner') return <span className="cert-owner-cell">{item.owner}</span>;
+    if (key === 'renewalStatus') return <span className="cert-renewal-cell">{item.renewalStatus}</span>;
+    if (key === 'documents') return item.documents.length  ? <span className="cert-doc-chip">{item.documents.length} Datei</span> : <span className="cert-doc-chip cert-doc-chip--missing">fehlt</span>;
+    if (key === 'actions') return <div className="table-action-menu"><button className="dots-btn dots-btn--table" type="button" onClick={(event) => { event.stopPropagation(); setRowMenu(rowMenu === item.id  ? null : item.id); }}>⋮</button>{rowMenu === item.id && <Menu items={['Details anzeigen', 'Bearbeiten', 'Zertifikat öffnen', 'Dokumente verwalten', 'Verlängerung starten', 'Audit planen', 'Maßnahme hinzufügen', 'Archivieren', 'Löschen']} />}</div>;
+    return item[key] || '-';
+  };
+  return <div className="cert-table-shell">
+    <div className="cert-table-wrap">
+      <table className="admin-table cert-admin-table cert-admin-table--compact">
+        <colgroup>
+          <col style={{ width: 46 }} />
+          {visibleColumns.map(([key]) => <col key={key} style={{ width: columnWidths[key] || 140 }} />)}
+        </colgroup>
+        <thead><tr>
+          <th className="sticky-select"><input type="checkbox" checked={flat.length > 0 && selectedIds.length === flat.length} onChange={event => toggleAll(event.target.checked)} /></th>
+          {visibleColumns.map(([key, label]) => <th key={key} className={key === 'name'  ? 'sticky-name' : key === 'actions'  ? 'sticky-actions' : ''}>
+            <button className="column-head-btn" type="button" onClick={() => setColumnMenu(columnMenu === key  ? null : key)}>{label}{label && <span>▾</span>}</button>
+            {columnMenu === key && <ColumnMenu label={label} colKey={key} sortBy={sortBy} setSortBy={setSortBy} groupBy={groupBy} setGroupBy={setGroupBy} hiddenCols={hiddenCols} setHiddenCols={setHiddenCols} />}
+          </th>)}
+        </tr></thead>
+        {groups.map(([label, items]) => <tbody key={label}>
+          {groups.length > 1 && <tr className="group-row"><td colSpan={visibleColumns.length + 1}>{label} · {items.length}</td></tr>}
+          {items.map(item => <tr key={item.id} className={item.statusKey === 'expired'  ? 'is-danger-row' : ''} onClick={() => onOpen(item.id)}>
+            <td className="sticky-select" onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggle(item.id)} /></td>
+            {visibleColumns.map(([key]) => <td key={key} className={key === 'name'  ? 'sticky-name' : key === 'actions'  ? 'sticky-actions' : ''} onClick={key === 'actions'  ? event => event.stopPropagation() : undefined}>{renderValue(item, key)}</td>)}
+          </tr>)}
+        </tbody>)}
+      </table>
+    </div>
   </div>;
 }
-
 function ColumnMenu({ label, colKey, sortBy, setSortBy, groupBy, setGroupBy, hiddenCols, setHiddenCols }) {
   const isHidden = hiddenCols.includes(colKey);
   return <div className="column-menu">
     <button type="button" onClick={() => setSortBy({ key: colKey, direction: 'asc' })}>A bis Z</button>
     <button type="button" onClick={() => setSortBy({ key: colKey, direction: 'desc' })}>Z bis A</button>
     <button type="button">Filtern nach</button>
-    <button type="button" onClick={() => setGroupBy(groupBy === colKey ? '' : colKey)}>Gruppieren nach "{label}"</button>
-    <button type="button" onClick={() => setHiddenCols(isHidden ? hiddenCols.filter(item => item !== colKey) : [...hiddenCols, colKey])}>{isHidden ? 'Spalte einblenden' : 'Spalte ausblenden'}</button>
+    <button type="button" onClick={() => setGroupBy(groupBy === colKey  ? '' : colKey)}>Gruppieren nach "{label}"</button>
+    <button type="button" onClick={() => setHiddenCols(isHidden  ? hiddenCols.filter(item => item !== colKey) : [...hiddenCols, colKey])}>{isHidden  ? 'Spalte einblenden' : 'Spalte ausblenden'}</button>
+    <button type="button">Spalten verwalten</button>
+    <button type="button" onClick={() => setHiddenCols([])}>Standardansicht wiederherstellen</button>
   </div>;
 }
-
 function Menu({ items }) {
   return <div className="cert-context-menu">{items.map(item => <button key={item} type="button">{item}</button>)}</div>;
 }
@@ -461,49 +463,82 @@ function Menu({ items }) {
 function FilterDialog({ filters, setFilters, companies, certs, onClose }) {
   const unique = key => Array.from(new Set(certs.map(item => item[key]).filter(Boolean)));
   const set = (key, value) => setFilters(current => ({ ...current, [key]: value }));
+  const reset = () => setFilters({ firma: 'all', status: 'all', rule: 'all', owner: 'all', issuer: 'all', year: 'all', due: 'all', docs: 'all', audit: 'all', renewal: 'all', measures: 'all', archive: 'active' });
   return <div className="cert-modal-backdrop" onMouseDown={onClose}>
-    <div className="filter-dialog cert-filter-dialog" onMouseDown={event => event.stopPropagation()}>
-      <h2>Filter</h2>
-      <div className="filter-grid">
+    <aside className="cert-filter-drawer" onMouseDown={event => event.stopPropagation()}>
+      <div className="cert-modal-card__head"><div><span className="eyebrow">Zertifizierungsübersicht</span><h2>Filter</h2></div><button className="icon-btn" type="button" onClick={onClose}><Icon name="x" size={18} /></button></div>
+      <div className="filter-grid filter-grid--single">
         <label>Firma<select value={filters.firma} onChange={event => set('firma', event.target.value)}><option value="all">Alle Firmen</option>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></label>
-        <label>Status<select value={filters.status} onChange={event => set('status', event.target.value)}><option value="all">Alle Status</option><option value="valid">Gültig</option><option value="soon">Läuft bald ab</option><option value="expired">Abgelaufen</option><option value="progress">In Bearbeitung</option><option value="review">Zur Prüfung</option><option value="archived">Archiviert</option></select></label>
-        <label>Norm oder Regelwerk<select value={filters.rule} onChange={event => set('rule', event.target.value)}><option value="all">Alle Regelwerke</option>{unique('rule').map(value => <option key={value}>{value}</option>)}</select></label>
+        <label>Zertifikat<input placeholder="Zertifikatsname suchen" /></label>
+        <label>Regelwerk<select value={filters.rule} onChange={event => set('rule', event.target.value)}><option value="all">Alle Regelwerke</option>{unique('rule').map(value => <option key={value}>{value}</option>)}</select></label>
+        <label>Geltungsbereich<select><option>Alle Geltungsbereiche</option>{unique('scope').map(value => <option key={value}>{value}</option>)}</select></label>
+        <label>Status<select value={filters.status} onChange={event => set('status', event.target.value)}><option value="all">Alle Status</option><option value="valid">Gültig</option><option value="soon">Läuft bald ab</option><option value="expired">Abgelaufen</option><option value="progress">In Prüfung</option><option value="archived">Archiviert</option></select></label>
         <label>Zuständige Person<select value={filters.owner} onChange={event => set('owner', event.target.value)}><option value="all">Alle Personen</option>{unique('owner').map(value => <option key={value}>{value}</option>)}</select></label>
         <label>Ausstellende Stelle<select value={filters.issuer} onChange={event => set('issuer', event.target.value)}><option value="all">Alle Stellen</option>{unique('issuer').map(value => <option key={value}>{value}</option>)}</select></label>
-        <label>Ablaufjahr<select value={filters.year} onChange={event => set('year', event.target.value)}><option value="all">Alle Jahre</option>{unique('validUntil').map(value => String(new Date(value).getFullYear())).filter((v, i, arr) => arr.indexOf(v) === i).map(year => <option key={year}>{year}</option>)}</select></label>
-        <label>Frist<select value={filters.due} onChange={event => set('due', event.target.value)}><option value="all">Alle Fristen</option><option value="30">läuft in 30 Tagen ab</option><option value="60">läuft in 60 Tagen ab</option><option value="90">läuft in 90 Tagen ab</option></select></label>
+        <label>Gültig bis<select value={filters.year} onChange={event => set('year', event.target.value)}><option value="all">Alle Jahre</option>{unique('validUntil').map(value => String(new Date(value).getFullYear())).filter((v, i, arr) => arr.indexOf(v) === i).map(year => <option key={year}>{year}</option>)}</select></label>
+        <label>Läuft innerhalb<select value={filters.due} onChange={event => set('due', event.target.value)}><option value="all">Alle Fristen</option><option value="30">30 Tage</option><option value="60">60 Tage</option><option value="90">90 Tage</option></select></label>
+        <label>Verlängerungsstatus<select value={filters.renewal} onChange={event => set('renewal', event.target.value)}><option value="all">Alle</option><option value="open">Offene Verlängerungen</option><option>Nicht erforderlich</option><option>Noch nicht begonnen</option><option>Unterlagen werden vorbereitet</option><option>Audit geplant</option><option>Verlängert</option></select></label>
+        <label>Audit<select value={filters.audit} onChange={event => set('audit', event.target.value)}><option value="all">Alle</option><option value="required">Audit geplant / erforderlich</option><option value="ok">kein Audit offen</option></select></label>
         <label>Dokument<select value={filters.docs} onChange={event => set('docs', event.target.value)}><option value="all">Alle</option><option value="present">Dokument vorhanden</option><option value="missing">Dokument fehlt</option></select></label>
-        <label>Audit<select value={filters.audit} onChange={event => set('audit', event.target.value)}><option value="all">Alle</option><option value="required">Audit erforderlich</option><option value="ok">kein Audit offen</option></select></label>
-        <label>Archiv<select value={filters.archive} onChange={event => set('archive', event.target.value)}><option value="active">Aktive</option><option value="archived">Archiviert</option><option value="all">Alle</option></select></label>
+        <label>Maßnahmen<select value={filters.measures} onChange={event => set('measures', event.target.value)}><option value="all">Alle</option><option value="open">Maßnahmen offen</option><option value="none">Keine offenen Maßnahmen</option></select></label>
+        <label>Archiv<select value={filters.archive} onChange={event => set('archive', event.target.value)}><option value="active">Aktive Zertifikate</option><option value="archived">Archivierte Zertifikate</option><option value="all">Alle</option></select></label>
       </div>
-      <div className="modal-actions"><button className="btn btn--ghost" type="button" onClick={() => setFilters({ firma: 'all', status: 'all', rule: 'all', owner: 'all', issuer: 'all', year: 'all', due: 'all', docs: 'all', audit: 'all', archive: 'active' })}>Zurücksetzen</button><button className="btn btn--primary" type="button" onClick={onClose}>Anwenden</button></div>
-    </div>
+      <div className="modal-actions"><button className="btn btn--ghost" type="button" onClick={reset}>Filter zurücksetzen</button><button className="btn btn--primary" type="button" onClick={onClose}>Filter anwenden</button></div>
+    </aside>
   </div>;
 }
-
 function CertificateDialog({ form, setForm, companies, employees, onClose, onSubmit }) {
+  const [step, setStep] = React.useState(1);
   const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
-  return <Modal title="Zertifikat anlegen" eyebrow="Zertifizierungsübersicht" onClose={onClose} onSubmit={onSubmit}>
-    <div className="form-grid form-grid--three">
-      <Field label="Name des Zertifikats"><input value={form.name} onChange={event => set('name', event.target.value)} /></Field>
+  const steps = ['Grunddaten', 'Gültigkeit', 'Zuständigkeit', 'Verlängerung und Audit', 'Dokumente', 'Zusammenfassung'];
+  const next = () => setStep(current => Math.min(6, current + 1));
+  const prev = () => setStep(current => Math.max(1, current - 1));
+  return <Modal title="Zertifikat anlegen" eyebrow={`Schritt ${step} von 6`} onClose={onClose} onSubmit={step === 6  ? onSubmit : (event) => { event.preventDefault(); next(); }} submitLabel={step === 6  ? 'Zertifikat anlegen' : 'Weiter'} secondaryAction={step > 1  ? <button className="btn btn--ghost" type="button" onClick={prev}>Zurück</button> : null}>
+    <div className="cert-stepper">{steps.map((label, index) => <button key={label} type="button" className={step === index + 1  ? 'is-active' : step > index + 1  ? 'is-done' : ''} onClick={() => setStep(index + 1)}><span>{index + 1}</span>{label}</button>)}</div>
+    {step === 1 && <div className="form-grid form-grid--three">
       <Field label="Firma"><select value={form.companyId} onChange={event => set('companyId', event.target.value)}>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></Field>
+      <Field label="Zertifikatsname"><input value={form.name} onChange={event => set('name', event.target.value)} /></Field>
       <Field label="Zertifikatsnummer"><input value={form.number} onChange={event => set('number', event.target.value)} /></Field>
-      <Field label="Norm oder Regelwerk"><input value={form.rule} onChange={event => set('rule', event.target.value)} /></Field>
+      <Field label="Regelwerk / Norm"><input value={form.rule} onChange={event => set('rule', event.target.value)} /></Field>
       <Field label="Geltungsbereich"><input value={form.scope} onChange={event => set('scope', event.target.value)} /></Field>
+      <Field label="Ausstellende Stelle"><input value={form.issuer} onChange={event => set('issuer', event.target.value)} /></Field>
+      <Field label="Beschreibung"><textarea value={form.note} onChange={event => set('note', event.target.value)} /></Field>
+    </div>}
+    {step === 2 && <div className="form-grid form-grid--three">
       <Field label="Ausstellungsdatum"><input type="date" value={form.issuedAt} onChange={event => set('issuedAt', event.target.value)} /></Field>
       <Field label="Gültig ab"><input type="date" value={form.validFrom} onChange={event => set('validFrom', event.target.value)} /></Field>
       <Field label="Gültig bis"><input type="date" value={form.validUntil} onChange={event => set('validUntil', event.target.value)} /></Field>
-      <Field label="Ausstellende Stelle"><input value={form.issuer} onChange={event => set('issuer', event.target.value)} /></Field>
-      <Field label="Zuständige Person"><select value={form.owner} onChange={event => set('owner', event.target.value)}><option value="">Bitte auswählen</option>{employees.slice(0, 18).map(emp => <option key={emp.id}>{emp.first} {emp.last}</option>)}</select></Field>
+      <Field label="Unbefristet"><select value={form.unlimited || 'Nein'} onChange={event => set('unlimited', event.target.value)}><option>Nein</option><option>Ja</option></select></Field>
       <Field label="Status"><select value={form.status} onChange={event => set('status', event.target.value)}>{['Automatisch', 'Gültig', 'Läuft bald ab', 'Abgelaufen', 'In Bearbeitung', 'Zur Prüfung', 'Archiviert'].map(value => <option key={value}>{value}</option>)}</select></Field>
-      <Field label="Erinnerungsfrist"><select value={form.reminder} onChange={event => set('reminder', event.target.value)}>{['7 Tage', '30 Tage', '60 Tage', '90 Tage'].map(value => <option key={value}>{value}</option>)}</select></Field>
-      <Field label="Zertifikatsdatei hochladen"><input value={form.file} onChange={event => set('file', event.target.value)} placeholder="SCC_Zertifikat.pdf" /></Field>
-      <Field label="Weitere Dokumente hochladen"><input value={form.documents} onChange={event => set('documents', event.target.value)} placeholder="Auditbericht.pdf, Maßnahmen.xlsx" /></Field>
-      <Field label="Bemerkung"><textarea value={form.note} onChange={event => set('note', event.target.value)} /></Field>
-    </div>
+      <Field label="Warnfrist"><select value={form.reminder} onChange={event => set('reminder', event.target.value)}>{['30 Tage', '60 Tage', '90 Tage', 'Benutzerdefiniert'].map(value => <option key={value}>{value}</option>)}</select></Field>
+    </div>}
+    {step === 3 && <div className="form-grid form-grid--three">
+      <Field label="Verantwortliche Person"><select value={form.owner} onChange={event => set('owner', event.target.value)}><option value="">Bitte auswählen</option>{employees.slice(0, 30).map(emp => <option key={emp.id}>{emp.first} {emp.last}</option>)}</select></Field>
+      <Field label="Vertretung"><select value={form.deputy || ''} onChange={event => set('deputy', event.target.value)}><option value="">Bitte auswählen</option>{employees.slice(0, 30).map(emp => <option key={emp.id}>{emp.first} {emp.last}</option>)}</select></Field>
+      <Field label="Benachrichtigung aktiv"><select value={form.notify || 'Ja'} onChange={event => set('notify', event.target.value)}><option>Ja</option><option>Nein</option></select></Field>
+      <Field label="Erste Erinnerung"><select value={form.firstReminder || '90 Tage vorher'} onChange={event => set('firstReminder', event.target.value)}><option>90 Tage vorher</option><option>60 Tage vorher</option><option>30 Tage vorher</option></select></Field>
+      <Field label="Eskalation an"><input value={form.escalation || ''} onChange={event => set('escalation', event.target.value)} /></Field>
+    </div>}
+    {step === 4 && <div className="form-grid form-grid--three">
+      <Field label="Verlängerung erforderlich"><select value={form.renewalRequired || 'Ja'} onChange={event => set('renewalRequired', event.target.value)}><option>Ja</option><option>Nein</option></select></Field>
+      <Field label="Nächster Verlängerungstermin"><input type="date" value={form.renewalDate || ''} onChange={event => set('renewalDate', event.target.value)} /></Field>
+      <Field label="Prüforganisation"><input value={form.auditOrg || form.issuer || ''} onChange={event => set('auditOrg', event.target.value)} /></Field>
+      <Field label="Audit erforderlich"><select value={form.auditRequired || 'Ja'} onChange={event => set('auditRequired', event.target.value)}><option>Ja</option><option>Nein</option></select></Field>
+      <Field label="Auditart"><select value={form.auditType || 'Überwachungsaudit'} onChange={event => set('auditType', event.target.value)}>{['Erstzertifizierung', 'Überwachungsaudit', 'Wiederholungsaudit', 'Rezertifizierung', 'internes Audit', 'Kundenaudit'].map(value => <option key={value}>{value}</option>)}</select></Field>
+      <Field label="Geplantes Auditdatum"><input type="date" value={form.auditDate || ''} onChange={event => set('auditDate', event.target.value)} /></Field>
+    </div>}
+    {step === 5 && <div className="form-grid form-grid--three">
+      <Field label="Zertifikat als PDF"><input value={form.file} onChange={event => set('file', event.target.value)} placeholder="Zertifikat.pdf" /></Field>
+      <Field label="Auditbericht"><input value={form.auditReport || ''} onChange={event => set('auditReport', event.target.value)} placeholder="Auditbericht.pdf" /></Field>
+      <Field label="Antragsunterlagen"><input value={form.applicationDocs || ''} onChange={event => set('applicationDocs', event.target.value)} /></Field>
+      <Field label="Prüfbericht"><input value={form.checkReport || ''} onChange={event => set('checkReport', event.target.value)} /></Field>
+      <Field label="Weitere Anlagen"><input value={form.documents} onChange={event => set('documents', event.target.value)} placeholder="Dateien mit Komma trennen" /></Field>
+    </div>}
+    {step === 6 && <div className="cert-summary-box">
+      {[['Firma', companies.find(company => company.id === form.companyId)?.name || '-'], ['Zertifikat', form.name || '-'], ['Nummer', form.number || '-'], ['Regelwerk', form.rule || '-'], ['Geltungsbereich', form.scope || '-'], ['Gültigkeit', `${form.validFrom || '-'} bis ${form.validUntil || '-'}`], ['Zuständig', form.owner || '-'], ['Warnfrist', form.reminder || '-'], ['Verlängerung', form.renewalRequired || 'Ja'], ['Audit', form.auditRequired || 'Ja'], ['Dokumente', [form.file, form.documents].filter(Boolean).join(', ') || '-']].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
+    </div>}
   </Modal>;
 }
-
 function AuditDialog({ form, setForm, companies, certs, onClose, onSubmit }) {
   const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
   return <Modal title="Audit anlegen" eyebrow="Auditverwaltung" onClose={onClose} onSubmit={onSubmit}>
@@ -548,8 +583,8 @@ function CertificateDetailPage({ item, audits, onBack, onEdit, onRenew }) {
       <InfoCard title="Stammdaten" rows={[['Firma', item.companyName], ['Zertifikatsnummer', item.number], ['Regelwerk', item.rule], ['Geltungsbereich', item.scope], ['Ausstellende Stelle', item.issuer]]} />
       <InfoCard title="Gültigkeit" rows={[['Ausstellungsdatum', window.fmtDE(item.issuedAt)], ['Gültig ab', window.fmtDE(item.validFrom)], ['Gültig bis', window.fmtDE(item.validUntil)], ['Restlaufzeit', item.restlaufzeit], ['Status', item.status], ['Warnung', item.warning]]} />
       <InfoCard title="Zuständige Personen" rows={[['Verantwortlich', item.owner], ['Benachrichtigung', `vor ${item.reminder}`], ['Vertretung', 'Sabine Janning']]} />
-      <InfoCard title="Dokumente" rows={item.documents.length ? item.documents.map((doc, index) => [`Dokument ${index + 1}`, doc]) : [['Dokument', 'fehlt']]} />
-      <InfoCard title="Auditverlauf" rows={audits.length ? audits.map(auditItem => [auditItem.title, `${window.fmtDE(auditItem.date)} · ${auditItem.status}`]) : [['Audit', 'kein Audit verknüpft']]} />
+      <InfoCard title="Dokumente" rows={item.documents.length  ? item.documents.map((doc, index) => [`Dokument ${index + 1}`, doc]) : [['Dokument', 'fehlt']]} />
+      <InfoCard title="Auditverlauf" rows={audits.length  ? audits.map(auditItem => [auditItem.title, `${window.fmtDE(auditItem.date)} · ${auditItem.status}`]) : [['Audit', 'kein Audit verknüpft']]} />
       <InfoCard title="Verlängerungsstatus" rows={[['Status', item.renewalStatus], ['Nächste Verlängerung', item.validUntil], ['Prüforganisation', item.issuer]]} />
       <InfoCard title="Offene Maßnahmen" rows={item.measures.map((measure, index) => [`Maßnahme ${index + 1}`, measure])} />
       <InfoCard title="Historie" rows={item.history.map((entry, index) => [`Eintrag ${index + 1}`, entry])} />
@@ -578,12 +613,12 @@ function Field({ label, children }) {
   return <label className="form-field"><span>{label}</span>{children}</label>;
 }
 
-function Modal({ title, eyebrow, children, onClose, onSubmit }) {
+function Modal({ title, eyebrow, children, onClose, onSubmit, submitLabel = 'Speichern', secondaryAction = null }) {
   return <div className="cert-modal-backdrop" onMouseDown={onClose}>
     <form className="cert-modal-card cert-modal-card--wide" onMouseDown={event => event.stopPropagation()} onSubmit={onSubmit}>
       <div className="cert-modal-card__head"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2></div><button className="icon-btn" type="button" onClick={onClose}><Icon name="x" size={18} /></button></div>
       {children}
-      <div className="modal-actions"><button className="btn btn--ghost" type="button" onClick={onClose}>Abbrechen</button><button className="btn btn--primary" type="submit">Speichern</button></div>
+      <div className="modal-actions">{secondaryAction}<button className="btn btn--ghost" type="button" onClick={onClose}>Abbrechen</button><button className="btn btn--primary" type="submit">{submitLabel}</button></div>
     </form>
   </div>;
 }

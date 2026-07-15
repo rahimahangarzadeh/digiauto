@@ -12220,7 +12220,7 @@ a.subtle:hover { text-decoration: underline; }
 .company-info-kpis .company-site-kpi:hover,.company-info-kpis .company-site-kpi.is-active{border-color:rgba(201,100,66,.55);background:#fff7f1;box-shadow:0 7px 18px rgba(47,36,25,.075)}
 .company-info-matrix-card{overflow:hidden;padding:0;background:#fffdfa}
 .company-info-matrix-wrap{overflow:auto;border:1px solid var(--border-1);border-radius:8px;background:var(--color-ivory)}
-.company-info-matrix-table{min-width:2200px;width:100%;border-collapse:separate;border-spacing:0}
+.company-info-matrix-table{min-width:1320px;width:100%;border-collapse:separate;border-spacing:0}
 .company-info-matrix-table th{height:44px;border-bottom:1px solid #ded4c8;background:#f2eee7;padding:0 13px;text-align:left;position:relative}
 .company-info-matrix-table th button{width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;border:0;background:transparent;padding:0;color:#77716b;font:inherit;font-size:10px;font-weight:850;text-align:left;text-transform:uppercase;letter-spacing:.32px;cursor:pointer}
 .company-info-matrix-table td{border-bottom:1px solid #e8ded3;padding:12px 13px;color:var(--fg-2);font-size:12px;line-height:1.45;vertical-align:top}

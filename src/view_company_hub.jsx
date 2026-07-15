@@ -540,17 +540,10 @@ function CompanyInformationMatrixPage({ company, onBack }) {
     ['companyName', 'Firma'],
     ['category', 'Kategorie'],
     ['standort', 'Standort'],
-    ['erstelltVon', 'erstellt von'],
-    ['geprueftVon', 'gepruft von'],
     ['freigabe', 'Freigabe'],
     ['released', 'Freigabe fur Mitarbeiter'],
-    ['archivierung', 'Archivierung'],
-    ['aufbewahrung', 'Aufbewahrungsfrist'],
-    ['retentionStart', 'Beginn der Frist'],
-    ['retentionEnd', 'Ende der Frist'],
-    ['gesetz', 'gesetzliche Grundlage'],
+    ['retentionEnd', 'Aufbewahrung bis'],
     ['responsible', 'verantwortlich'],
-    ['vernichtung', 'Verantwortlich fur Vernichtung'],
     ['status', 'Status'],
     ['document', 'Dokument'],
   ];
@@ -629,17 +622,10 @@ function CompanyInformationMatrixPage({ company, onBack }) {
               <td>{row.companyName}</td>
               <td>{row.category}</td>
               <td>{row.standort}</td>
-              <td>{row.erstelltVon}</td>
-              <td>{row.geprueftVon}</td>
               <td>{row.freigabe}</td>
               <td><span className={'badge ' + (row.released ? 'badge--valid' : 'badge--missing')}><span className="badge__dot" />{row.released ? 'Ja' : 'Nein'}</span></td>
-              <td>{row.archivierung}</td>
-              <td>{row.aufbewahrung}</td>
-              <td>{window.fmtDE?.(row.retentionStart) || row.retentionStart}</td>
               <td>{row.retentionEnd}</td>
-              <td>{row.gesetz}</td>
               <td>{row.responsible}</td>
-              <td>{row.vernichtung}</td>
               <td><InfoMatrixStatus status={row.status} /></td>
               <td>{row.document ? <button className="btn btn--ghost" onClick={event => event.stopPropagation()}><Icon name="doc" size={13} />{row.document}</button> : <span className="muted">fehlt</span>}</td>
               <td onClick={event => event.stopPropagation()}><InfoMatrixActions row={row} onOpen={() => setSelected(row)} onEdit={() => setDialog({ mode:'edit', row })} onDestroy={() => setDestroyRow(row)} /></td>

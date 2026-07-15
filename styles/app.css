@@ -10123,6 +10123,106 @@ a.subtle:hover { text-decoration: underline; }
 .emp-operator-table th:nth-child(2){width:170px}.emp-operator-table th:nth-child(3){width:105px}.emp-operator-table th:nth-child(4){width:120px}.emp-operator-table th:nth-child(5){width:150px}.emp-operator-table th:nth-child(6){width:135px}.emp-operator-table th:nth-child(7){width:175px}.emp-operator-table th:nth-child(8){width:205px}.emp-operator-table th:nth-child(9){width:205px}.emp-operator-table th:nth-child(10){width:150px}.emp-operator-table th:nth-child(11),.emp-operator-table th:nth-child(12),.emp-operator-table th:nth-child(13){width:125px}.emp-operator-table th:nth-child(14){width:115px}.emp-operator-table th:nth-child(15){width:135px}.emp-operator-table th:nth-child(16){width:170px}.emp-operator-table th:nth-child(17){width:170px}.emp-operator-table th:nth-child(18){width:125px}.emp-operator-table th:nth-child(19){width:175px}.emp-operator-table th:nth-child(20){width:90px}.emp-operator-table th:nth-child(21){width:75px}
 .emp-operator-table tbody tr:not(.emp-group-row){cursor:pointer}.emp-operator-table tbody tr:not(.emp-group-row):hover{background:#faf9f6}.emp-operator-table tbody tr.is-warn,.emp-operator-table tbody tr.is-warn:hover{background:#fff9eb}.emp-operator-table tbody tr.is-expired,.emp-operator-table tbody tr.is-expired:hover{background:#fff0ee}.emp-operator-table tbody tr.is-expired td{border-color:#efccc7}.emp-operator-table td strong{color:var(--fg-1);font-weight:750}.emp-operator-table .is-overdue{color:#a13232;font-weight:750}
 
+.emp-operator-table-wrap {
+  max-height:calc(100vh - 310px);
+  overflow:auto;
+}
+.emp-operator-table.emp-operator-table--compact {
+  min-width:1260px;
+  table-layout:fixed;
+}
+.emp-operator-table--compact th,
+.emp-operator-table--compact td {
+  background:#fff;
+}
+.emp-operator-table--compact thead th {
+  position:sticky;
+  top:0;
+  z-index:4;
+  background:var(--color-parchment);
+}
+.emp-operator-table--compact th:nth-child(1),
+.emp-operator-table--compact td:nth-child(1) {
+  width:42px;
+}
+.emp-operator-table--compact th:nth-child(2),
+.emp-operator-table--compact td:nth-child(2) {
+  width:180px;
+}
+.emp-operator-table--compact th:nth-child(3),
+.emp-operator-table--compact td:nth-child(3) {
+  width:200px;
+}
+.emp-operator-table--compact th:nth-child(4),
+.emp-operator-table--compact td:nth-child(4),
+.emp-operator-table--compact th:nth-child(5),
+.emp-operator-table--compact td:nth-child(5) {
+  width:170px;
+}
+.emp-operator-table--compact th:nth-child(6),
+.emp-operator-table--compact td:nth-child(6),
+.emp-operator-table--compact th:nth-child(7),
+.emp-operator-table--compact td:nth-child(7) {
+  width:126px;
+}
+.emp-operator-table--compact th:nth-child(8),
+.emp-operator-table--compact td:nth-child(8),
+.emp-operator-table--compact th:nth-child(9),
+.emp-operator-table--compact td:nth-child(9) {
+  width:120px;
+}
+.emp-operator-table--compact .emp-sticky-select {
+  position:sticky;
+  left:0;
+  z-index:5;
+  background:#fff;
+}
+.emp-operator-table--compact thead .emp-sticky-select {
+  z-index:7;
+  background:var(--color-parchment);
+}
+.emp-operator-table--compact .emp-sticky-device {
+  position:sticky;
+  left:42px;
+  z-index:5;
+  background:#fff;
+  box-shadow:8px 0 12px rgba(32,32,30,.045);
+}
+.emp-operator-table--compact thead .emp-sticky-device {
+  z-index:7;
+  background:var(--color-parchment);
+}
+.emp-operator-table--compact .emp-sticky-actions {
+  position:sticky;
+  right:0;
+  z-index:5;
+  background:#fff;
+  box-shadow:-8px 0 12px rgba(32,32,30,.045);
+}
+.emp-operator-table--compact thead .emp-sticky-actions {
+  z-index:7;
+  background:var(--color-parchment);
+}
+.emp-operator-table--compact td small {
+  display:block;
+  margin-top:3px;
+  color:var(--fg-3);
+  font-size:10px;
+}
+.emp-row-menu-btn {
+  width:30px;
+  height:30px;
+  border:1px solid var(--border-1);
+  border-radius:7px;
+  background:#fff;
+  color:var(--fg-1);
+  font-size:18px;
+  cursor:pointer;
+}
+.emp-operator-card footer {
+  align-items:center;
+}
+
 /* Employee equipment inspection list */
 .emp-equipment-check-table { width:100%; min-width:2720px; border-collapse:collapse; table-layout:fixed; }
 .emp-equipment-check-table th,.emp-equipment-check-table td { border-bottom:1px solid var(--border-1); padding:10px 11px; color:var(--fg-2); font-size:10.5px; line-height:1.35; text-align:left; vertical-align:middle; }

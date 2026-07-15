@@ -1723,7 +1723,7 @@ function employeeOperatorRecords(emp) {
   }));
 }
 
-function EmployeeOperatorArea({emp,onBack,onOpen}) {
+function EmployeeOperatorAreaLegacy({emp,onBack,onOpen}) {
   const [scope,setScope]=React.useState(emp.id);
   const sourceEmployees=React.useMemo(()=>window.SEED.employees,[]);
   const activeEmployees=React.useMemo(()=>{
@@ -1805,6 +1805,120 @@ function EmployeeOperatorArea({emp,onBack,onOpen}) {
           {columns.map(([key])=><td key={key} className={(key==='description'||key==='restriction'?'emp-ellipsis ':'')+(key==='days'&&row.days<0?'is-overdue':'')}>{cellValue(row,key)}</td>)}
         </tr></React.Fragment>)}</tbody>
     </table></div>
+  </div>;
+}
+
+function EmployeeOperatorArea({emp,onBack,onOpen}) {
+  const [scope,setScope]=React.useState(emp.id);
+  const [viewMode,setViewMode]=React.useState(()=>localStorage.getItem('employeeOperatorView')||'list');
+  const [employeePickerOpen,setEmployeePickerOpen]=React.useState(false);
+  const [employeeSearch,setEmployeeSearch]=React.useState('');
+  const [employeeCompanyFilter,setEmployeeCompanyFilter]=React.useState('all');
+  const [employeeDepartmentFilter,setEmployeeDepartmentFilter]=React.useState('all');
+  const [employeePositionFilter,setEmployeePositionFilter]=React.useState('');
+  const [employeeStatusFilter,setEmployeeStatusFilter]=React.useState('all');
+  const [filterOpen,setFilterOpen]=React.useState(false);
+  const [createOpen,setCreateOpen]=React.useState(false);
+  const [createStep,setCreateStep]=React.useState(1);
+  const [selected,setSelected]=React.useState(new Set());
+  const [sort,setSort]=React.useState({key:'device',dir:'asc'});
+  const [menu,setMenu]=React.useState(null);
+  const [filter,setFilter]=React.useState('all');
+  const [group,setGroup]=React.useState('');
+  const defaultHiddenColumns=React.useMemo(()=>new Set(['manufacturer','issued','days','operationArea','restriction','trainingCenter','instructor','responsible','released','history','description','companyShort','department','position']),[]);
+  const [hiddenColumns,setHiddenColumns]=React.useState(defaultHiddenColumns);
+  const [filters,setFilters]=React.useState({employee:'',company:'all',department:'all',position:'',device:'',manufacturer:'',training:'',instruction:'all',authorization:'all',nextFrom:'',nextTo:'',expiresUntil:'all',status:'all',operationArea:'',document:'all',released:'all',archived:false});
+  React.useEffect(()=>localStorage.setItem('employeeOperatorView',viewMode),[viewMode]);
+  const sourceEmployees=React.useMemo(()=>window.SEED.employees,[]);
+  const departments=React.useMemo(()=>[...new Set(sourceEmployees.map(item=>item.department).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de')), [sourceEmployees]);
+  const activeEmployees=React.useMemo(()=>{
+    if(scope==='all') return sourceEmployees;
+    if(scope.startsWith('company:')) return sourceEmployees.filter(item=>item.company===scope.replace('company:',''));
+    if(scope.startsWith('department:')) return sourceEmployees.filter(item=>item.department===scope.replace('department:',''));
+    return sourceEmployees.filter(item=>item.id===scope);
+  },[scope,sourceEmployees]);
+  const isAllView=scope!==emp.id;
+  const currentEmployee=activeEmployees.length===1?activeEmployees[0]:emp;
+  const currentScopeLabel=isAllView?'Alle Mitarbeiter':currentEmployee.name;
+  const records=React.useMemo(()=>activeEmployees.flatMap(employeeOperatorRecords),[activeEmployees]);
+  const labels={valid:'Gültig',warn:'Läuft bald ab',expired:'Abgelaufen',instructionDue:'Unterweisung fällig',authorizationMissing:'Beauftragung fehlt',documentMissing:'Dokument fehlt',archived:'Archiviert'};
+  const statusClass=status=>status==='valid'?'valid':status==='warn'||status==='instructionDue'||status==='authorizationMissing'||status==='documentMissing'?'warn':status==='archived'?'archived':'expired';
+  const value=(row,key)=>key==='status'?labels[row.status]:(key==='document'?row.documentMissing?'fehlt':'vorhanden':row[key]);
+  const matchesDate=(dateText,from,to)=>{
+    if(!from&&!to) return true;
+    const parts=String(dateText||'').split('.');
+    if(parts.length!==3) return true;
+    const iso=`${parts[2]}-${parts[1]}-${parts[0]}`;
+    return (!from||iso>=from)&&(!to||iso<=to);
+  };
+  const activeFilterCount=Object.entries(filters).filter(([key,val])=>key==='archived'?val:val&&val!=='all').length;
+  let rows=records.filter(row=>{
+    if(filter==='valid'&&row.status!=='valid') return false;
+    if(filter==='warn'&&row.status!=='warn') return false;
+    if(filter==='expired'&&row.status!=='expired') return false;
+    if(filter==='instructionDue'&&!['fällig','überfällig'].includes(row.instructionStatus)) return false;
+    if(filter==='authorizationMissing'&&!row.authorizationMissing) return false;
+    if(filter==='documentMissing'&&!row.documentMissing) return false;
+    if(filter==='archived') return false;
+    if(filters.employee&&!(row.employeeName||'').toLowerCase().includes(filters.employee.toLowerCase())) return false;
+    if(filters.company!=='all'&&row.employee.company!==filters.company) return false;
+    if(filters.department!=='all'&&row.department!==filters.department) return false;
+    if(filters.position&&!String(row.position||'').toLowerCase().includes(filters.position.toLowerCase())) return false;
+    if(filters.device&&!String(row.device||'').toLowerCase().includes(filters.device.toLowerCase())) return false;
+    if(filters.manufacturer&&!String(row.manufacturer||'').toLowerCase().includes(filters.manufacturer.toLowerCase())) return false;
+    if(filters.training&&!String(row.training||'').toLowerCase().includes(filters.training.toLowerCase())) return false;
+    if(filters.instruction!=='all'&&row.instructionStatus!==filters.instruction) return false;
+    if(filters.authorization!=='all'&&row.authorizationStatus!==filters.authorization) return false;
+    if(!matchesDate(row.nextInstruction,filters.nextFrom,filters.nextTo)) return false;
+    if(filters.expiresUntil!=='all'&&row.days>Number(filters.expiresUntil)) return false;
+    if(filters.status!=='all'&&row.status!==filters.status) return false;
+    if(filters.operationArea&&!String(row.operationArea||'').toLowerCase().includes(filters.operationArea.toLowerCase())) return false;
+    if(filters.document==='missing'&&!row.documentMissing) return false;
+    if(filters.document==='present'&&row.documentMissing) return false;
+    if(filters.released==='true'&&!row.released) return false;
+    if(filters.released==='false'&&row.released) return false;
+    return true;
+  });
+  rows=[...rows].sort((a,b)=>(sort.dir==='asc'?1:-1)*String(value(a,sort.key)??'').localeCompare(String(value(b,sort.key)??''),'de',{numeric:true}));
+  const toggle=id=>setSelected(current=>{const next=new Set(current);next.has(id)?next.delete(id):next.add(id);return next;});
+  const pickerEmployees=sourceEmployees.filter(item=>{
+    const text=`${item.firstName} ${item.lastName} ${item.personalNr}`.toLowerCase();
+    if(employeeSearch&&!text.includes(employeeSearch.toLowerCase())) return false;
+    if(employeeCompanyFilter!=='all'&&item.company!==employeeCompanyFilter) return false;
+    if(employeeDepartmentFilter!=='all'&&item.department!==employeeDepartmentFilter) return false;
+    if(employeePositionFilter&&!item.position.toLowerCase().includes(employeePositionFilter.toLowerCase())) return false;
+    if(employeeStatusFilter!=='all'&&item.status!==employeeStatusFilter) return false;
+    return true;
+  }).sort((a,b)=>a.lastName.localeCompare(b.lastName,'de'));
+  const baseColumns=[
+    ...(isAllView?[['employeeName','Mitarbeiter']]:[]),
+    ['device','Gerätetyp'],['training','Ausbildung'],['instruction','Betriebliche Einweisung'],['authorization','Schriftliche Beauftragung'],['nextInstruction','Nächste Unterweisung'],['expires','Ablaufdatum'],['status','Gesamtstatus'],['document','Dokument'],['actions','Aktionen'],
+    ['manufacturer','Hersteller / Gerätegruppe'],['issued','Ausstellungsdatum'],['days','Restlaufzeit'],['operationArea','Einsatzbereich'],['restriction','Einschränkungen'],['trainingCenter','Ausbildungsstelle'],['instructor','Ausbilder / Einweiser'],['responsible','Verantwortliche Führungskraft'],['released','Freigabe für Mitarbeiter'],['history','Nachweis- und Änderungshistorie'],['description','Beschreibung'],['companyShort','Firma'],['department','Abteilung'],['position','Position']
+  ];
+  const columns=baseColumns.filter(([key])=>!hiddenColumns.has(key)||key==='actions');
+  const tabLabels={all:`Alle ${records.length}`,valid:`Gültig ${records.filter(row=>row.status==='valid').length}`,warn:`Läuft bald ab ${records.filter(row=>row.status==='warn').length}`,expired:`Abgelaufen ${records.filter(row=>row.status==='expired').length}`,instructionDue:`Unterweisung fällig ${records.filter(row=>['fällig','überfällig'].includes(row.instructionStatus)).length}`,authorizationMissing:`Beauftragung fehlt ${records.filter(row=>row.authorizationMissing).length}`,documentMissing:`Dokument fehlt ${records.filter(row=>row.documentMissing).length}`,archived:'Archiviert 0'};
+  const cellValue=(row,key)=>{
+    if(key==='employeeName') return <div><strong>{row.employeeName}</strong><small>PN {row.employee.personalNr}</small></div>;
+    if(key==='device') return <strong>{row.device}</strong>;
+    if(key==='instruction') return <div><strong>{row.instruction}</strong><small>{row.instructionStatus}</small></div>;
+    if(key==='authorization') return <div><strong>{row.authorization}</strong><small>{row.authorizationStatus}</small></div>;
+    if(key==='days') return row.days<0?`${Math.abs(row.days)} Tage abgelaufen`:`in ${row.days} Tagen`;
+    if(key==='status') return <span className={'emp-status is-'+statusClass(row.status)}>{labels[row.status]}</span>;
+    if(key==='document') return <span className={'emp-doc-count '+(row.documentMissing?'is-missing':'')}><Icon name="doc" size={13}/>{row.documentMissing?'fehlt':'1 Datei'}</span>;
+    if(key==='released') return <span className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</span>;
+    if(key==='history') return <span className="emp-version-chip"><Icon name="history" size={13}/>{row.history} Ereignisse</span>;
+    if(key==='actions') return <button className="emp-row-menu-btn" onClick={event=>event.stopPropagation()}>⋮</button>;
+    return row[key]||'-';
+  };
+  return <div className="emp-full">
+    <EmpPageTitle title={isAllView?'Geräteführer - alle Mitarbeiter':`Geräteführer (${currentEmployee.name})`} onBack={onBack} action={<div className="emp-training-toolbar"><button onClick={()=>setEmployeePickerOpen(true)}><Icon name="users" size={14}/>Mitarbeiter: {currentScopeLabel}</button><div className="emp-view-toggle"><button className={viewMode==='cards'?'is-active':''} onClick={()=>setViewMode('cards')}>Kacheln</button><button className={viewMode==='list'?'is-active':''} onClick={()=>setViewMode('list')}>Liste</button></div><button onClick={()=>setFilterOpen(true)}><Icon name="settings" size={14}/>Filter{activeFilterCount?` (${activeFilterCount})`:''}</button><button onClick={()=>setCreateOpen(true)}><Icon name="plus" size={14}/>Geräteberechtigung hinzufügen</button></div>}/>
+    <div className="emp-training-tabs">{Object.keys(tabLabels).map(id=><button key={id} className={filter===id?'is-active':''} onClick={()=>setFilter(id)}>{tabLabels[id]}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}{hiddenColumns.size>0&&<button className="emp-clear-group" onClick={()=>setHiddenColumns(defaultHiddenColumns)}>Standardansicht</button>}</div>
+    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="cal" size={14}/>Unterweisung planen</button><button><Icon name="check" size={14}/>Einweisung erfassen</button><button><Icon name="doc" size={14}/>Beauftragung erstellen</button><button><Icon name="users" size={14}/>Verantwortliche Person zuweisen</button><button><Icon name="download" size={14}/>Export</button></div>}
+    {viewMode==='cards'&&<div className="emp-license-card-grid emp-operator-card-grid">{rows.map(row=><button key={row.id} className={'emp-license-card emp-operator-card is-'+row.status} onClick={()=>onOpen(row)}><header><div><strong>{row.device}</strong><span>{row.employeeName}</span></div><span className={'emp-status is-'+statusClass(row.status)}>{labels[row.status]}</span></header><div><span>Ausbildung</span><b>{row.training}</b></div><div><span>Einweisung</span><b>{row.instructionStatus}</b></div><div><span>Beauftragung</span><b>{row.authorizationStatus}</b></div><footer><span>{row.nextInstruction}</span><span className={'emp-doc-count '+(row.documentMissing?'is-missing':'')}><Icon name="doc" size={13}/>{row.documentMissing?'Dokument fehlt':'Dokument'}</span><span>⋮</span></footer></button>)}</div>}
+    {viewMode==='list'&&<div className="emp-table-wrap emp-operator-table-wrap"><table className="emp-operator-table emp-operator-table--compact"><thead><tr><th className="emp-check emp-sticky-select"><input type="checkbox" checked={rows.length>0&&selected.size===rows.length} onChange={()=>setSelected(selected.size===rows.length?new Set():new Set(rows.map(row=>row.id)))}/></th>{columns.map(([key,label])=><th key={key} className={(key==='device'?'emp-sticky-device ':'')+(key==='actions'?'emp-sticky-actions':'')}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={()=>setMenu(null)}>Filtern nach</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Gruppieren nach &quot;{label}&quot;</button>{key!=='actions'&&<button onClick={()=>{setHiddenColumns(old=>new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button>}<button onClick={()=>{setHiddenColumns(defaultHiddenColumns);setMenu(null);}}>Standardansicht wiederherstellen</button></div>}</th>)}</tr></thead><tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan={columns.length+1}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}<tr className={row.status==='expired'?'is-expired':row.status==='warn'?'is-warn':''} onClick={()=>onOpen(row)}><td className="emp-check emp-sticky-select" onClick={event=>event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={()=>toggle(row.id)}/></td>{columns.map(([key])=><td key={key} className={(key==='device'?'emp-sticky-device ':'')+(key==='actions'?'emp-sticky-actions ':'')+(key==='description'||key==='restriction'?'emp-ellipsis ':'')+(key==='days'&&row.days<0?'is-overdue':'')}>{cellValue(row,key)}</td>)}</tr></React.Fragment>)}</tbody></table></div>}
+    {employeePickerOpen&&<div className="emp-picker-backdrop" onClick={()=>setEmployeePickerOpen(false)}><section className="emp-picker-modal" onClick={event=>event.stopPropagation()}><header><div><span>Geräteführer</span><h2>Mitarbeiter auswählen</h2></div><button onClick={()=>setEmployeePickerOpen(false)}>×</button></header><div className="emp-picker-filters"><input placeholder="Name oder Personalnummer" value={employeeSearch} onChange={event=>setEmployeeSearch(event.target.value)}/><select value={employeeCompanyFilter} onChange={event=>setEmployeeCompanyFilter(event.target.value)}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company=><option key={company.id} value={company.id}>{company.name}</option>)}</select><select value={employeeDepartmentFilter} onChange={event=>setEmployeeDepartmentFilter(event.target.value)}><option value="all">Alle Abteilungen</option>{departments.map(item=><option key={item}>{item}</option>)}</select><input placeholder="Position" value={employeePositionFilter} onChange={event=>setEmployeePositionFilter(event.target.value)}/><select value={employeeStatusFilter} onChange={event=>setEmployeeStatusFilter(event.target.value)}><option value="all">Alle Status</option><option value="aktiv">Aktiv</option><option value="inaktiv">Ausgeschieden</option></select><button type="button" onClick={()=>{setScope('all');setEmployeePickerOpen(false);setSelected(new Set());}}>Alle Mitarbeiter</button></div><div className="emp-picker-table"><table><thead><tr><th>Mitarbeiter</th><th>Firma</th><th>Abteilung</th><th>Position</th></tr></thead><tbody>{pickerEmployees.map(item=><tr key={item.id} onClick={()=>{setScope(item.id);setEmployeePickerOpen(false);setSelected(new Set());}}><td><strong>{item.lastName}, {item.firstName}</strong><small>PN {item.personalNr}</small></td><td>{window.company(item.company)?.name || item.company}</td><td>{item.department}</td><td>{item.position}</td></tr>)}</tbody></table></div></section></div>}
+    {filterOpen&&<aside className="emp-filter-drawer"><header><div><span>Geräteführer</span><h2>Filter</h2></div><button onClick={()=>setFilterOpen(false)}>×</button></header><div className="emp-filter-grid"><label>Mitarbeiter<input value={filters.employee} onChange={event=>setFilters(old=>({...old,employee:event.target.value}))}/></label><label>Firma<select value={filters.company} onChange={event=>setFilters(old=>({...old,company:event.target.value}))}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company=><option key={company.id} value={company.id}>{company.name}</option>)}</select></label><label>Abteilung<select value={filters.department} onChange={event=>setFilters(old=>({...old,department:event.target.value}))}><option value="all">Alle Abteilungen</option>{departments.map(item=><option key={item}>{item}</option>)}</select></label><label>Position<input value={filters.position} onChange={event=>setFilters(old=>({...old,position:event.target.value}))}/></label><label>Gerätetyp<input value={filters.device} onChange={event=>setFilters(old=>({...old,device:event.target.value}))}/></label><label>Hersteller / Gerätegruppe<input value={filters.manufacturer} onChange={event=>setFilters(old=>({...old,manufacturer:event.target.value}))}/></label><label>Ausbildung<input value={filters.training} onChange={event=>setFilters(old=>({...old,training:event.target.value}))}/></label><label>Einweisungsstatus<select value={filters.instruction} onChange={event=>setFilters(old=>({...old,instruction:event.target.value}))}><option value="all">Alle</option><option>aktuell</option><option>fällig</option><option>überfällig</option></select></label><label>Beauftragungsstatus<select value={filters.authorization} onChange={event=>setFilters(old=>({...old,authorization:event.target.value}))}><option value="all">Alle</option><option>vorhanden</option><option>fehlt</option><option>abgelaufen</option><option>widerrufen</option></select></label><label>Nächste Unterweisung von<input type="date" value={filters.nextFrom} onChange={event=>setFilters(old=>({...old,nextFrom:event.target.value}))}/></label><label>Nächste Unterweisung bis<input type="date" value={filters.nextTo} onChange={event=>setFilters(old=>({...old,nextTo:event.target.value}))}/></label><label>Läuft innerhalb<select value={filters.expiresUntil} onChange={event=>setFilters(old=>({...old,expiresUntil:event.target.value}))}><option value="all">Alle Zeiten</option><option value="30">30 Tage</option><option value="60">60 Tage</option><option value="90">90 Tage</option></select></label><label>Gesamtstatus<select value={filters.status} onChange={event=>setFilters(old=>({...old,status:event.target.value}))}><option value="all">Alle</option>{Object.entries(labels).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label><label>Einsatzbereich<input value={filters.operationArea} onChange={event=>setFilters(old=>({...old,operationArea:event.target.value}))}/></label><label>Dokument<select value={filters.document} onChange={event=>setFilters(old=>({...old,document:event.target.value}))}><option value="all">Alle</option><option value="present">vorhanden</option><option value="missing">fehlt</option></select></label><label>Freigabe<select value={filters.released} onChange={event=>setFilters(old=>({...old,released:event.target.value}))}><option value="all">Alle</option><option value="true">Freigegeben</option><option value="false">Nicht freigegeben</option></select></label><label className="emp-check-label"><input type="checkbox" checked={filters.archived} onChange={event=>setFilters(old=>({...old,archived:event.target.checked}))}/>Archivierte Einträge anzeigen</label></div><footer><button onClick={()=>setFilters({employee:'',company:'all',department:'all',position:'',device:'',manufacturer:'',training:'',instruction:'all',authorization:'all',nextFrom:'',nextTo:'',expiresUntil:'all',status:'all',operationArea:'',document:'all',released:'all',archived:false})}>Zurücksetzen</button><button onClick={()=>setFilterOpen(false)}>Schließen</button><button className="btn btn--primary" onClick={()=>setFilterOpen(false)}>Anwenden</button></footer></aside>}
+    {createOpen&&<div className="emp-create-backdrop" onClick={()=>setCreateOpen(false)}><section className="emp-create-modal" onClick={event=>event.stopPropagation()}><header><div><span>Geräteführer</span><h2>Geräteberechtigung hinzufügen</h2><p>Schritt {createStep} von 6</p></div><button onClick={()=>setCreateOpen(false)}>×</button></header><div className="emp-create-steps">{['Mitarbeiter','Gerät und Ausbildung','Einweisung','Beauftragung','Freigabe und Dokumente','Zusammenfassung'].map((item,index)=><button key={item} className={createStep===index+1?'is-active':''} onClick={()=>setCreateStep(index+1)}>{index+1}. {item}</button>)}</div><div className="emp-create-body">{createStep===1&&<div className="emp-form-grid"><label>Mitarbeiter<select><option>{currentScopeLabel}</option><option>Mehrere Mitarbeiter auswählen</option><option>Alle Mitarbeiter einer Firma</option></select></label><label>Firma<input value={window.company(currentEmployee.company)?.name || currentEmployee.company} readOnly/></label><label>Abteilung / Position<input value={`${currentEmployee.department} · ${currentEmployee.position}`} readOnly/></label><label>Verantwortliche Person<select><option>Alexander Petersen</option><option>Sabine Janning</option><option>Rahim Ahangarzadeh</option></select></label></div>}{createStep===2&&<div className="emp-form-grid"><label>Gerätetyp<input placeholder="Bagger, Radlader, Stapler"/></label><label>Hersteller / Gerätegruppe<input placeholder="Volvo L30 / Hydraulikbagger"/></label><label>Ausbildung / Einweisung<input placeholder="Ausbildung Erdbaumaschinenführer"/></label><label>Ausbildungsstelle<input placeholder="DEKRA Akademie"/></label><label>Ausbilder / Einweiser<input/></label><label>Einsatzbereich<input placeholder="Baustellen Tiefbau"/></label></div>}{createStep===3&&<div className="emp-form-grid"><label>Betriebliche Einweisung<select><option>aktuell</option><option>fällig</option><option>überfällig</option></select></label><label>Nächste Unterweisung<input type="date"/></label><label>Unterweisungsintervall<select><option>jährlich</option><option>alle 2 Jahre</option><option>projektbezogen</option></select></label><label className="is-wide">Beschreibung<textarea rows="3"/></label></div>}{createStep===4&&<div className="emp-form-grid"><label>Schriftliche Beauftragung<select><option>vorhanden</option><option>fehlt</option><option>widerrufen</option><option>abgelaufen</option></select></label><label>Gültig ab<input type="date"/></label><label>Ablaufdatum<input type="date"/></label><label>Einschränkungen<input placeholder="z.B. nur RL-04"/></label></div>}{createStep===5&&<div className="emp-form-grid"><label>Freigabe für Mitarbeiter<select><option>freigegeben</option><option>nicht freigegeben</option><option>nur Status sichtbar</option><option>Status und Dokument sichtbar</option></select></label><label>Gesamtstatus<select><option>Gültig</option><option>Läuft bald ab</option><option>Abgelaufen</option><option>Unterweisung fällig</option><option>Beauftragung fehlt</option><option>Dokument fehlt</option></select></label><label>Ausbildungsnachweis<input type="file"/></label><label>Einweisungsnachweis<input type="file"/></label><label>Beauftragung<input type="file"/></label><label>Weitere Dokumente<input type="file" multiple/></label></div>}{createStep===6&&<div className="emp-create-summary"><strong>Zusammenfassung</strong><span>Mitarbeiter: {currentScopeLabel}</span><span>Gerät: Radlader / Bagger</span><span>Einweisung: jährlich</span><span>Beauftragung: schriftlich vorhanden</span><span>Freigabe: Status und Dokument sichtbar</span></div>}</div><footer><button onClick={()=>setCreateOpen(false)}>Abbrechen</button><button onClick={()=>setCreateOpen(false)}>Als Entwurf speichern</button>{createStep>1&&<button onClick={()=>setCreateStep(step=>step-1)}>Zurück</button>}{createStep<6?<button className="btn btn--primary" onClick={()=>setCreateStep(step=>step+1)}>Weiter</button>:<button className="btn btn--primary" onClick={()=>setCreateOpen(false)}>Geräteberechtigung hinzufügen</button>}</footer></section></div>}
   </div>;
 }
 

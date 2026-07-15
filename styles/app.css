@@ -10434,6 +10434,46 @@ a.subtle:hover { text-decoration: underline; }
 .emp-appointment-checklist { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 12px; padding:0 18px 18px; }
 .emp-appointment-checklist label { display:flex; align-items:center; gap:8px; border:1px solid var(--border-1); border-radius:7px; background:#fff; padding:9px; color:var(--fg-1); font-size:11px; font-weight:700; }
 .emp-appointment-checklist input { width:15px; height:15px; accent-color:#3f7a4a; }
+.emp-calendar-view-switch { margin-left:auto; }
+.emp-appointment-calendar-head { display:flex; align-items:center; gap:14px; margin:10px 0; }
+.emp-appointment-calendar-head h2 { margin:0; font-family:var(--font-serif); font-size:24px; font-weight:500; color:var(--fg-1); }
+.emp-appointment-calendar-head button { width:30px; height:30px; border:1px solid var(--border-1); border-radius:50%; background:#fff; color:var(--fg-1); cursor:pointer; }
+.emp-personal-calendar--week .emp-personal-calendar__cell { min-height:360px; }
+.emp-personal-calendar__cell button span { display:inline-flex; margin-right:5px; font-size:8px; font-weight:850; text-transform:uppercase; }
+.emp-personal-calendar__cell button.is-training { border-color:#d8e8d9; background:#f3faf1; color:#2d6f41; }
+.emp-personal-calendar__cell button.is-instruction { border-color:#ead9b6; background:#fff8e9; color:#84651a; }
+.emp-personal-calendar__cell button.is-license { border-color:#d7dfed; background:#eef3fb; color:#365c8a; }
+.emp-personal-calendar__cell button.is-equipment { border-color:#e8d8c4; background:#fff5ec; color:#92552d; }
+.emp-personal-calendar__cell button.is-medical { border-color:#d7ece8; background:#f0fbf8; color:#2f786d; }
+.emp-personal-calendar__cell button.is-meeting { border-color:#e5dced; background:#f8f2fb; color:#6a4a86; }
+.emp-appointment-agenda { display:grid; gap:8px; border:1px solid var(--border-1); border-radius:8px; background:#fff; padding:10px; }
+.emp-appointment-agenda button { display:grid; grid-template-columns:auto 165px minmax(0,1fr) 230px; gap:10px; align-items:center; border:1px solid var(--border-1); border-radius:7px; background:#fff; padding:10px 12px; color:var(--fg-1); font:inherit; text-align:left; cursor:pointer; }
+.emp-appointment-agenda button:hover { background:#fbfaf7; }
+.emp-appointment-agenda small { color:var(--fg-3); }
+.emp-appointment-dot { width:10px; height:10px; border-radius:50%; background:#8b8b82; }
+.emp-appointment-dot.is-training { background:#4f9161; }.emp-appointment-dot.is-instruction { background:#c89b3f; }.emp-appointment-dot.is-license { background:#3b74a8; }.emp-appointment-dot.is-equipment { background:#c36b3f; }.emp-appointment-dot.is-medical { background:#438b7f; }.emp-appointment-dot.is-meeting { background:#7a5aa0; }
+.emp-appointments-table-wrap { max-height:calc(100vh - 315px); overflow:auto; border:1px solid var(--border-1); border-radius:8px; background:#fff; }
+.emp-appointments-table.emp-appointments-table--compact { min-width:1060px; table-layout:fixed; }
+.emp-appointments-table--compact th,.emp-appointments-table--compact td { background:#fff; }
+.emp-appointments-table--compact thead th { position:sticky; top:0; z-index:4; background:var(--color-parchment); }
+.emp-appointments-table--compact th:nth-child(n),.emp-appointments-table--compact td:nth-child(n){width:auto}
+.emp-appointments-table--compact .emp-sticky-select { position:sticky; left:0; z-index:7; width:42px; background:#fff; }
+.emp-appointments-table--compact thead .emp-sticky-select { background:var(--color-parchment); z-index:9; }
+.emp-appointments-table--compact .emp-sticky-employee { position:sticky; left:42px; z-index:6; width:190px; min-width:190px; background:#fff; box-shadow:8px 0 12px rgba(32,32,30,.045); }
+.emp-appointments-table--compact .emp-sticky-title { position:sticky; left:42px; z-index:5; width:260px; min-width:260px; background:#fff; box-shadow:8px 0 12px rgba(32,32,30,.045); }
+.emp-appointments-table--compact .emp-sticky-employee + .emp-sticky-title { left:232px; }
+.emp-appointments-table--compact thead .emp-sticky-employee,.emp-appointments-table--compact thead .emp-sticky-title { background:var(--color-parchment); z-index:8; }
+.emp-appointments-table--compact .emp-sticky-actions { position:sticky; right:0; z-index:6; width:132px; background:#fff; box-shadow:-8px 0 12px rgba(32,32,30,.045); }
+.emp-appointments-table--compact thead .emp-sticky-actions { background:var(--color-parchment); z-index:8; }
+.emp-appointment-type { display:inline-flex; align-items:center; min-height:24px; border-radius:999px; padding:0 9px; font-size:10px; font-weight:850; }
+.emp-appointment-type.is-training { background:#f3faf1; color:#2d6f41; }.emp-appointment-type.is-instruction { background:#fff8e9; color:#84651a; }.emp-appointment-type.is-license { background:#eef3fb; color:#365c8a; }.emp-appointment-type.is-equipment { background:#fff5ec; color:#92552d; }.emp-appointment-type.is-medical { background:#f0fbf8; color:#2f786d; }.emp-appointment-type.is-meeting { background:#f8f2fb; color:#6a4a86; }.emp-appointment-type.is-other { background:#f4f4f2; color:#666; }
+.emp-appointment-row-actions { display:flex; align-items:center; justify-content:flex-end; gap:6px; }
+.emp-appointment-row-actions button { min-height:28px; border:1px solid var(--border-1); border-radius:7px; background:#fff; padding:0 10px; color:var(--fg-1); font:inherit; font-size:10px; font-weight:800; cursor:pointer; }
+.emp-appointment-row-actions button:hover { border-color:rgba(201,100,66,.35); color:var(--color-terracotta); }
+.emp-appointment-type-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:18px; }
+.emp-appointment-type-grid button { min-height:58px; display:flex; align-items:center; gap:10px; border:1px solid var(--border-1); border-radius:8px; background:#fff; padding:0 14px; color:var(--fg-1); font:inherit; font-size:12px; font-weight:850; cursor:pointer; }
+.emp-appointment-type-grid button.is-active { border-color:#d26b45; background:#fff4ee; color:#a3482b; box-shadow:inset 0 0 0 1px #d26b45; }
+.emp-appointment-modal > header p { margin:4px 0 0; color:#d8e9f2; font-size:11px; }
 @media(max-width:950px){.emp-personal-calendar{grid-template-columns:repeat(2,minmax(140px,1fr))}.emp-appointment-title{display:grid}.emp-appointment-actions{justify-content:flex-start}.emp-form-grid,.emp-appointment-checklist{grid-template-columns:1fr}}
 
 /* Employee master data list */

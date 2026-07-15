@@ -305,7 +305,7 @@ function employeeAppointmentRows(emp) {
   return rows;
 }
 
-function EmployeeAppointmentModal({ type, onClose }) {
+function EmployeeAppointmentModalLegacy({ type, onClose }) {
   const isPost = type === 'post';
   const checklist = ['Teilnehmerliste vollständig', 'Anwesenheit dokumentiert', 'Ergebnisse eingetragen', 'Zertifikate vollständig', 'Gültigkeitsdaten eingetragen', 'nächste Wiederholung eingetragen', 'Sicherheitspass-Aufkleber dokumentiert', 'Rechnung erhalten', 'Rechnung bezahlt', 'Schulungsunterlagen gespeichert'];
   return <div className="emp-modal-backdrop" onMouseDown={onClose}>
@@ -343,7 +343,44 @@ function EmployeeAppointmentModal({ type, onClose }) {
   </div>;
 }
 
-function EmployeeAppointmentsArea({emp,onBack}) {
+function EmployeeAppointmentModal({ type, onClose }) {
+  const isPost=type==='post';
+  const isDetail=type==='detail';
+  const [step,setStep]=React.useState(1);
+  const [appointmentType,setAppointmentType]=React.useState('Schulung');
+  const checklist=['Teilnehmerliste vollständig','Anwesenheit dokumentiert','Ergebnis eingetragen','Zertifikate vollständig','Gültigkeitsdaten eingetragen','nächste Wiederholung festgelegt','Rechnung erhalten','Rechnung bezahlt','Dokumente vollständig'];
+  const types=['Schulung','Unterweisung','Vorsorge','Führerscheinkontrolle','Geräteprüfung','Besprechung','sonstiger Termin'];
+  return <div className="emp-modal-backdrop" onMouseDown={onClose}>
+    <section className="emp-appointment-modal" onMouseDown={event=>event.stopPropagation()}>
+      <header><div><span>{isPost?'Termin nachbearbeiten':isDetail?'Termin':'Neuer Termin'}</span><h2>{isPost?'Nachbearbeitung prüfen':isDetail?'Kurzansicht':'Termin eintragen'}</h2>{!isPost&&!isDetail&&<p>Schritt {step} von 5</p>}</div><button type="button" onClick={onClose}>×</button></header>
+      {isDetail?<React.Fragment>
+        <div className="emp-appointment-progress"><strong>Erste Hilfe Auffrischung</strong><span>15.10.2026 · 09:00-10:30 Uhr · Schulung</span></div>
+        <div className="emp-form-grid"><label><span>Status</span><input value="Bestätigt" readOnly/></label><label><span>Verantwortlicher</span><input value="Rahim Ahangarzadeh" readOnly/></label><label><span>Dokumente</span><input value="vollständig" readOnly/></label><label><span>Anbieter</span><input value="Interne Schulung (Janning)" readOnly/></label></div>
+        <footer><button type="button" onClick={onClose}>Schließen</button><button type="button" className="btn btn--primary">Vollständige Detailansicht</button></footer>
+      </React.Fragment>:isPost?<React.Fragment>
+        <div className="emp-appointment-progress"><strong>6 von 9 Punkten abgeschlossen</strong><span>Es fehlen noch Rechnung, Gültigkeitsdaten und Dokumente.</span></div>
+        <div className="emp-appointment-checklist">{checklist.map((item,index)=><label key={item}><input type="checkbox" defaultChecked={index<6}/>{item}</label>)}</div>
+        <footer><button type="button" onClick={onClose}>Abbrechen</button><button type="button" className="btn btn--primary">Abschließen und archivieren</button></footer>
+      </React.Fragment>:<React.Fragment>
+        <div className="emp-create-steps">{['Terminart','Grunddaten','Spezifisch','Dokumente','Zusammenfassung'].map((item,index)=><button key={item} className={step===index+1?'is-active':''} onClick={()=>setStep(index+1)}>{index+1}. {item}</button>)}</div>
+        {step===1&&<div className="emp-appointment-type-grid">{types.map(item=><button key={item} className={appointmentType===item?'is-active':''} onClick={()=>setAppointmentType(item)}><Icon name={item==='Schulung'?'cap':item==='Führerscheinkontrolle'?'users':item==='Geräteprüfung'?'settings':item==='Vorsorge'?'shield':item==='Besprechung'?'users':'cal'} size={18}/>{item}</button>)}</div>}
+        {step===2&&<div className="emp-form-grid"><label><span>Terminbezeichnung *</span><input placeholder="z.B. Erste Hilfe Auffrischung"/></label><label><span>Terminart *</span><input value={appointmentType} readOnly/></label><label><span>Mitarbeiter / Teilnehmer *</span><input placeholder="Mitarbeiter auswählen"/></label><label><span>Firma *</span><select><option>Janning Tiefbau GmbH</option><option>Janning Galabau GmbH</option><option>Janning Rohrbau GmbH</option></select></label><label><span>Datum *</span><input type="date"/></label><label><span>Beginn *</span><input type="time"/></label><label><span>Ende *</span><input type="time"/></label><label className="emp-checkline"><input type="checkbox"/>ganztägig</label><label><span>Ort *</span><input placeholder="Ort, Raum oder Treffpunkt"/></label><label><span>Verantwortlicher *</span><input defaultValue="Rahim Ahangarzadeh"/></label><label><span>Status *</span><select>{['Entwurf','Geplant','Bestätigt','Durchgeführt','Nachbearbeitung offen','Vollständig'].map(item=><option key={item}>{item}</option>)}</select></label><label className="is-wide"><span>Notiz</span><textarea/></label></div>}
+        {step===3&&<div className="emp-form-grid">
+          {appointmentType==='Schulung'&&<React.Fragment><label><span>Schulung aus Liste</span><select><option>Erste Hilfe (9 UE)</option><option>SCC 017 Führungskräfte</option><option>MVAS 99</option></select></label><label><span>Anbieter</span><select><option>Interne Schulung (Janning)</option><option>DEKRA Akademie</option><option>BiW Bildungszentrum</option></select></label><label><span>Referent</span><input/></label><label><span>maximale Teilnehmerzahl</span><input type="number"/></label><label><span>Anmeldefrist</span><input type="date"/></label><label><span>Kosten</span><input/></label><label className="emp-checkline"><input type="checkbox"/>Hotel erforderlich</label><label><span>Rechnung</span><select><option>offen</option><option>bezahlt</option><option>nicht erforderlich</option></select></label></React.Fragment>}
+          {appointmentType==='Führerscheinkontrolle'&&<React.Fragment><label><span>Führerscheinklasse</span><input placeholder="B, BE, C, CE"/></label><label><span>kontrollierende Person</span><input/></label><label><span>Kontrollintervall</span><select><option>halbjährlich</option><option>jährlich</option></select></label><label><span>nächster Kontrolltermin</span><input type="date"/></label></React.Fragment>}
+          {appointmentType==='Geräteprüfung'&&<React.Fragment><label><span>Gerät oder Gerätegruppe</span><input/></label><label><span>Prüfer</span><input/></label><label><span>Prüfart</span><input/></label><label><span>Prüfintervall</span><input/></label></React.Fragment>}
+          {appointmentType==='Vorsorge'&&<React.Fragment><label><span>Vorsorgeart</span><input/></label><label><span>Untersuchungsstelle</span><input/></label><label><span>Terminbestätigung</span><select><option>offen</option><option>bestätigt</option></select></label><label><span>nächste Wiederholung</span><input type="date"/></label></React.Fragment>}
+          {!['Schulung','Führerscheinkontrolle','Geräteprüfung','Vorsorge'].includes(appointmentType)&&<label className="is-wide"><span>Terminartspezifische Angaben</span><textarea placeholder="Besprechung, Unterweisung oder sonstige Angaben"/></label>}
+        </div>}
+        {step===4&&<div className="emp-form-grid"><label><span>Einladung</span><input type="file"/></label><label><span>Terminbestätigung</span><input type="file"/></label><label><span>Schulungsunterlagen</span><input type="file"/></label><label><span>Sonstige Dokumente</span><input type="file" multiple/></label><label className="emp-checkline"><input type="checkbox" defaultChecked/>Erinnerung aktivieren</label><label><span>Erinnerung</span><select><option>1 Tag vorher</option><option>3 Tage vorher</option><option>7 Tage vorher</option></select></label></div>}
+        {step===5&&<div className="emp-create-summary"><strong>Zusammenfassung</strong><span>Terminart: {appointmentType}</span><span>Terminbezeichnung: Erste Hilfe Auffrischung</span><span>Datum: 15.10.2026, 09:00-10:30 Uhr</span><span>Status: Geplant</span><span>Dokumente: Einladung und Unterlagen vorgesehen</span></div>}
+        <footer><button type="button" onClick={onClose}>Abbrechen</button><button type="button">Als Entwurf speichern</button>{step>1&&<button type="button" onClick={()=>setStep(step-1)}>Zurück</button>}{step<5?<button type="button" className="btn btn--primary" onClick={()=>setStep(step+1)}>Weiter</button>:<button type="button" className="btn btn--primary" onClick={onClose}>Termin erstellen</button>}</footer>
+      </React.Fragment>}
+    </section>
+  </div>;
+}
+
+function EmployeeAppointmentsAreaLegacy({emp,onBack}) {
   const [mode, setMode] = React.useState('calendar');
   const [scope, setScope] = React.useState(emp.id);
   const [selected, setSelected] = React.useState(new Set());
@@ -429,6 +466,103 @@ function EmployeeAppointmentsArea({emp,onBack}) {
       </table>
     </div>}
     {modal && <EmployeeAppointmentModal type={modal} onClose={() => setModal(null)} />}
+  </div>;
+}
+
+function EmployeeAppointmentsArea({emp,onBack}) {
+  const [mode,setMode]=React.useState('calendar');
+  const [scope,setScope]=React.useState(emp.id);
+  const [employeePickerOpen,setEmployeePickerOpen]=React.useState(false);
+  const [employeeSearch,setEmployeeSearch]=React.useState('');
+  const [employeeCompanyFilter,setEmployeeCompanyFilter]=React.useState('all');
+  const [employeeDepartmentFilter,setEmployeeDepartmentFilter]=React.useState('all');
+  const [employeePositionFilter,setEmployeePositionFilter]=React.useState('');
+  const [employeeStatusFilter,setEmployeeStatusFilter]=React.useState('all');
+  const [menu,setMenu]=React.useState(null);
+  const [sort,setSort]=React.useState({key:'date',dir:'asc'});
+  const [quickFilter,setQuickFilter]=React.useState('upcoming');
+  const [filterOpen,setFilterOpen]=React.useState(false);
+  const [modal,setModal]=React.useState(null);
+  const [selected,setSelected]=React.useState(new Set());
+  const [calendarView,setCalendarView]=React.useState('month');
+  const [filters,setFilters]=React.useState({employee:'',company:'all',type:'all',status:'all',from:'',to:'',responsible:'',provider:'',training:'',docs:'all',certs:'all',invoice:'all',archived:false});
+  React.useEffect(()=>setScope(emp.id),[emp.id]);
+  const employees=React.useMemo(()=>window.SEED.employees,[]);
+  const departments=React.useMemo(()=>[...new Set(employees.map(item=>item.department).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de')),[employees]);
+  const activeEmployees=React.useMemo(()=>{
+    if(scope==='all') return employees;
+    if(scope==='active') return employees.filter(item=>item.status==='aktiv');
+    if(scope==='inactive') return employees.filter(item=>item.status!=='aktiv');
+    return employees.filter(item=>item.id===scope);
+  },[scope,employees]);
+  const isAll=scope==='all'||scope==='active'||scope==='inactive';
+  const currentEmployee=activeEmployees.length===1?activeEmployees[0]:emp;
+  const rows=React.useMemo(()=>activeEmployees.flatMap(employeeAppointmentRows),[activeEmployees]);
+  const scopeLabel=scope==='all'?'Alle Mitarbeiter':scope==='active'?'nur aktive Mitarbeiter':scope==='inactive'?'ausgeschiedene Mitarbeiter':(currentEmployee?.name||emp.name);
+  const title=isAll?'Termine - alle Mitarbeiter':`Termine (${scopeLabel})`;
+  const activeFilterCount=Object.entries(filters).filter(([key,val])=>key==='archived'?val:val&&val!=='all').length;
+  const statusClass=status=>/vollständig|bestätigt/i.test(status)?'valid':/nachbearbeitung|durchgeführt/i.test(status)?'warn':/abgesagt|archiv/i.test(status)?'archived':'planned';
+  const typeClass=type=>String(type).toLowerCase().includes('schulung')?'training':String(type).toLowerCase().includes('unterweisung')?'instruction':String(type).toLowerCase().includes('führerschein')?'license':String(type).toLowerCase().includes('geräte')?'equipment':String(type).toLowerCase().includes('vorsorge')?'medical':String(type).toLowerCase().includes('besprechung')?'meeting':'other';
+  const value=(row,key)=>key==='period'?`${row.date} ${row.start} ${row.end}`:row[key]||'';
+  const visibleRows=rows.filter(row=>{
+    if(mode==='archive') {
+      if(!(row.archived||row.status==='Archiviert'||row.status==='Vollständig')) return false;
+    } else if(!filters.archived && row.archived) return false;
+    if(quickFilter==='today'&&row.date!=='2026-10-15') return false;
+    if(quickFilter==='week'&&(row.date<'2026-10-15'||row.date>'2026-10-22')) return false;
+    if(quickFilter==='month'&&!row.date.startsWith('2026-10')) return false;
+    if(quickFilter==='past'&&row.date>='2026-10-15') return false;
+    if(quickFilter==='upcoming'&&row.date<'2026-10-15') return false;
+    if(filters.employee&&!String(row.employeeName||'').toLowerCase().includes(filters.employee.toLowerCase())) return false;
+    if(filters.company!=='all'&&row.company!==(window.company(filters.company)?.name||filters.company)) return false;
+    if(filters.type!=='all'&&row.type!==filters.type) return false;
+    if(filters.status!=='all'&&row.status!==filters.status) return false;
+    if(filters.from&&row.date<filters.from) return false;
+    if(filters.to&&row.date>filters.to) return false;
+    if(filters.responsible&&!String(row.responsible||'').toLowerCase().includes(filters.responsible.toLowerCase())) return false;
+    if(filters.provider&&!String(row.provider||'').toLowerCase().includes(filters.provider.toLowerCase())) return false;
+    if(filters.training&&!String(row.training||'').toLowerCase().includes(filters.training.toLowerCase())) return false;
+    if(filters.docs!=='all'&&row.docs!==filters.docs) return false;
+    if(filters.certs!=='all'&&row.certs!==filters.certs) return false;
+    if(filters.invoice!=='all'&&row.invoice!==filters.invoice) return false;
+    return true;
+  }).sort((a,b)=>(sort.dir==='asc'?1:-1)*String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
+  const pickerEmployees=employees.filter(item=>{
+    const term=employeeSearch.toLowerCase();
+    if(term&&!`${item.firstName} ${item.lastName} ${item.personalNr}`.toLowerCase().includes(term)) return false;
+    if(employeeCompanyFilter!=='all'&&item.company!==employeeCompanyFilter) return false;
+    if(employeeDepartmentFilter!=='all'&&item.department!==employeeDepartmentFilter) return false;
+    if(employeePositionFilter&&!String(item.position||'').toLowerCase().includes(employeePositionFilter.toLowerCase())) return false;
+    if(employeeStatusFilter!=='all'&&(employeeStatusFilter==='aktiv'?item.status!=='aktiv':item.status==='aktiv')) return false;
+    return true;
+  });
+  const toggle=id=>setSelected(old=>{const next=new Set(old);next.has(id)?next.delete(id):next.add(id);return next;});
+  const columns=mode==='archive'?
+    [...(isAll?[{key:'employeeName',label:'Mitarbeiter'}]:[]),{key:'title',label:'Termin'},{key:'type',label:'Terminart'},{key:'period',label:'Terminzeitraum'},{key:'post',label:'Abschlussdatum'},{key:'responsible',label:'abgeschlossen von'},{key:'docs',label:'Dokumente'},{key:'actions',label:'Aktionen'}]:
+    [...(isAll?[{key:'employeeName',label:'Mitarbeiter'}]:[]),{key:'title',label:'Termin'},{key:'type',label:'Terminart'},{key:'period',label:'Datum und Uhrzeit'},{key:'status',label:'Status'},{key:'responsible',label:'Verantwortlicher'},{key:'docs',label:'Dokumentstatus'},{key:'actions',label:'Aktionen'}];
+  const cellValue=(row,key)=>{
+    if(key==='employeeName') return <div><strong>{row.employeeName.split(' ').reverse().join(', ')}</strong><small>PN {row.employeeId}</small></div>;
+    if(key==='title') return <div><strong>{row.title}</strong><small>{row.training} · {row.provider}</small></div>;
+    if(key==='type') return <span className={`emp-appointment-type is-${typeClass(row.type)}`}>{row.type}</span>;
+    if(key==='period') return <div><strong>{window.fmtDE(row.date)}</strong><small>{row.start}-{row.end} Uhr</small></div>;
+    if(key==='status') return <span className={'emp-status is-'+statusClass(row.status)}>{row.status}</span>;
+    if(key==='docs') return <span className={'emp-doc-count '+(row.docs==='offen'?'is-missing':'')}><Icon name="doc" size={13}/>{row.docs}</span>;
+    if(key==='post') return row.post==='-'?'12.10.2026':row.post;
+    if(key==='actions') return <div className="emp-appointment-row-actions"><button onClick={event=>{event.stopPropagation();setModal(row.status==='Nachbearbeitung offen'?'post':'detail');}}>Öffnen</button><button onClick={event=>event.stopPropagation()}>⋮</button></div>;
+    return row[key]||'-';
+  };
+  const renderCalendar=()=>calendarView==='agenda'?<div className="emp-appointment-agenda">{visibleRows.map(row=><button key={row.id} onClick={()=>setModal(row.status==='Nachbearbeitung offen'?'post':'detail')}><span className={`emp-appointment-dot is-${typeClass(row.type)}`}/><strong>{window.fmtDE(row.date)} · {row.start}</strong><span>{row.title}</span><small>{row.type} · {row.employeeName}</small></button>)}</div>:<React.Fragment><div className="emp-appointment-calendar-head"><button>‹</button><h2>Oktober 2026</h2><button>›</button></div><div className={'emp-personal-calendar emp-personal-calendar--'+calendarView}>{['Mo','Di','Mi','Do','Fr','Sa','So'].map(day=><div key={day} className="emp-personal-calendar__head">{day}</div>)}{Array.from({length:calendarView==='week'?7:35},(_,index)=>{const day=calendarView==='week'?15+index:index+1;const dayRows=visibleRows.filter(row=>Number(row.date.slice(-2))===day);return <div key={day} className="emp-personal-calendar__cell"><b>{day}</b>{dayRows.map(row=><button key={row.id} className={`is-${typeClass(row.type)}`} onClick={()=>setModal(row.status==='Nachbearbeitung offen'?'post':'detail')}><span>{row.type}</span>{row.start} · {row.title}</button>)}</div>;})}</div></React.Fragment>;
+  const resetFilters=()=>setFilters({employee:'',company:'all',type:'all',status:'all',from:'',to:'',responsible:'',provider:'',training:'',docs:'all',certs:'all',invoice:'all',archived:false});
+  return <div className="emp-full emp-appointments-page">
+    <EmpPageTitle title={title} onBack={onBack} action={<div className="emp-appointment-actions"><button className="btn btn--ghost" onClick={()=>setEmployeePickerOpen(true)}><Icon name="users" size={14}/>Mitarbeiter: {scopeLabel}</button><div className="emp-segmented">{[['calendar','Kalender'],['list','Liste'],['archive','Archiv']].map(([id,label])=><button key={id} className={mode===id?'is-active':''} onClick={()=>setMode(id)}>{label}</button>)}</div><button className="btn btn--ghost" onClick={()=>setFilterOpen(true)}><Icon name="filter" size={14}/>Filter{activeFilterCount?` (${activeFilterCount})`:''}</button><button className="btn btn--primary" onClick={()=>setModal('new')}><Icon name="plus" size={14}/>Termin</button></div>}/>
+    <div className="emp-appointment-filterbar">{['Heute','Diese Woche','Dieser Monat','Kommende Termine','Vergangene Termine'].map((label,index)=>{const id=['today','week','month','upcoming','past'][index];return <button key={id} className={quickFilter===id?'is-active':''} onClick={()=>setQuickFilter(id)}>{label}</button>;})}{mode==='calendar'&&<div className="emp-segmented emp-calendar-view-switch">{[['month','Monat'],['week','Woche'],['agenda','Agenda']].map(([id,label])=><button key={id} className={calendarView===id?'is-active':''} onClick={()=>setCalendarView(id)}>{label}</button>)}</div>}</div>
+    {activeFilterCount>0&&<div className="emp-active-filter-chips">{filters.status!=='all'&&<button onClick={()=>setFilters(old=>({...old,status:'all'}))}>Status: {filters.status} ×</button>}{filters.type!=='all'&&<button onClick={()=>setFilters(old=>({...old,type:'all'}))}>Terminart: {filters.type} ×</button>}{(filters.from||filters.to)&&<button onClick={()=>setFilters(old=>({...old,from:'',to:''}))}>Zeitraum ×</button>}</div>}
+    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14}/>Export</button><button>Archivieren</button><button className="is-clear" onClick={()=>setSelected(new Set())}>×</button></div>}
+    {mode==='calendar'&&renderCalendar()}
+    {(mode==='list'||mode==='archive')&&<div className="emp-table-wrap emp-appointments-table-wrap"><table className="emp-appointments-table emp-appointments-table--compact"><thead><tr><th className="emp-check emp-sticky-select"><input type="checkbox" checked={visibleRows.length>0&&selected.size===visibleRows.length} onChange={event=>setSelected(event.target.checked?new Set(visibleRows.map(row=>row.id)):new Set())}/></th>{columns.map(column=><th key={column.key} className={column.key==='employeeName'?'emp-sticky-employee':column.key==='title'?'emp-sticky-title':column.key==='actions'?'emp-sticky-actions':''}><button onClick={()=>column.key!=='actions'&&setMenu(menu===column.key?null:column.key)}>{column.label}<span>{column.key!=='actions'?(sort.key===column.key?(sort.dir==='asc'?'↑':'↓'):'⌄'):''}</span></button>{menu===column.key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key:column.key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={()=>{setSort({key:column.key,dir:'desc'});setMenu(null);}}>Z bis A</button><button>Filtern nach</button><button>Gruppieren nach "{column.label}"</button><button>Spalten verwalten</button></div>}</th>)}</tr></thead><tbody>{visibleRows.map(row=><tr key={row.id} className={selected.has(row.id)?'is-selected':''} onClick={()=>setModal(row.status==='Nachbearbeitung offen'?'post':'detail')}><td className="emp-check emp-sticky-select" onClick={event=>event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={()=>toggle(row.id)}/></td>{columns.map(column=><td key={column.key} className={column.key==='employeeName'?'emp-sticky-employee':column.key==='title'?'emp-sticky-title':column.key==='actions'?'emp-sticky-actions':''}>{cellValue(row,column.key)}</td>)}</tr>)}</tbody></table></div>}
+    {employeePickerOpen&&<div className="emp-picker-backdrop" onClick={()=>setEmployeePickerOpen(false)}><section className="emp-picker-modal" onClick={event=>event.stopPropagation()}><header><div><span>Termine</span><h2>Mitarbeiter auswählen</h2></div><button onClick={()=>setEmployeePickerOpen(false)}>×</button></header><div className="emp-picker-filters"><input placeholder="Name oder Personalnummer" value={employeeSearch} onChange={event=>setEmployeeSearch(event.target.value)}/><select value={employeeCompanyFilter} onChange={event=>setEmployeeCompanyFilter(event.target.value)}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company=><option key={company.id} value={company.id}>{company.name}</option>)}</select><select value={employeeDepartmentFilter} onChange={event=>setEmployeeDepartmentFilter(event.target.value)}><option value="all">Alle Abteilungen</option>{departments.map(item=><option key={item}>{item}</option>)}</select><input placeholder="Position" value={employeePositionFilter} onChange={event=>setEmployeePositionFilter(event.target.value)}/><select value={employeeStatusFilter} onChange={event=>setEmployeeStatusFilter(event.target.value)}><option value="all">Alle Status</option><option value="aktiv">nur aktive Mitarbeiter</option><option value="inaktiv">ausgeschiedene Mitarbeiter</option></select><button type="button" onClick={()=>{setScope('all');setEmployeePickerOpen(false);}}>Alle Mitarbeiter</button></div><div className="emp-picker-table"><table><thead><tr><th>Mitarbeiter</th><th>Firma</th><th>Abteilung</th><th>Position</th></tr></thead><tbody>{pickerEmployees.map(item=><tr key={item.id} onClick={()=>{setScope(item.id);setEmployeePickerOpen(false);}}><td><strong>{item.lastName}, {item.firstName}</strong><small>PN {item.personalNr}</small></td><td>{window.company(item.company)?.name||item.company}</td><td>{item.department}</td><td>{item.position}</td></tr>)}</tbody></table></div></section></div>}
+    {filterOpen&&<div className="emp-filter-backdrop" onClick={()=>setFilterOpen(false)}><aside className="emp-filter-panel" onClick={event=>event.stopPropagation()}><header><div><span>Termine</span><h2>Filter</h2></div><button onClick={()=>setFilterOpen(false)}>×</button></header><div className="emp-filter-grid"><label>Mitarbeiter<input value={filters.employee} onChange={event=>setFilters(old=>({...old,employee:event.target.value}))}/></label><label>Firma<select value={filters.company} onChange={event=>setFilters(old=>({...old,company:event.target.value}))}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company=><option key={company.id} value={company.id}>{company.name}</option>)}</select></label><label>Terminart<select value={filters.type} onChange={event=>setFilters(old=>({...old,type:event.target.value}))}><option value="all">Alle</option>{['Schulung','Unterweisung','arbeitsmedizinische Vorsorge','Führerscheinkontrolle','Geräteprüfung','Besprechung','sonstiger Termin'].map(item=><option key={item}>{item}</option>)}</select></label><label>Status<select value={filters.status} onChange={event=>setFilters(old=>({...old,status:event.target.value}))}><option value="all">Alle</option>{['Entwurf','Geplant','Bestätigt','Durchgeführt','Nachbearbeitung offen','Vollständig','Verschoben','Abgesagt','Archiviert'].map(item=><option key={item}>{item}</option>)}</select></label><label>Zeitraum von<input type="date" value={filters.from} onChange={event=>setFilters(old=>({...old,from:event.target.value}))}/></label><label>Zeitraum bis<input type="date" value={filters.to} onChange={event=>setFilters(old=>({...old,to:event.target.value}))}/></label><label>Verantwortlicher<input value={filters.responsible} onChange={event=>setFilters(old=>({...old,responsible:event.target.value}))}/></label><label>Anbieter<input value={filters.provider} onChange={event=>setFilters(old=>({...old,provider:event.target.value}))}/></label><label>Schulung<input value={filters.training} onChange={event=>setFilters(old=>({...old,training:event.target.value}))}/></label><label>Dokumente<select value={filters.docs} onChange={event=>setFilters(old=>({...old,docs:event.target.value}))}><option value="all">Alle</option><option value="vollständig">vollständig</option><option value="offen">offen</option></select></label><label>Zertifikate<select value={filters.certs} onChange={event=>setFilters(old=>({...old,certs:event.target.value}))}><option value="all">Alle</option><option value="vollständig">vollständig</option><option value="offen">offen</option></select></label><label>Rechnung<select value={filters.invoice} onChange={event=>setFilters(old=>({...old,invoice:event.target.value}))}><option value="all">Alle</option><option value="bezahlt">bezahlt</option><option value="offen">offen</option></select></label><label className="emp-checkline"><input type="checkbox" checked={filters.archived} onChange={event=>setFilters(old=>({...old,archived:event.target.checked}))}/>Archivierte Termine anzeigen</label></div><footer><button onClick={resetFilters}>Zurücksetzen</button><button onClick={()=>setFilterOpen(false)}>Schließen</button><button className="btn btn--primary" onClick={()=>setFilterOpen(false)}>Anwenden</button></footer></aside></div>}
+    {modal&&<EmployeeAppointmentModal type={modal} onClose={()=>setModal(null)}/>}
   </div>;
 }
 

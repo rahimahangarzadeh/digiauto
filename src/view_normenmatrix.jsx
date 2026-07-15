@@ -4,7 +4,8 @@ function NormenmatrixView({ activeCompany = 'all', extraAction = null, title = '
   const sourceRows = window.NORMENMATRIX_ROWS || [];
 
   const [rows, setRows] = React.useState(() => sourceRows.map((row, index) => normalizeNormRow(row, index, today)));
-  const [viewMode, setViewMode] = React.useState('list');
+  const [viewMode, setViewMode] = React.useState(() => window.localStorage?.getItem('normenmatrix-view') || 'list');
+  const [tab, setTab] = React.useState('all');
   const [selectedIds, setSelectedIds] = React.useState([]);
   const [detailId, setDetailId] = React.useState(null);
   const [dialog, setDialog] = React.useState(null);
@@ -29,6 +30,10 @@ function NormenmatrixView({ activeCompany = 'all', extraAction = null, title = '
     setSelectedIds([]);
   }, [activeCompany]);
 
+  React.useEffect(() => {
+    window.localStorage?.setItem('normenmatrix-view', viewMode);
+  }, [viewMode]);
+
   const companyMap = Object.fromEntries(companies.map(company => [company.id, company]));
   const scopedRows = rows
     .map(row => enrichNormRow(row, today, companyMap))
@@ -39,12 +44,14 @@ function NormenmatrixView({ activeCompany = 'all', extraAction = null, title = '
     .filter(row => filters.owner === 'all' || row.owner === filters.owner)
     .filter(row => filters.due === 'all' || (filters.due === '90' && row.daysToCheck <= 90 && row.daysToCheck >= 0) || (filters.due === '30' && row.daysToCheck <= 30 && row.daysToCheck >= 0) || (filters.due === '7' && row.daysToCheck <= 7 && row.daysToCheck >= 0) || (filters.due === 'overdue' && row.daysToCheck < 0))
     .filter(row => filters.docs === 'all' || (filters.docs === 'missing' ? row.documents.length === 0 : row.documents.length > 0))
+    .filter(row => tab === 'all' || (tab === 'missingDocs' ? row.documents.length === 0 : tab === 'Prüfung fällig' ? row.status === 'Prüfung fällig' || row.daysToCheck <= 30 : row.status === tab))
     .sort((a, b) => compareNormRows(a, b, sortBy));
 
   const groups = groupBy ? groupNormRows(scopedRows, groupBy) : [['Alle Normen', scopedRows]];
   const selectedRows = rows.filter(row => selectedIds.includes(row.id));
   const detailRow = rows.map(row => enrichNormRow(row, today, companyMap)).find(row => row.id === detailId);
-  const kpis = getNormKpis(rows.map(row => enrichNormRow(row, today, companyMap)), activeCompany, filters.company);
+  const kpis = getNormKpis(rows.map(row => enrichNormRow(row, today, companyMap)), activeCompany, filters.company).filter(kpi => !['Ersetzt', 'Archiviert'].includes(kpi.label));
+  const tabs = getNormTabs(rows.map(row => enrichNormRow(row, today, companyMap)), activeCompany, filters.company);
 
   const openNormDialog = (mode, row = null) => {
     const target = row || {};
@@ -188,6 +195,13 @@ function NormenmatrixView({ activeCompany = 'all', extraAction = null, title = '
       </button>)}
     </section>
 
+    <nav className="norm-tabs" aria-label="Normenstatus">
+      {tabs.map(item => <button key={item.key} type="button" className={tab === item.key ? 'is-active' : ''} onClick={() => { setTab(item.key); setSelectedIds([]); }}>
+        <span>{item.label}</span>
+        <strong>{item.count}</strong>
+      </button>)}
+    </nav>
+
     {selectedIds.length > 0 && <div className="norm-bulkbar">
       <strong>{selectedIds.length} ausgewählt</strong>
       <button type="button">Status ändern</button>
@@ -202,7 +216,7 @@ function NormenmatrixView({ activeCompany = 'all', extraAction = null, title = '
 
     {viewMode === 'cards'
       ? <div className="norm-card-grid">{scopedRows.map(row => <NormCard key={row.id} row={row} menuOpen={menuId === row.id} onMenu={() => setMenuId(menuId === row.id ? null : row.id)} onOpen={() => setDetailId(row.id)} onEdit={() => openNormDialog('edit', row)} onCheck={() => openCheckDialog(row)} onVersion={() => createNewVersion(row)} />)}</div>
-      : <NormTable groups={groups} columns={NORM_COLUMNS} selectedIds={selectedIds} toggleSelected={toggleSelected} toggleAll={toggleAll} onOpen={setDetailId} onEdit={openNormDialog} onCheck={openCheckDialog} onVersion={createNewVersion} columnMenu={columnMenu} setColumnMenu={setColumnMenu} sortBy={sortBy} setSortBy={setSortBy} groupBy={groupBy} setGroupBy={setGroupBy} hiddenCols={hiddenCols} setHiddenCols={setHiddenCols} />}
+      : <NormTable groups={groups} columns={NORM_COMPACT_COLUMNS} selectedIds={selectedIds} toggleSelected={toggleSelected} toggleAll={toggleAll} onOpen={setDetailId} onEdit={openNormDialog} onCheck={openCheckDialog} onVersion={createNewVersion} columnMenu={columnMenu} setColumnMenu={setColumnMenu} sortBy={sortBy} setSortBy={setSortBy} groupBy={groupBy} setGroupBy={setGroupBy} hiddenCols={hiddenCols} setHiddenCols={setHiddenCols} />}
 
     {filterOpen && <NormFilterDialog filters={filters} setFilters={setFilters} companies={companies} rows={rows} onClose={() => setFilterOpen(false)} />}
     {dialog?.type === 'norm' && <NormDialog form={form} setForm={setForm} companies={companies} onClose={() => setDialog(null)} onSubmit={saveDialog} />}
@@ -226,6 +240,18 @@ const NORM_COLUMNS = [
   ['link', 'Link'],
   ['provider', 'Anbieter'],
   ['notes', 'Bemerkungen'],
+  ['actions', 'Aktionen'],
+];
+
+const NORM_COMPACT_COLUMNS = [
+  ['name', 'Norm / Regelwerk'],
+  ['area', 'Bereich'],
+  ['normNumber', 'Normnummer'],
+  ['version', 'Ausgabe / Version'],
+  ['nextCheck', 'Nächste Prüfung'],
+  ['owner', 'Zuständig'],
+  ['status', 'Status'],
+  ['documents', 'Dokument'],
   ['actions', 'Aktionen'],
 ];
 
@@ -355,6 +381,21 @@ function getNormKpis(rows, activeCompany, companyFilter) {
   ];
 }
 
+function getNormTabs(rows, activeCompany, companyFilter) {
+  const scoped = rows.filter(row => (activeCompany === 'all' || row.companies.includes(activeCompany) || row.companies.includes('all')) && (companyFilter === 'all' || row.companies.includes(companyFilter) || row.companies.includes('all')));
+  const countStatus = status => scoped.filter(row => row.status === status).length;
+  return [
+    { key: 'all', label: 'Alle', count: scoped.length },
+    { key: 'Aktuell', label: 'Aktuell', count: countStatus('Aktuell') },
+    { key: 'Prüfung fällig', label: 'Prüfung fällig', count: scoped.filter(row => row.status === 'Prüfung fällig' || row.daysToCheck <= 30).length },
+    { key: 'In Prüfung', label: 'In Prüfung', count: countStatus('In Prüfung') },
+    { key: 'Veraltet', label: 'Veraltet', count: countStatus('Veraltet') },
+    { key: 'Ersetzt', label: 'Ersetzt', count: countStatus('Ersetzt') },
+    { key: 'missingDocs', label: 'Dokument fehlt', count: scoped.filter(row => row.documents.length === 0).length },
+    { key: 'Archiviert', label: 'Archiviert', count: countStatus('Archiviert') },
+  ];
+}
+
 function nextVersionLabel(version) {
   const match = String(version || '').match(/(\d{4})-(\d{2})/);
   if (!match) return '2026-01';
@@ -386,44 +427,37 @@ function NormCard({ row, menuOpen, onMenu, onOpen, onEdit, onCheck, onVersion })
 
 function NormTable({ groups, columns, selectedIds, toggleSelected, toggleAll, onOpen, onEdit, onCheck, onVersion, columnMenu, setColumnMenu, sortBy, setSortBy, groupBy, setGroupBy, hiddenCols, setHiddenCols }) {
   const flat = groups.flatMap(([, items]) => items);
+  const visibleColumns = columns.filter(([key]) => !hiddenCols.includes(key));
+  const renderCell = (row, key) => {
+    if (key === 'name') return <><strong>{row.name}</strong><small>{row.companyNames}</small></>;
+    if (key === 'nextCheck') return <><strong>{window.fmtDE?.(row.nextCheck) || row.nextCheck}</strong><small>{row.daysToCheck < 0 ? Math.abs(row.daysToCheck) + ' Tage überfällig' : 'in ' + row.daysToCheck + ' Tagen'}</small></>;
+    if (key === 'status') return <span className={'norm-status-pill norm-status-' + statusClass(row.status)}>{row.status}</span>;
+    if (key === 'documents') return row.documents.length ? row.documents.length + ' Datei(en)' : <span className="tone-danger">fehlt</span>;
+    if (key === 'actions') return <div className="norm-row-actions"><button onClick={() => onEdit('edit', row)}><Icon name="edit" size={14} /></button><button onClick={() => onCheck(row)}><Icon name="check" size={14} /></button><button onClick={() => onVersion(row)}><Icon name="history" size={14} /></button></div>;
+    return row[key] || '-';
+  };
 
   return <div className="norm-table-shell">
     <div className="norm-table-wrap">
-      <table className="admin-table norm-admin-table">
+      <table className="admin-table norm-admin-table norm-admin-table--compact">
         <thead><tr>
-          <th><input type="checkbox" checked={flat.length > 0 && flat.every(row => selectedIds.includes(row.id))} onChange={toggleAll} /></th>
-          {columns.filter(([key]) => !hiddenCols.includes(key)).map(([key, label]) => <th key={key}>
-            <button type="button" className="column-head-btn" onClick={() => setColumnMenu(columnMenu === key ? null : key)}>{label}⌄</button>
-            {columnMenu === key && <NormColumnMenu colKey={key} label={label} setSortBy={setSortBy} groupBy={groupBy} setGroupBy={setGroupBy} hiddenCols={hiddenCols} setHiddenCols={setHiddenCols} />}
+          <th className="norm-sticky-select"><input type="checkbox" checked={flat.length > 0 && flat.every(row => selectedIds.includes(row.id))} onChange={toggleAll} /></th>
+          {visibleColumns.map(([key, label]) => <th key={key} className={(key === 'name' ? 'norm-sticky-name ' : '') + (key === 'actions' ? 'norm-sticky-actions ' : '')}>
+            <button type="button" className="column-head-btn" onClick={() => key !== 'actions' && setColumnMenu(columnMenu === key ? null : key)}>{label}{key !== 'actions' && <span>{sortBy.key === key ? (sortBy.dir === 'asc' ? '↑' : '↓') : '⌄'}</span>}</button>
+            {columnMenu === key && key !== 'actions' && <NormColumnMenu colKey={key} label={label} setSortBy={setSortBy} groupBy={groupBy} setGroupBy={setGroupBy} hiddenCols={hiddenCols} setHiddenCols={setHiddenCols} />}
           </th>)}
         </tr></thead>
         {groups.map(([label, items]) => <tbody key={label}>
-          {groups.length > 1 && <tr className="group-row"><td colSpan={columns.length + 1}>{label} · {items.length}</td></tr>}
+          {groups.length > 1 && <tr className="group-row"><td colSpan={visibleColumns.length + 1}>{label} · {items.length}</td></tr>}
           {items.map(row => <tr key={row.id} className={row.status === 'Veraltet' || row.daysToCheck < 0 ? 'is-danger-row' : ''} onClick={() => onOpen(row.id)}>
-            <td onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleSelected(row.id)} /></td>
-            {!hiddenCols.includes('number') && <td>{row.number}</td>}
-            {!hiddenCols.includes('area') && <td>{row.area}</td>}
-            {!hiddenCols.includes('name') && <td className="norm-name-cell"><strong>{row.name}</strong><small>{row.companyNames}</small></td>}
-            {!hiddenCols.includes('normNumber') && <td>{row.normNumber}</td>}
-            {!hiddenCols.includes('purpose') && <td className="wide-cell">{row.purpose}</td>}
-            {!hiddenCols.includes('version') && <td>{row.version}</td>}
-            {!hiddenCols.includes('issueDate') && <td>{window.fmtDE?.(row.issueDate) || row.issueDate}</td>}
-            {!hiddenCols.includes('lastCheck') && <td>{window.fmtDE?.(row.lastCheck) || row.lastCheck}</td>}
-            {!hiddenCols.includes('nextCheck') && <td>{window.fmtDE?.(row.nextCheck) || row.nextCheck}</td>}
-            {!hiddenCols.includes('owner') && <td>{row.owner}</td>}
-            {!hiddenCols.includes('status') && <td><span className={`norm-status-pill norm-status-${statusClass(row.status)}`}>{row.status}</span></td>}
-            {!hiddenCols.includes('documents') && <td>{row.documents.length ? `${row.documents.length} Datei(en)` : <span className="tone-danger">fehlt</span>}</td>}
-            {!hiddenCols.includes('link') && <td>{row.link ? <a href={row.link} onClick={event => event.stopPropagation()}>Link</a> : '-'}</td>}
-            {!hiddenCols.includes('provider') && <td>{row.provider}</td>}
-            {!hiddenCols.includes('notes') && <td>{row.notes || '-'}</td>}
-            {!hiddenCols.includes('actions') && <td onClick={event => event.stopPropagation()}><div className="norm-row-actions"><button onClick={() => onEdit('edit', row)}><Icon name="edit" size={14} /></button><button onClick={() => onCheck(row)}><Icon name="check" size={14} /></button><button onClick={() => onVersion(row)}><Icon name="history" size={14} /></button></div></td>}
+            <td className="norm-sticky-select" onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleSelected(row.id)} /></td>
+            {visibleColumns.map(([key]) => <td key={key} className={(key === 'name' ? 'norm-name-cell norm-sticky-name ' : '') + (key === 'nextCheck' ? 'norm-date-cell ' : '') + (key === 'actions' ? 'norm-sticky-actions ' : '')} onClick={key === 'actions' ? event => event.stopPropagation() : undefined}>{renderCell(row, key)}</td>)}
           </tr>)}
         </tbody>)}
       </table>
     </div>
   </div>;
 }
-
 function NormColumnMenu({ colKey, label, setSortBy, groupBy, setGroupBy, hiddenCols, setHiddenCols }) {
   const hidden = hiddenCols.includes(colKey);
   return <div className="column-menu">
@@ -432,6 +466,8 @@ function NormColumnMenu({ colKey, label, setSortBy, groupBy, setGroupBy, hiddenC
     <button type="button">Filtern nach</button>
     <button type="button" onClick={() => setGroupBy(groupBy === colKey ? '' : colKey)}>Gruppieren nach "{label}"</button>
     <button type="button" onClick={() => setHiddenCols(hidden ? hiddenCols.filter(item => item !== colKey) : [...hiddenCols, colKey])}>{hidden ? 'Spalte einblenden' : 'Spalte ausblenden'}</button>
+    <button type="button">Spalten verwalten</button>
+    <button type="button" onClick={() => setHiddenCols([])}>Standardansicht wiederherstellen</button>
   </div>;
 }
 
@@ -463,31 +499,61 @@ function NormFilterDialog({ filters, setFilters, companies, rows, onClose }) {
 }
 
 function NormDialog({ form, setForm, companies, onClose, onSubmit }) {
+  const [step, setStep] = React.useState(1);
   const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
-  return <NormModal title="Norm hinzufügen" eyebrow="Normenmatrix" onClose={onClose} onSubmit={onSubmit}>
-    <div className="form-grid form-grid--three">
+  const steps = ['Grunddaten', 'Ausgabe und Version', 'Prüfung', 'Dokumente', 'Zusammenfassung'];
+  const isLast = step === steps.length;
+  const submit = (event) => {
+    event.preventDefault();
+    if (!isLast) {
+      setStep(current => Math.min(steps.length, current + 1));
+      return;
+    }
+    onSubmit(event);
+  };
+
+  return <NormModal title="Norm hinzufügen" eyebrow={'Schritt ' + step + ' von ' + steps.length} onClose={onClose} onSubmit={submit} submitLabel={isLast ? 'Norm hinzufügen' : 'Weiter'} secondaryAction={!isLast ? <button className="btn btn--ghost" type="button" onClick={() => setStep(current => Math.max(1, current - 1))} disabled={step === 1}>Zurück</button> : <button className="btn btn--ghost" type="button">Als Entwurf speichern</button>}>
+    <div className="norm-stepper">{steps.map((item, index) => <button key={item} type="button" className={step === index + 1 ? 'is-active' : ''} onClick={() => setStep(index + 1)}>{index + 1}. {item}</button>)}</div>
+    {step === 1 && <div className="form-grid form-grid--three">
+      <NormField label="Firma"><select value={form.companies} onChange={event => set('companies', event.target.value)}><option value="all">Alle Firmen</option>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></NormField>
       <NormField label="Bereich"><input value={form.area} onChange={event => set('area', event.target.value)} /></NormField>
-      <NormField label="Name der Norm oder des Regelwerks"><input value={form.name} onChange={event => set('name', event.target.value)} /></NormField>
+      <NormField label="Norm / Regelwerk"><input value={form.name} onChange={event => set('name', event.target.value)} /></NormField>
       <NormField label="Normnummer"><input value={form.normNumber} onChange={event => set('normNumber', event.target.value)} /></NormField>
-      <NormField label="Ausgabe / Version"><input value={form.version} onChange={event => set('version', event.target.value)} /></NormField>
-      <NormField label="Ausgabedatum"><input type="date" value={form.issueDate} onChange={event => set('issueDate', event.target.value)} /></NormField>
-      <NormField label="Anbieter / Herausgeber"><input value={form.provider} onChange={event => set('provider', event.target.value)} /></NormField>
-      <NormField label="Firma oder mehrere Firmen"><select value={form.companies} onChange={event => set('companies', event.target.value)}><option value="all">Alle Firmen</option>{companies.map(company => <option key={company.id} value={company.id}>{company.name}</option>)}</select></NormField>
       <NormField label="Geltungsbereich"><select value={form.scope} onChange={event => set('scope', event.target.value)}>{['Unternehmen', 'Abteilung', 'Tätigkeit', 'Standort', 'Projekt'].map(value => <option key={value}>{value}</option>)}</select></NormField>
-      <NormField label="Gültig ab"><input type="date" value={form.validFrom} onChange={event => set('validFrom', event.target.value)} /></NormField>
-      <NormField label="Letzte Prüfung"><input type="date" value={form.lastCheck} onChange={event => set('lastCheck', event.target.value)} /></NormField>
-      <NormField label="Nächste Prüfung"><input type="date" value={form.nextCheck} onChange={event => set('nextCheck', event.target.value)} /></NormField>
-      <NormField label="Prüfintervall"><select value={form.interval} onChange={event => set('interval', event.target.value)}>{['monatlich', 'quartalsweise', 'halbjährlich', 'jährlich', 'alle 2 Jahre', 'alle 3 Jahre'].map(value => <option key={value}>{value}</option>)}</select></NormField>
-      <NormField label="Zuständige Person"><input value={form.owner} onChange={event => set('owner', event.target.value)} /></NormField>
-      <NormField label="Status"><select value={form.status} onChange={event => set('status', event.target.value)}>{['Aktuell', 'Prüfung fällig', 'In Prüfung', 'Veraltet', 'Ersetzt', 'Archiviert'].map(value => <option key={value}>{value}</option>)}</select></NormField>
-      <NormField label="Dokument hochladen"><input value={form.document} onChange={event => set('document', event.target.value)} placeholder="Normdokument.pdf" /></NormField>
+      <NormField label="Anbieter / Herausgeber"><input value={form.provider} onChange={event => set('provider', event.target.value)} /></NormField>
       <NormField label="Externer Link"><input value={form.link} onChange={event => set('link', event.target.value)} /></NormField>
       <NormField label="Zweck / Beschreibung"><textarea value={form.purpose} onChange={event => set('purpose', event.target.value)} /></NormField>
-      <NormField label="Bemerkungen"><textarea value={form.notes} onChange={event => set('notes', event.target.value)} /></NormField>
-    </div>
+    </div>}
+    {step === 2 && <div className="form-grid form-grid--three">
+      <NormField label="Ausgabe / Version"><input value={form.version} onChange={event => set('version', event.target.value)} /></NormField>
+      <NormField label="Ausgabedatum"><input type="date" value={form.issueDate} onChange={event => set('issueDate', event.target.value)} /></NormField>
+      <NormField label="Gültig ab"><input type="date" value={form.validFrom} onChange={event => set('validFrom', event.target.value)} /></NormField>
+      <NormField label="Aktuelle Version"><select value={form.currentVersion || 'Ja'} onChange={event => set('currentVersion', event.target.value)}><option>Ja</option><option>Nein</option></select></NormField>
+      <NormField label="Ersetzt frühere Norm"><select value={form.replacesOld || 'Nein'} onChange={event => set('replacesOld', event.target.value)}><option>Nein</option><option>Ja</option></select></NormField>
+      <NormField label="Ersetzte Norm"><input value={form.replacedNorm || ''} onChange={event => set('replacedNorm', event.target.value)} /></NormField>
+      <NormField label="Bemerkung"><textarea value={form.notes} onChange={event => set('notes', event.target.value)} /></NormField>
+    </div>}
+    {step === 3 && <div className="form-grid form-grid--three">
+      <NormField label="Letzte Prüfung"><input type="date" value={form.lastCheck} onChange={event => set('lastCheck', event.target.value)} /></NormField>
+      <NormField label="Nächste Prüfung"><input type="date" value={form.nextCheck} onChange={event => set('nextCheck', event.target.value)} /></NormField>
+      <NormField label="Prüfintervall"><select value={form.interval} onChange={event => set('interval', event.target.value)}>{['halbjährlich', 'jährlich', 'zweijährlich', 'benutzerdefiniert'].map(value => <option key={value}>{value}</option>)}</select></NormField>
+      <NormField label="Zuständige Person"><input value={form.owner} onChange={event => set('owner', event.target.value)} /></NormField>
+      <NormField label="Vertretung"><input value={form.deputy || ''} onChange={event => set('deputy', event.target.value)} /></NormField>
+      <NormField label="Status"><select value={form.status} onChange={event => set('status', event.target.value)}>{['Aktuell', 'Prüfung fällig', 'In Prüfung', 'Veraltet', 'Ersetzt', 'Archiviert'].map(value => <option key={value}>{value}</option>)}</select></NormField>
+      <NormField label="Erinnerung aktivieren"><select value={form.reminder || 'Ja'} onChange={event => set('reminder', event.target.value)}><option>Ja</option><option>Nein</option></select></NormField>
+    </div>}
+    {step === 4 && <div className="form-grid form-grid--three">
+      <NormField label="Normdokument"><input value={form.document} onChange={event => set('document', event.target.value)} placeholder="Normdokument.pdf" /></NormField>
+      <NormField label="Prüfprotokoll"><input value={form.checkDocument || ''} onChange={event => set('checkDocument', event.target.value)} placeholder="Pruefprotokoll.pdf" /></NormField>
+      <NormField label="Freigabedokument"><input value={form.releaseDocument || ''} onChange={event => set('releaseDocument', event.target.value)} /></NormField>
+      <NormField label="Weitere Anlagen"><textarea value={form.attachments || ''} onChange={event => set('attachments', event.target.value)} /></NormField>
+    </div>}
+    {step === 5 && <div className="norm-summary-box">
+      <h3>{form.name || 'Neue Norm'}</h3>
+      <dl><div><dt>Firma</dt><dd>{form.companies || 'Alle Firmen'}</dd></div><div><dt>Bereich</dt><dd>{form.area || '-'}</dd></div><div><dt>Version</dt><dd>{form.version || '-'}</dd></div><div><dt>Nächste Prüfung</dt><dd>{form.nextCheck || '-'}</dd></div><div><dt>Zuständig</dt><dd>{form.owner || '-'}</dd></div><div><dt>Status</dt><dd>{form.status || '-'}</dd></div></dl>
+    </div>}
   </NormModal>;
 }
-
 function NormCheckDialog({ form, setForm, onClose, onSubmit }) {
   const set = (key, value) => setForm(current => ({ ...current, [key]: value }));
   return <NormModal title="Prüfung durchführen" eyebrow="Normenprüfung" onClose={onClose} onSubmit={onSubmit}>
@@ -534,12 +600,12 @@ function NormField({ label, children }) {
   return <label className="form-field"><span>{label}</span>{children}</label>;
 }
 
-function NormModal({ title, eyebrow, children, onClose, onSubmit }) {
+function NormModal({ title, eyebrow, children, onClose, onSubmit, submitLabel = 'Speichern', secondaryAction = null }) {
   return <div className="cert-modal-backdrop" onMouseDown={onClose}>
     <form className="cert-modal-card cert-modal-card--wide" onMouseDown={event => event.stopPropagation()} onSubmit={onSubmit}>
       <div className="cert-modal-card__head"><div><span className="eyebrow">{eyebrow}</span><h2>{title}</h2></div><button className="icon-btn" type="button" onClick={onClose}><Icon name="x" size={18} /></button></div>
       {children}
-      <div className="modal-actions"><button className="btn btn--ghost" type="button" onClick={onClose}>Abbrechen</button><button className="btn btn--primary" type="submit">Speichern</button></div>
+      <div className="modal-actions">{secondaryAction}<button className="btn btn--ghost" type="button" onClick={onClose}>Abbrechen</button><button className="btn btn--primary" type="submit">{submitLabel}</button></div>
     </form>
   </div>;
 }

@@ -910,6 +910,22 @@ function employeeInstructionRecords(emp) {
 
 function EmployeeInstructionArea({ emp, onBack, onOpen }) {
   const [scope,setScope]=React.useState(emp.id);
+  const [viewMode,setViewMode]=React.useState(()=>localStorage.getItem('employeeInstructionView') || 'list');
+  const [employeePickerOpen,setEmployeePickerOpen]=React.useState(false);
+  const [filterPanelOpen,setFilterPanelOpen]=React.useState(false);
+  const [createOpen,setCreateOpen]=React.useState(false);
+  const [rowActionMenu,setRowActionMenu]=React.useState(null);
+  const [employeeSearch,setEmployeeSearch]=React.useState('');
+  const [employeeCompanyFilter,setEmployeeCompanyFilter]=React.useState('all');
+  const [employeeDepartmentFilter,setEmployeeDepartmentFilter]=React.useState('all');
+  const [employeePositionFilter,setEmployeePositionFilter]=React.useState('');
+  const [employeeGroupFilter,setEmployeeGroupFilter]=React.useState('all');
+  const [employeeStatusFilter,setEmployeeStatusFilter]=React.useState('aktiv');
+  const [filters,setFilters]=React.useState({
+    employee:'', company:'all', department:'all', position:'', name:'', instructor:'',
+    participantStatus:'all', status:'all', dateFrom:'', dateTo:'', confirmation:'',
+    document:'all', release:'all', archived:false,
+  });
   const sourceEmployees=React.useMemo(()=>window.SEED.employees,[]);
   const activeEmployees=React.useMemo(()=>{
     if(scope==='all') return sourceEmployees;
@@ -918,7 +934,7 @@ function EmployeeInstructionArea({ emp, onBack, onOpen }) {
     if(scope.startsWith('company:')) return sourceEmployees.filter(item=>item.company===scope.replace('company:',''));
     return sourceEmployees.filter(item=>item.id===scope);
   },[scope,sourceEmployees]);
-  const isAllView=scope!==emp.id;
+  const isAllView=scope === 'all' || scope === 'active' || scope === 'inactive' || scope.startsWith('company:');
   const currentEmployee=activeEmployees.length===1?activeEmployees[0]:emp;
   const records = React.useMemo(() => activeEmployees.flatMap(employeeInstructionRecords), [activeEmployees]);
   const [selected, setSelected] = React.useState(new Set());
@@ -926,31 +942,72 @@ function EmployeeInstructionArea({ emp, onBack, onOpen }) {
   const [menu, setMenu] = React.useState(null);
   const [filter, setFilter] = React.useState('all');
   const [group, setGroup] = React.useState('');
-  const [hiddenColumns,setHiddenColumns]=React.useState(new Set());
+  const defaultHiddenColumns = React.useMemo(() => new Set(['company','group','released','history','description']), []);
+  const [hiddenColumns,setHiddenColumns]=React.useState(defaultHiddenColumns);
   const labels = {done:'Durchgeführt',open:'Offen',archived:'Archiviert',documentMissing:'Dokument fehlt'};
+  const departments=[...new Set(sourceEmployees.map(item=>item.department).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
+  const groups=[...new Set(sourceEmployees.map(item=>item.group || (item.position?.toLowerCase().includes('azubi')?'Azubi':item.position?.toLowerCase().includes('kaufm')?'Angestellte':'Gewerbliche')).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de'));
+  const currentScopeLabel=scope==='all'?'Alle Mitarbeiter':scope==='active'?'Aktive Mitarbeiter':scope==='inactive'?'Inaktive Mitarbeiter':scope.startsWith('company:')?(window.company(scope.replace('company:',''))?.name || 'Firma'):(sourceEmployees.find(item=>item.id===scope)?.name || emp.name);
+  const activeFilterCount=[filters.employee,filters.company!=='all',filters.department!=='all',filters.position,filters.name,filters.instructor,filters.participantStatus!=='all',filters.status!=='all',filters.dateFrom,filters.dateTo,filters.confirmation,filters.document!=='all',filters.release!=='all',filters.archived].filter(Boolean).length;
+  const resetFilters=()=>setFilters({employee:'',company:'all',department:'all',position:'',name:'',instructor:'',participantStatus:'all',status:'all',dateFrom:'',dateTo:'',confirmation:'',document:'all',release:'all',archived:false});
   const value = (row,key) => key === 'status' ? labels[row.status] : key === 'history' ? row.version : row[key];
-  let rows = filter === 'all' ? records : filter === 'documentMissing' ? records.filter(row=>row.documentMissing) : records.filter(row => row.status === filter);
+  const dateValue=row => {
+    const parts = String(row.date || '').split('.');
+    return parts.length === 3 ? `${parts[2]}-${parts[1]}-${parts[0]}` : '';
+  };
+  const filterRow=row=>{
+    if(filter === 'documentMissing') return row.documentMissing;
+    if(filter !== 'all' && row.status !== filter) return false;
+    return true;
+  };
+  const panelFilterRow=row=>{
+    const employeeText=`${row.employeeName} ${row.employee.personalNr || ''}`.toLowerCase();
+    if(filters.employee && !employeeText.includes(filters.employee.toLowerCase())) return false;
+    if(filters.company !== 'all' && row.employee.company !== filters.company) return false;
+    if(filters.department !== 'all' && row.department !== filters.department) return false;
+    if(filters.position && !row.position.toLowerCase().includes(filters.position.toLowerCase())) return false;
+    if(filters.name && !row.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
+    if(filters.instructor && !row.instructor.toLowerCase().includes(filters.instructor.toLowerCase())) return false;
+    if(filters.participantStatus !== 'all' && row.employeeStatus !== filters.participantStatus) return false;
+    if(filters.status !== 'all' && row.status !== filters.status) return false;
+    if(filters.dateFrom && dateValue(row) && dateValue(row) < filters.dateFrom) return false;
+    if(filters.dateTo && dateValue(row) && dateValue(row) > filters.dateTo) return false;
+    if(filters.confirmation && !row.confirmation.toLowerCase().includes(filters.confirmation.toLowerCase())) return false;
+    if(filters.document === 'missing' && !row.documentMissing) return false;
+    if(filters.document === 'available' && row.documentMissing) return false;
+    if(filters.release === 'released' && !row.released) return false;
+    if(filters.release === 'blocked' && row.released) return false;
+    if(!filters.archived && row.status === 'archived') return false;
+    return true;
+  };
+  let rows = records.filter(filterRow).filter(panelFilterRow);
   rows = [...rows].sort((a,b) => (sort.dir === 'asc' ? 1 : -1) * String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
   const toggle = id => setSelected(current => { const next=new Set(current); next.has(id)?next.delete(id):next.add(id); return next; });
   const baseColumns = [
-    ...(isAllView ? [['employeeName','Mitarbeiter'],['companyShort','Firma'],['department','Abteilung'],['position','Position']] : []),
-    ['name','Name Unterweisung'],['company','Firma'],['date','Unterweisungsdatum'],['instructor','Unterwiesen von'],['group','Gruppe / Abteilung'],[isAllView?'participants':'employeeStatus',isAllView?'Zahl Teilnehmer':'Teilnahmestatus'],['confirmation','Ergebnis / Bestätigung'],['status','Status'],['released','Freigabe für Mitarbeiter'],['history','Versionshistorie'],['description','Beschreibung'],['documents','Dokument'],['actions','Aktionen']
+    ...(isAllView ? [['employeeName','Mitarbeiter']] : []),
+    ['name','Unterweisung'],['date','Datum'],['instructor','Unterweisender'],['employeeStatus','Teilnahmestatus'],['confirmation','Ergebnis / Bestätigung'],['status','Status'],['documents','Dokument'],['actions','Aktionen'],
+    ['company','Firma'],['group','Gruppe / Abteilung'],['released','Freigabe für Mitarbeiter'],['history','Versionshistorie'],['description','Beschreibung']
   ];
   const columns=baseColumns.filter(([key])=>!hiddenColumns.has(key));
-  const tabLabels={ all:`Alle ${records.length}`, done:'Durchgeführt', open:'Offen', archived:'Archiviert', documentMissing:'Dokument fehlt' };
-  const kpi=[
-    ['Teilnahmen', records.length, 'all'],
-    ['Durchgeführt', records.filter(row=>row.status==='done').length, 'done'],
-    ['Offen', records.filter(row=>row.status==='open').length, 'open'],
-    ['Dokument fehlt', records.filter(row=>row.documentMissing).length, 'documentMissing'],
-    ['Archiviert', records.filter(row=>row.status==='archived').length, 'archived'],
-  ];
+  const tabLabels={ all:`Alle ${records.length}`, done:`Durchgeführt ${records.filter(row=>row.status==='done').length}`, open:`Offen ${records.filter(row=>row.status==='open').length}`, documentMissing:`Dokument fehlt ${records.filter(row=>row.documentMissing).length}`, archived:`Archiviert ${records.filter(row=>row.status==='archived').length}` };
+  const pickerEmployees=sourceEmployees.filter(item=>{
+    const text=`${item.lastName}, ${item.firstName} ${item.personalNr}`.toLowerCase();
+    const groupName=item.group || (item.position?.toLowerCase().includes('azubi')?'Azubi':item.position?.toLowerCase().includes('kaufm')?'Angestellte':'Gewerbliche');
+    if(employeeSearch && !text.includes(employeeSearch.toLowerCase())) return false;
+    if(employeeCompanyFilter !== 'all' && item.company !== employeeCompanyFilter) return false;
+    if(employeeDepartmentFilter !== 'all' && item.department !== employeeDepartmentFilter) return false;
+    if(employeePositionFilter && !item.position.toLowerCase().includes(employeePositionFilter.toLowerCase())) return false;
+    if(employeeGroupFilter !== 'all' && groupName !== employeeGroupFilter) return false;
+    if(employeeStatusFilter !== 'all' && item.status !== employeeStatusFilter) return false;
+    return true;
+  }).slice().sort((a,b)=>a.lastName.localeCompare(b.lastName,'de'));
+  const setMode=mode=>{setViewMode(mode);localStorage.setItem('employeeInstructionView',mode);};
   const cellValue=(row,key)=>{
     if(key==='status') return <span className={'emp-status is-'+row.status}>{labels[row.status]}</span>;
     if(key==='released') return <span className="emp-release" title={row.releaseScope}>{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</span>;
     if(key==='history') return <span className="emp-version-chip"><Icon name="history" size={13}/>{row.version}</span>;
     if(key==='documents') return <span className={'emp-doc-count '+(row.documentMissing?'is-missing':'')}><Icon name="doc" size={13}/>{row.documentMissing?'fehlt':row.documents}</span>;
-    if(key==='actions') return <button className="emp-row-menu-btn" onClick={event=>event.stopPropagation()}>⋮</button>;
+    if(key==='actions') return <div className="emp-row-actions" onClick={event=>event.stopPropagation()}><button className="emp-row-menu-btn" onClick={()=>setRowActionMenu(rowActionMenu===row.id?null:row.id)}>⋮</button>{rowActionMenu===row.id && <div className="emp-row-action-menu">{['Details anzeigen','Bearbeiten','Teilnehmer verwalten','Teilnahme bestätigen','Dokument öffnen','Dokument hochladen','Dokument ersetzen','Neue Version anlegen','Wiederholung planen','Freigabe ändern','Duplizieren','Archivieren','Löschen'].map(label=><button key={label} onClick={()=>{ if(label==='Details anzeigen' || label==='Bearbeiten') onOpen(row); setRowActionMenu(null); }}>{label}</button>)}</div>}</div>;
     if(key==='employeeName'||key==='name') return <strong>{row[key]}</strong>;
     return row[key];
   };
@@ -958,29 +1015,24 @@ function EmployeeInstructionArea({ emp, onBack, onOpen }) {
   return <div className="emp-full">
     <EmpPageTitle title={isAllView?'Unterweisungen - alle Mitarbeiter':`Unterweisungen (${currentEmployee.name})`} onBack={onBack} action={
       <div className="emp-training-toolbar">
-        <label>Mitarbeiter auswählen<select value={scope} onChange={event=>{setScope(event.target.value);setSelected(new Set());}}>
-          <option value={emp.id}>{emp.name}</option>
-          <option value="all">Alle Mitarbeiter</option>
-          <option value="active">Nur aktive Mitarbeiter</option>
-          <option value="inactive">Ausgeschiedene Mitarbeiter</option>
-          {window.SEED.companies.map(company => <option key={company.id} value={`company:${company.id}`}>{company.name}</option>)}
-          {sourceEmployees.filter(item=>item.id!==emp.id).slice().sort((a,b)=>a.lastName.localeCompare(b.lastName,'de')).map(item=><option key={item.id} value={item.id}>{item.lastName}, {item.firstName}</option>)}
-        </select></label>
-        <button><Icon name="settings" size={14}/>Filter</button>
-        <button><Icon name="plus" size={14}/>Unterweisung</button>
+        <button type="button" className="emp-current-picker-btn" onClick={()=>setEmployeePickerOpen(true)}><Icon name="users" size={14}/>Mitarbeiter: {currentScopeLabel}</button>
+        <button type="button" onClick={()=>setFilterPanelOpen(true)}><Icon name="settings" size={14}/>Filter{activeFilterCount?` (${activeFilterCount})`:''}</button>
+        <span className="emp-view-toggle"><button className={viewMode==='cards'?'is-active':''} onClick={()=>setMode('cards')}><Icon name="dashboard" size={14}/>Kacheln</button><button className={viewMode==='list'?'is-active':''} onClick={()=>setMode('list')}><Icon name="doc" size={14}/>Liste</button></span>
+        <button type="button" onClick={()=>setCreateOpen(true)}><Icon name="plus" size={14}/>Unterweisung</button>
       </div>
     } />
-    <div className="emp-training-kpis">{kpi.map(item=><button key={item[0]} className={filter===item[2]?'is-active':''} onClick={()=>setFilter(item[2])}><span>{item[0]}</span><strong>{item[1]}</strong><small>Klicken zum Filtern</small></button>)}</div>
     <div className="emp-training-tabs">
-      {['all','done','open','archived','documentMissing'].map(id => <button key={id} className={filter===id?'is-active':''} onClick={() => setFilter(id)}>{tabLabels[id]}</button>)}
+      {['all','done','open','documentMissing','archived'].map(id => <button key={id} className={filter===id?'is-active':''} onClick={() => setFilter(id)}>{tabLabels[id]}</button>)}
       {group && <button className="emp-clear-group" onClick={() => setGroup('')}>Gruppierung aufheben</button>}
       {hiddenColumns.size>0 && <button className="emp-clear-group" onClick={()=>setHiddenColumns(new Set())}>Alle Spalten anzeigen</button>}
     </div>
-    {selected.size>0 && <div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="check" size={14}/>Als durchgeführt markieren</button><button><Icon name="edit" size={14}/>Teilnehmer bestätigen</button><button><Icon name="download" size={14}/>Dokumente herunterladen</button><button><Icon name="mail" size={14}/>Erinnerung senden</button><button className="is-danger"><Icon name="trash" size={14}/>Löschen</button></div>}
-    <div className="emp-table-wrap"><table className="emp-instruction-table">
+    {activeFilterCount>0 && <div className="emp-active-filter-chips">{filters.company!=='all' && <button onClick={()=>setFilters(old=>({...old,company:'all'}))}>Firma: {window.company(filters.company)?.short || filters.company} ×</button>}{filters.status!=='all' && <button onClick={()=>setFilters(old=>({...old,status:'all'}))}>Status: {labels[filters.status]} ×</button>}{filters.document!=='all' && <button onClick={()=>setFilters(old=>({...old,document:'all'}))}>Dokument {filters.document==='missing'?'fehlt':'vorhanden'} ×</button>}{filters.name && <button onClick={()=>setFilters(old=>({...old,name:''}))}>Unterweisung: {filters.name} ×</button>}</div>}
+    {selected.size>0 && <div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="check" size={14}/>Als durchgeführt markieren</button><button><Icon name="edit" size={14}/>Teilnahme bestätigen</button><button><Icon name="shield" size={14}/>Freigabe ändern</button><button><Icon name="download" size={14}/>Dokumente herunterladen</button><button><Icon name="mail" size={14}/>Erinnerung senden</button><button><Icon name="clock" size={14}/>Wiederholung planen</button><button className="is-danger"><Icon name="trash" size={14}/>Archivieren</button></div>}
+    {viewMode==='cards' && <div className="emp-instruction-card-grid">{rows.map(row=><article key={row.id} className={'emp-instruction-card is-'+row.status} onClick={()=>onOpen(row)}><header><div><span>{row.date}</span><h3>{row.name}</h3></div><button className="emp-row-menu-btn" onClick={event=>event.stopPropagation()}>⋮</button></header><p>{isAllView ? row.employeeName : row.company}</p><dl><div><dt>Unterweisender</dt><dd>{row.instructor}</dd></div><div><dt>Teilnahmestatus</dt><dd>{row.employeeStatus}</dd></div><div><dt>Status</dt><dd>{cellValue(row,'status')}</dd></div><div><dt>Dokument</dt><dd>{cellValue(row,'documents')}</dd></div></dl></article>)}</div>}
+    {viewMode==='list' && <div className="emp-table-wrap"><table className="emp-instruction-table">
       <thead><tr><th className="emp-check"><input type="checkbox" checked={rows.length>0 && selected.size===rows.length} onChange={() => setSelected(selected.size===rows.length?new Set():new Set(rows.map(row=>row.id)))}/></th>
         {columns.map(([key,label]) => <th key={key}><button onClick={() => setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>
-          {menu===key && <div className="emp-column-menu"><button onClick={() => {setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={() => {setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={() => setMenu(null)}>Filtern nach</button><button onClick={() => {setGroup(key);setMenu(null);}}>Gruppieren nach &quot;{label}&quot;</button><button onClick={() => {setHiddenColumns(old=>new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button></div>}
+          {menu===key && <div className="emp-column-menu"><button onClick={() => {setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={() => {setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={() => setMenu(null)}>Filtern nach</button><button onClick={() => {setGroup(key);setMenu(null);}}>Gruppieren nach &quot;{label}&quot;</button><button onClick={() => {setHiddenColumns(old=>new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button><button onClick={() => setMenu(null)}>Spalten verwalten</button><button onClick={() => {setHiddenColumns(defaultHiddenColumns);setMenu(null);}}>Standardansicht wiederherstellen</button></div>}
         </th>)}</tr></thead>
       <tbody>{rows.map((row,index) => <React.Fragment key={row.id}>
         {group && (index===0 || value(rows[index-1],group)!==value(row,group)) && <tr className="emp-group-row"><td colSpan={columns.length+1}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}
@@ -989,7 +1041,10 @@ function EmployeeInstructionArea({ emp, onBack, onOpen }) {
           {columns.map(([key])=><td key={key} className={key==='description'?'emp-ellipsis':''}>{cellValue(row,key)}</td>)}
         </tr>
       </React.Fragment>)}</tbody>
-    </table></div>
+    </table></div>}
+    {employeePickerOpen && <div className="emp-picker-backdrop" onClick={()=>setEmployeePickerOpen(false)}><section className="emp-picker-modal" onClick={event=>event.stopPropagation()}><header><div><span>Unterweisungen</span><h2>Mitarbeiter auswählen</h2></div><button onClick={()=>setEmployeePickerOpen(false)}>×</button></header><div className="emp-picker-filters emp-picker-filters--instructions"><input placeholder="Name oder Personalnummer" value={employeeSearch} onChange={event=>setEmployeeSearch(event.target.value)}/><select value={employeeCompanyFilter} onChange={event=>setEmployeeCompanyFilter(event.target.value)}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company=><option key={company.id} value={company.id}>{company.name}</option>)}</select><select value={employeeDepartmentFilter} onChange={event=>setEmployeeDepartmentFilter(event.target.value)}><option value="all">Alle Abteilungen</option>{departments.map(item=><option key={item}>{item}</option>)}</select><input placeholder="Position" value={employeePositionFilter} onChange={event=>setEmployeePositionFilter(event.target.value)}/><select value={employeeGroupFilter} onChange={event=>setEmployeeGroupFilter(event.target.value)}><option value="all">Alle Gruppen</option>{groups.map(item=><option key={item}>{item}</option>)}</select><select value={employeeStatusFilter} onChange={event=>setEmployeeStatusFilter(event.target.value)}><option value="all">Alle Status</option><option value="aktiv">Aktiv</option><option value="inaktiv">Inaktiv</option></select><button type="button" onClick={()=>{setScope('all');setEmployeePickerOpen(false);setSelected(new Set());}}>Alle Mitarbeiter</button></div><div className="emp-picker-table"><table><thead><tr><th>Mitarbeiter</th><th>Firma</th><th>Abteilung</th><th>Position</th></tr></thead><tbody>{pickerEmployees.map(item=><tr key={item.id} onClick={()=>{setScope(item.id);setEmployeePickerOpen(false);setSelected(new Set());}}><td><strong>{item.lastName}, {item.firstName}</strong><small>PN {item.personalNr}</small></td><td>{window.company(item.company)?.name || item.company}</td><td>{item.department}</td><td>{item.position}</td></tr>)}</tbody></table></div></section></div>}
+    {filterPanelOpen && <div className="emp-training-filter-shell" onClick={()=>setFilterPanelOpen(false)}><aside className="emp-training-filter-panel" onClick={event=>event.stopPropagation()}><header><div><span>Unterweisungen</span><h2>Filter</h2></div><button onClick={()=>setFilterPanelOpen(false)}>×</button></header><main><label><span>Mitarbeiter</span><input value={filters.employee} onChange={event=>setFilters(old=>({...old,employee:event.target.value}))} placeholder="Name oder PN"/></label><label><span>Firma</span><select value={filters.company} onChange={event=>setFilters(old=>({...old,company:event.target.value}))}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company=><option key={company.id} value={company.id}>{company.name}</option>)}</select></label><label><span>Abteilung</span><select value={filters.department} onChange={event=>setFilters(old=>({...old,department:event.target.value}))}><option value="all">Alle Abteilungen</option>{departments.map(item=><option key={item}>{item}</option>)}</select></label><label><span>Position</span><input value={filters.position} onChange={event=>setFilters(old=>({...old,position:event.target.value}))}/></label><label><span>Name der Unterweisung</span><input value={filters.name} onChange={event=>setFilters(old=>({...old,name:event.target.value}))}/></label><label><span>Unterweisender</span><input value={filters.instructor} onChange={event=>setFilters(old=>({...old,instructor:event.target.value}))}/></label><label><span>Teilnahmestatus</span><select value={filters.participantStatus} onChange={event=>setFilters(old=>({...old,participantStatus:event.target.value}))}><option value="all">Alle</option>{['Eingeladen','Vorgemerkt','Teilgenommen','Bestätigt','Nicht teilgenommen','Wiederholung erforderlich','Offen'].map(item=><option key={item}>{item}</option>)}</select></label><label><span>Status der Unterweisung</span><select value={filters.status} onChange={event=>setFilters(old=>({...old,status:event.target.value}))}><option value="all">Alle</option><option value="open">Offen</option><option value="done">Durchgeführt</option><option value="archived">Archiviert</option></select></label><label><span>Unterweisungsdatum von</span><input type="date" value={filters.dateFrom} onChange={event=>setFilters(old=>({...old,dateFrom:event.target.value}))}/></label><label><span>Unterweisungsdatum bis</span><input type="date" value={filters.dateTo} onChange={event=>setFilters(old=>({...old,dateTo:event.target.value}))}/></label><label><span>Ergebnis / Bestätigung</span><input value={filters.confirmation} onChange={event=>setFilters(old=>({...old,confirmation:event.target.value}))}/></label><label><span>Dokument</span><select value={filters.document} onChange={event=>setFilters(old=>({...old,document:event.target.value}))}><option value="all">Alle</option><option value="available">Vorhanden</option><option value="missing">Fehlt</option></select></label><label><span>Freigabe</span><select value={filters.release} onChange={event=>setFilters(old=>({...old,release:event.target.value}))}><option value="all">Alle</option><option value="released">Freigegeben</option><option value="blocked">Nicht freigegeben</option></select></label><label className="emp-checkline"><input type="checkbox" checked={filters.archived} onChange={event=>setFilters(old=>({...old,archived:event.target.checked}))}/>Archivierte Einträge anzeigen</label></main><footer><button onClick={resetFilters}>Filter zurücksetzen</button><button onClick={()=>setFilterPanelOpen(false)}>Schließen</button><button className="btn btn--primary" onClick={()=>setFilterPanelOpen(false)}>Filter anwenden</button></footer></aside></div>}
+    {createOpen && <div className="emp-picker-backdrop" onClick={()=>setCreateOpen(false)}><section className="emp-assign-modal emp-instruction-create-modal" onClick={event=>event.stopPropagation()}><header><div><span>Unterweisungen</span><h2>Unterweisung erstellen</h2></div><button onClick={()=>setCreateOpen(false)}>×</button></header><main><fieldset><legend>1. Grunddaten</legend><label><span>Name der Unterweisung *</span><input/></label><label><span>Firma *</span><select>{window.SEED.companies.map(company=><option key={company.id}>{company.name}</option>)}</select></label><label><span>Unterweisungsdatum *</span><input type="date"/></label><label><span>Unterweisender *</span><input/></label><label><span>Unterweisungsart *</span><select>{['Jahresunterweisung','Erstunterweisung','Baustellenunterweisung','projektbezogene Unterweisung','tätigkeitsbezogene Unterweisung','Betriebsanweisung','sonstige Unterweisung'].map(item=><option key={item}>{item}</option>)}</select></label><label className="is-wide"><span>Beschreibung</span><textarea/></label></fieldset><fieldset><legend>2. Teilnehmer</legend><label><span>Teilnehmer oder Gruppe *</span><select><option>Einzelne Mitarbeiter auswählen</option><option>Abteilung auswählen</option><option>Mitarbeitergruppe auswählen</option><option>Alle Mitarbeiter einer Firma</option></select></label><label><span>Abteilung / Gruppe</span><select><option>Alle</option>{departments.map(item=><option key={item}>{item}</option>)}</select></label><label><span>Mindestteilnehmerzahl</span><input type="number"/></label><label><span>Maximale Teilnehmerzahl</span><input type="number"/></label><p className="emp-form-summary">12 Mitarbeiter wurden ausgewählt.</p></fieldset><fieldset><legend>3. Inhalte und Durchführung</legend><label><span>Thema / Inhalt *</span><input/></label><label><span>Version *</span><input defaultValue="1.0"/></label><label><span>Wiederholungsintervall</span><input/></label><label><span>Nächster Wiederholungstermin</span><input type="date"/></label><label><span>Ort</span><input/></label><label><span>Beginn</span><input type="time"/></label><label><span>Ende</span><input type="time"/></label><label className="is-wide"><span>Durchführung / Erklärung</span><textarea/></label></fieldset><fieldset><legend>4. Teilnahme und Bestätigung</legend><label><span>Teilnahmestatus *</span><select>{['Vorgemerkt','Eingeladen','Teilgenommen','Bestätigt','Nicht teilgenommen','Wiederholung erforderlich','Offen'].map(item=><option key={item}>{item}</option>)}</select></label><label><span>Ergebnis / Bestätigung</span><select>{['Teilnahme bestätigt','Nachweis offen','bestanden','nicht bestanden','Wiederholung erforderlich'].map(item=><option key={item}>{item}</option>)}</select></label><label><span>Bestätigungsdatum</span><input type="date"/></label><label className="emp-checkline"><input type="checkbox" defaultChecked/>Freigabe für Mitarbeiter *</label><label className="emp-checkline"><input type="checkbox"/>Unterschrift erforderlich</label><label className="emp-checkline"><input type="checkbox"/>Nachweis erforderlich</label></fieldset><fieldset><legend>5. Dokumente</legend><label><span>Unterweisungsdokument</span><input type="file" multiple accept=".pdf,.jpg,.jpeg,.png"/></label><label><span>Teilnehmernachweis</span><input type="file" multiple accept=".pdf,.jpg,.jpeg,.png"/></label><label><span>Präsentation</span><input type="file" multiple accept=".pdf,.jpg,.jpeg,.png"/></label><label><span>Betriebsanweisung</span><input type="file" multiple accept=".pdf,.jpg,.jpeg,.png"/></label><label className="is-wide"><span>Weitere Anlagen</span><input type="file" multiple accept=".pdf,.jpg,.jpeg,.png"/></label></fieldset><fieldset><legend>6. Zusammenfassung</legend><div className="emp-create-summary"><strong>Unterweisung</strong><span>Jahresunterweisung Tiefbau</span><strong>Teilnehmer</strong><span>12 Mitarbeiter</span><strong>Version</strong><span>1.0</span><strong>Freigabe</strong><span>für Mitarbeiter freigegeben</span></div></fieldset></main><footer><button onClick={()=>setCreateOpen(false)}>Abbrechen</button><button>Als Entwurf speichern</button><button className="btn btn--primary" onClick={()=>setCreateOpen(false)}>Unterweisung erstellen</button></footer></section></div>}
   </div>;
 }
 

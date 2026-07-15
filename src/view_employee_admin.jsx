@@ -1988,7 +1988,7 @@ function employeeEquipmentCheckRecords(emp) {
   }));
 }
 
-function EmployeeEquipmentCheckArea({emp,onBack,onOpen}) {
+function EmployeeEquipmentCheckAreaLegacy({emp,onBack,onOpen}) {
   const [scope,setScope]=React.useState(emp.id);
   const sourceEmployees=React.useMemo(()=>window.SEED.employees,[]);
   const activeEmployees=React.useMemo(()=>{
@@ -2072,6 +2072,120 @@ function EmployeeEquipmentCheckArea({emp,onBack,onOpen}) {
   </div>;
 }
 
+function EmployeeEquipmentCheckArea({emp,onBack,onOpen}) {
+  const [scope,setScope]=React.useState(emp.id);
+  const [viewMode,setViewMode]=React.useState(()=>localStorage.getItem('employeeEquipmentCheckView')||'list');
+  const [employeePickerOpen,setEmployeePickerOpen]=React.useState(false);
+  const [employeeSearch,setEmployeeSearch]=React.useState('');
+  const [employeeCompanyFilter,setEmployeeCompanyFilter]=React.useState('all');
+  const [employeeDepartmentFilter,setEmployeeDepartmentFilter]=React.useState('all');
+  const [employeePositionFilter,setEmployeePositionFilter]=React.useState('');
+  const [employeeStatusFilter,setEmployeeStatusFilter]=React.useState('all');
+  const [filterOpen,setFilterOpen]=React.useState(false);
+  const [createOpen,setCreateOpen]=React.useState(false);
+  const [createStep,setCreateStep]=React.useState(1);
+  const [selected,setSelected]=React.useState(new Set());
+  const [sort,setSort]=React.useState({key:'area',dir:'asc'});
+  const [menu,setMenu]=React.useState(null);
+  const [filter,setFilter]=React.useState('all');
+  const [group,setGroup]=React.useState('');
+  const defaultHiddenColumns=React.useMemo(()=>new Set(['legal','validFrom','days','released','inspectionScope','restriction','commissioner','responsible','lastReport','history','description','companyShort','department','position']),[]);
+  const [hiddenColumns,setHiddenColumns]=React.useState(defaultHiddenColumns);
+  const [filters,setFilters]=React.useState({employee:'',company:'all',department:'all',position:'',area:'',qualification:'',appointment:'all',legal:'',status:'all',validFrom:'',validTo:'',expiresUntil:'all',deputy:'all',document:'all',released:'all',openChecks:false,archived:false});
+  React.useEffect(()=>localStorage.setItem('employeeEquipmentCheckView',viewMode),[viewMode]);
+  const sourceEmployees=React.useMemo(()=>window.SEED.employees,[]);
+  const departments=React.useMemo(()=>[...new Set(sourceEmployees.map(item=>item.department).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de')), [sourceEmployees]);
+  const activeEmployees=React.useMemo(()=>{
+    if(scope==='all') return sourceEmployees;
+    if(scope.startsWith('company:')) return sourceEmployees.filter(item=>item.company===scope.replace('company:',''));
+    if(scope.startsWith('department:')) return sourceEmployees.filter(item=>item.department===scope.replace('department:',''));
+    return sourceEmployees.filter(item=>item.id===scope);
+  },[scope,sourceEmployees]);
+  const isAllView=scope!==emp.id;
+  const currentEmployee=activeEmployees.length===1?activeEmployees[0]:emp;
+  const currentScopeLabel=isAllView?'Alle Mitarbeiter':currentEmployee.name;
+  const records=React.useMemo(()=>activeEmployees.flatMap(employeeEquipmentCheckRecords),[activeEmployees]);
+  const labels={valid:'Gültig',warn:'Läuft bald ab',expired:'Abgelaufen',appointmentMissing:'Beauftragung fehlt',appointmentExpired:'Beauftragung abgelaufen',documentMissing:'Qualifikationsnachweis fehlt',deputyMissing:'Stellvertretung fehlt',revoked:'Widerrufen',blocked:'Gesperrt',archived:'Archiviert'};
+  const statusClass=status=>status==='valid'?'valid':status==='warn'||status==='appointmentMissing'||status==='appointmentExpired'||status==='documentMissing'||status==='deputyMissing'?'warn':status==='archived'?'archived':'expired';
+  const value=(row,key)=>key==='status'?labels[row.status]:(key==='document'?row.documentMissing?'fehlt':'vorhanden':row[key]);
+  const matchesDate=(dateText,from,to)=>{
+    if(!from&&!to) return true;
+    const parts=String(dateText||'').split('.');
+    if(parts.length!==3) return true;
+    const iso=`${parts[2]}-${parts[1]}-${parts[0]}`;
+    return (!from||iso>=from)&&(!to||iso<=to);
+  };
+  const activeFilterCount=Object.entries(filters).filter(([key,val])=>(key==='openChecks'||key==='archived')?val:val&&val!=='all').length;
+  let rows=records.filter(row=>{
+    if(filter==='valid'&&row.status!=='valid') return false;
+    if(filter==='warn'&&row.status!=='warn') return false;
+    if(filter==='expired'&&row.status!=='expired') return false;
+    if(filter==='appointmentMissing'&&!row.appointmentMissing) return false;
+    if(filter==='documentMissing'&&!row.documentMissing) return false;
+    if(filter==='archived') return false;
+    if(filters.employee&&!(row.employeeName||'').toLowerCase().includes(filters.employee.toLowerCase())) return false;
+    if(filters.company!=='all'&&row.employee.company!==filters.company) return false;
+    if(filters.department!=='all'&&row.department!==filters.department) return false;
+    if(filters.position&&!String(row.position||'').toLowerCase().includes(filters.position.toLowerCase())) return false;
+    if(filters.area&&!String(row.area||'').toLowerCase().includes(filters.area.toLowerCase())) return false;
+    if(filters.qualification&&!String(row.qualification||'').toLowerCase().includes(filters.qualification.toLowerCase())) return false;
+    if(filters.appointment!=='all'&&!String(row.appointment||'').toLowerCase().includes(filters.appointment.toLowerCase())) return false;
+    if(filters.legal&&!String(row.legal||'').toLowerCase().includes(filters.legal.toLowerCase())) return false;
+    if(filters.status!=='all'&&row.status!==filters.status) return false;
+    if(!matchesDate(row.validTo,filters.validFrom,filters.validTo)) return false;
+    if(filters.expiresUntil!=='all'&&row.days>Number(filters.expiresUntil)) return false;
+    if(filters.deputy==='present'&&(!row.deputy||row.deputy==='-')) return false;
+    if(filters.deputy==='missing'&&row.deputy&&row.deputy!=='-') return false;
+    if(filters.document==='missing'&&!row.documentMissing) return false;
+    if(filters.document==='present'&&row.documentMissing) return false;
+    if(filters.released==='true'&&!row.released) return false;
+    if(filters.released==='false'&&row.released) return false;
+    if(filters.openChecks&&!String(row.assignedDevices||'').match(/[1-9]/)) return false;
+    return true;
+  });
+  rows=[...rows].sort((a,b)=>(sort.dir==='asc'?1:-1)*String(value(a,sort.key)??'').localeCompare(String(value(b,sort.key)??''),'de',{numeric:true}));
+  const toggle=id=>setSelected(current=>{const next=new Set(current);next.has(id)?next.delete(id):next.add(id);return next;});
+  const pickerEmployees=sourceEmployees.filter(item=>{
+    const text=`${item.firstName} ${item.lastName} ${item.personalNr}`.toLowerCase();
+    if(employeeSearch&&!text.includes(employeeSearch.toLowerCase())) return false;
+    if(employeeCompanyFilter!=='all'&&item.company!==employeeCompanyFilter) return false;
+    if(employeeDepartmentFilter!=='all'&&item.department!==employeeDepartmentFilter) return false;
+    if(employeePositionFilter&&!item.position.toLowerCase().includes(employeePositionFilter.toLowerCase())) return false;
+    if(employeeStatusFilter!=='all'&&item.status!==employeeStatusFilter) return false;
+    return true;
+  }).sort((a,b)=>a.lastName.localeCompare(b.lastName,'de'));
+  const baseColumns=[
+    ...(isAllView?[['employeeName','Mitarbeiter']]:[]),
+    ['area','Arbeitsmittelbereich'],['qualification','Fachliche Befähigung'],['appointment','Schriftliche Beauftragung'],['validTo','Gültig bis'],['status','Status'],['deputy','Stellvertretung'],['document','Dokument'],['actions','Aktionen'],
+    ['legal','Rechtsgrundlage'],['validFrom','Gültig ab'],['days','Restlaufzeit'],['released','Freigabe für Mitarbeiter'],['inspectionScope','Prüfbereich'],['restriction','Einschränkungen'],['commissioner','Beauftragende Person'],['responsible','Verantwortliche Führungskraft'],['lastReport','Letzter Prüfbericht'],['history','Befähigungs- und Beauftragungshistorie'],['description','Beschreibung'],['companyShort','Firma'],['department','Abteilung'],['position','Position']
+  ];
+  const columns=baseColumns.filter(([key])=>!hiddenColumns.has(key)||key==='actions');
+  const tabLabels={all:`Alle ${records.length}`,valid:`Gültig ${records.filter(row=>row.status==='valid').length}`,warn:`Läuft bald ab ${records.filter(row=>row.status==='warn').length}`,expired:`Abgelaufen ${records.filter(row=>row.status==='expired').length}`,appointmentMissing:`Beauftragung fehlt ${records.filter(row=>row.appointmentMissing).length}`,documentMissing:`Dokument fehlt ${records.filter(row=>row.documentMissing).length}`,archived:'Archiviert 0'};
+  const cellValue=(row,key)=>{
+    if(key==='employeeName') return <div><strong>{row.employeeName}</strong><small>PN {row.employee.personalNr}</small></div>;
+    if(key==='area') return <strong>{row.area}</strong>;
+    if(key==='qualification') return <div><strong>{row.qualification}</strong><small>{row.proof}</small></div>;
+    if(key==='appointment') return <span className={'emp-status is-'+(row.appointmentMissing?'warn':'valid')}>{row.appointment}</span>;
+    if(key==='days') return row.days<0?`${Math.abs(row.days)} Tage abgelaufen`:`in ${row.days} Tagen`;
+    if(key==='status') return <div><span className={'emp-status is-'+statusClass(row.status)}>{labels[row.status]}</span><small>{row.days<0?`seit ${Math.abs(row.days)} Tagen`:`in ${row.days} Tagen`}</small></div>;
+    if(key==='document') return <span className={'emp-doc-count '+(row.documentMissing?'is-missing':'')}><Icon name="doc" size={13}/>{row.documentMissing?'fehlt':'1 Datei'}</span>;
+    if(key==='released') return <span className="emp-release">{row.released?<Icon name="check" size={17} stroke={2.4}/>: '-'}</span>;
+    if(key==='history') return <span className="emp-version-chip"><Icon name="history" size={13}/>{row.history} Ereignisse</span>;
+    if(key==='actions') return <button className="emp-row-menu-btn" onClick={event=>event.stopPropagation()}>⋮</button>;
+    return row[key]||'-';
+  };
+  return <div className="emp-full">
+    <EmpPageTitle title={isAllView?'Prüfberechtigungen - alle Mitarbeiter':`Prüfberechtigungen (${currentEmployee.name})`} onBack={onBack} action={<div className="emp-training-toolbar"><button onClick={()=>setEmployeePickerOpen(true)}><Icon name="users" size={14}/>Mitarbeiter: {currentScopeLabel}</button><div className="emp-view-toggle"><button className={viewMode==='cards'?'is-active':''} onClick={()=>setViewMode('cards')}>Kacheln</button><button className={viewMode==='list'?'is-active':''} onClick={()=>setViewMode('list')}>Liste</button></div><button onClick={()=>setFilterOpen(true)}><Icon name="settings" size={14}/>Filter{activeFilterCount?` (${activeFilterCount})`:''}</button><button onClick={()=>setCreateOpen(true)}><Icon name="plus" size={14}/>Prüfberechtigung hinzufügen</button></div>}/>
+    <div className="emp-training-tabs">{Object.keys(tabLabels).map(id=><button key={id} className={filter===id?'is-active':''} onClick={()=>setFilter(id)}>{tabLabels[id]}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}{hiddenColumns.size>0&&<button className="emp-clear-group" onClick={()=>setHiddenColumns(defaultHiddenColumns)}>Standardansicht</button>}</div>
+    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="doc" size={14}/>Beauftragung erstellen</button><button><Icon name="cal" size={14}/>Verlängern</button><button><Icon name="users" size={14}/>Führungskraft ändern</button><button><Icon name="users" size={14}/>Stellvertretung zuweisen</button><button><Icon name="edit" size={14}/>Freigabe ändern</button><button><Icon name="download" size={14}/>Dokumente herunterladen</button><button><Icon name="history" size={14}/>Archivieren</button></div>}
+    {viewMode==='cards'&&<div className="emp-license-card-grid emp-equipment-check-card-grid">{rows.map(row=><button key={row.id} className={'emp-license-card emp-equipment-check-card is-'+row.status} onClick={()=>onOpen(row)}><header><div><strong>{row.area}</strong><span>{row.employeeName}</span></div><span className={'emp-status is-'+statusClass(row.status)}>{labels[row.status]}</span></header><div><span>Fachliche Befähigung</span><b>{row.qualification}</b></div><div><span>Beauftragung</span><b>{row.appointment}</b></div><div><span>Gültig bis</span><b>{row.validTo}</b></div><footer><span>Vertretung: {row.deputy||'-'}</span><span className={'emp-doc-count '+(row.documentMissing?'is-missing':'')}><Icon name="doc" size={13}/>{row.documentMissing?'Dokument fehlt':'Dokument'}</span><span>⋮</span></footer></button>)}</div>}
+    {viewMode==='list'&&<div className="emp-table-wrap emp-equipment-check-table-wrap"><table className="emp-equipment-check-table emp-equipment-check-table--compact"><thead><tr><th className="emp-check emp-sticky-select"><input type="checkbox" checked={rows.length>0&&selected.size===rows.length} onChange={()=>setSelected(selected.size===rows.length?new Set():new Set(rows.map(row=>row.id)))}/></th>{columns.map(([key,label])=><th key={key} className={(key==='area'?'emp-sticky-area ':'')+(key==='actions'?'emp-sticky-actions':'')}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={()=>setMenu(null)}>Filtern nach</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Gruppieren nach &quot;{label}&quot;</button>{key!=='actions'&&<button onClick={()=>{setHiddenColumns(old=>new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button>}<button onClick={()=>setMenu(null)}>Spalten verwalten</button><button onClick={()=>{setHiddenColumns(defaultHiddenColumns);setMenu(null);}}>Standardansicht wiederherstellen</button></div>}</th>)}</tr></thead><tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan={columns.length+1}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}<tr className={row.status==='expired'?'is-expired':row.status==='warn'?'is-warn':''} onClick={()=>onOpen(row)}><td className="emp-check emp-sticky-select" onClick={event=>event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={()=>toggle(row.id)}/></td>{columns.map(([key])=><td key={key} className={(key==='area'?'emp-sticky-area ':'')+(key==='actions'?'emp-sticky-actions ':'')+(key==='description'||key==='qualification'?'emp-ellipsis ':'')+(key==='days'&&row.days<0?'is-overdue':'')}>{cellValue(row,key)}</td>)}</tr></React.Fragment>)}</tbody></table></div>}
+    {employeePickerOpen&&<div className="emp-picker-backdrop" onClick={()=>setEmployeePickerOpen(false)}><section className="emp-picker-modal" onClick={event=>event.stopPropagation()}><header><div><span>Prüfberechtigungen</span><h2>Mitarbeiter auswählen</h2></div><button onClick={()=>setEmployeePickerOpen(false)}>×</button></header><div className="emp-picker-filters"><input placeholder="Name oder Personalnummer" value={employeeSearch} onChange={event=>setEmployeeSearch(event.target.value)}/><select value={employeeCompanyFilter} onChange={event=>setEmployeeCompanyFilter(event.target.value)}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company=><option key={company.id} value={company.id}>{company.name}</option>)}</select><select value={employeeDepartmentFilter} onChange={event=>setEmployeeDepartmentFilter(event.target.value)}><option value="all">Alle Abteilungen</option>{departments.map(item=><option key={item}>{item}</option>)}</select><input placeholder="Position" value={employeePositionFilter} onChange={event=>setEmployeePositionFilter(event.target.value)}/><select value={employeeStatusFilter} onChange={event=>setEmployeeStatusFilter(event.target.value)}><option value="all">Alle Status</option><option value="aktiv">Aktiv</option><option value="inaktiv">Ausgeschieden</option></select><button type="button" onClick={()=>{setScope('all');setEmployeePickerOpen(false);setSelected(new Set());}}>Alle Mitarbeiter</button></div><div className="emp-picker-table"><table><thead><tr><th>Mitarbeiter</th><th>Firma</th><th>Abteilung</th><th>Position</th></tr></thead><tbody>{pickerEmployees.map(item=><tr key={item.id} onClick={()=>{setScope(item.id);setEmployeePickerOpen(false);setSelected(new Set());}}><td><strong>{item.lastName}, {item.firstName}</strong><small>PN {item.personalNr}</small></td><td>{window.company(item.company)?.name || item.company}</td><td>{item.department}</td><td>{item.position}</td></tr>)}</tbody></table></div></section></div>}
+    {filterOpen&&<aside className="emp-filter-drawer"><header><div><span>Prüfberechtigungen</span><h2>Filter</h2></div><button onClick={()=>setFilterOpen(false)}>×</button></header><div className="emp-filter-grid"><label>Mitarbeiter<input value={filters.employee} onChange={event=>setFilters(old=>({...old,employee:event.target.value}))}/></label><label>Firma<select value={filters.company} onChange={event=>setFilters(old=>({...old,company:event.target.value}))}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company=><option key={company.id} value={company.id}>{company.name}</option>)}</select></label><label>Abteilung<select value={filters.department} onChange={event=>setFilters(old=>({...old,department:event.target.value}))}><option value="all">Alle Abteilungen</option>{departments.map(item=><option key={item}>{item}</option>)}</select></label><label>Position<input value={filters.position} onChange={event=>setFilters(old=>({...old,position:event.target.value}))}/></label><label>Arbeitsmittelbereich<input value={filters.area} onChange={event=>setFilters(old=>({...old,area:event.target.value}))}/></label><label>Fachliche Befähigung<input value={filters.qualification} onChange={event=>setFilters(old=>({...old,qualification:event.target.value}))}/></label><label>Schriftliche Beauftragung<select value={filters.appointment} onChange={event=>setFilters(old=>({...old,appointment:event.target.value}))}><option value="all">Alle</option><option value="vorhanden">vorhanden</option><option value="fehlt">fehlt</option><option value="abgelaufen">abgelaufen</option><option value="widerrufen">widerrufen</option></select></label><label>Rechtsgrundlage<input value={filters.legal} onChange={event=>setFilters(old=>({...old,legal:event.target.value}))}/></label><label>Status<select value={filters.status} onChange={event=>setFilters(old=>({...old,status:event.target.value}))}><option value="all">Alle</option>{Object.entries(labels).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label><label>Gültig von<input type="date" value={filters.validFrom} onChange={event=>setFilters(old=>({...old,validFrom:event.target.value}))}/></label><label>Gültig bis<input type="date" value={filters.validTo} onChange={event=>setFilters(old=>({...old,validTo:event.target.value}))}/></label><label>Läuft innerhalb<select value={filters.expiresUntil} onChange={event=>setFilters(old=>({...old,expiresUntil:event.target.value}))}><option value="all">Alle Zeiten</option><option value="30">30 Tage</option><option value="60">60 Tage</option><option value="90">90 Tage</option></select></label><label>Stellvertretung<select value={filters.deputy} onChange={event=>setFilters(old=>({...old,deputy:event.target.value}))}><option value="all">Alle</option><option value="present">vorhanden</option><option value="missing">fehlt</option></select></label><label>Qualifikationsnachweis<select value={filters.document} onChange={event=>setFilters(old=>({...old,document:event.target.value}))}><option value="all">Alle</option><option value="present">vorhanden</option><option value="missing">fehlt</option></select></label><label>Freigabe<select value={filters.released} onChange={event=>setFilters(old=>({...old,released:event.target.value}))}><option value="all">Alle</option><option value="true">Freigegeben</option><option value="false">Nicht freigegeben</option></select></label><label className="emp-check-label"><input type="checkbox" checked={filters.openChecks} onChange={event=>setFilters(old=>({...old,openChecks:event.target.checked}))}/>Offene Prüfungen vorhanden</label><label className="emp-check-label"><input type="checkbox" checked={filters.archived} onChange={event=>setFilters(old=>({...old,archived:event.target.checked}))}/>Archivierte Einträge anzeigen</label></div><footer><button onClick={()=>setFilters({employee:'',company:'all',department:'all',position:'',area:'',qualification:'',appointment:'all',legal:'',status:'all',validFrom:'',validTo:'',expiresUntil:'all',deputy:'all',document:'all',released:'all',openChecks:false,archived:false})}>Zurücksetzen</button><button onClick={()=>setFilterOpen(false)}>Schließen</button><button className="btn btn--primary" onClick={()=>setFilterOpen(false)}>Anwenden</button></footer></aside>}
+    {createOpen&&<div className="emp-create-backdrop" onClick={()=>setCreateOpen(false)}><section className="emp-create-modal" onClick={event=>event.stopPropagation()}><header><div><span>Prüfberechtigungen</span><h2>Prüfberechtigung hinzufügen</h2><p>Schritt {createStep} von 6</p></div><button onClick={()=>setCreateOpen(false)}>×</button></header><div className="emp-create-steps">{['Mitarbeiter','Arbeitsmittelbereich','Gültigkeit','Beauftragung','Freigabe und Dokumente','Zusammenfassung'].map((item,index)=><button key={item} className={createStep===index+1?'is-active':''} onClick={()=>setCreateStep(index+1)}>{index+1}. {item}</button>)}</div><div className="emp-create-body">{createStep===1&&<div className="emp-form-grid"><label>Mitarbeiter<select><option>{currentScopeLabel}</option><option>Mehrere Mitarbeiter auswählen</option><option>Alle Mitarbeiter einer Firma</option></select></label><label>Firma<input value={window.company(currentEmployee.company)?.name || currentEmployee.company} readOnly/></label><label>Abteilung / Position<input value={`${currentEmployee.department} · ${currentEmployee.position}`} readOnly/></label><label>Verantwortliche Führungskraft<select><option>Alexander Petersen</option><option>Michael Janning</option><option>Rahim Ahangarzadeh</option></select></label></div>}{createStep===2&&<div className="emp-form-grid"><label>Arbeitsmittelbereich<select><option>elektrische Arbeitsmittel</option><option>Erdbaumaschinen</option><option>Leitern und Tritte</option><option>Gerüste</option><option>Anschlagmittel</option><option>Hebezeuge</option><option>Druckgeräte</option><option>Fahrzeuge</option><option>Verbaugeräte</option><option>persönliche Schutzausrüstung</option><option>sonstige Arbeitsmittel</option></select></label><label>Fachliche Befähigung<input placeholder="Befähigte Person nach TRBS 1203"/></label><label>Rechtsgrundlage<input placeholder="BetrSichV / DGUV / TRBS"/></label><label>Prüfbereich<input placeholder="zu prüfende Arbeitsmittel"/></label><label>Qualifikationsnachweis<input placeholder="Nachweisbezeichnung"/></label><label>Einschränkungen<input placeholder="optional"/></label></div>}{createStep===3&&<div className="emp-form-grid"><label>Gültig ab<input type="date"/></label><label>Gültig bis<input type="date"/></label><label className="emp-check-label"><input type="checkbox"/>Unbefristet</label><label>Status<select><option>gültig</option><option>läuft bald ab</option><option>abgelaufen</option><option>in Prüfung</option><option>gesperrt</option><option>widerrufen</option></select></label><label className="emp-check-label"><input type="checkbox" defaultChecked/>Erinnerung aktivieren</label></div>}{createStep===4&&<div className="emp-form-grid"><label>Schriftliche Beauftragung vorhanden<select><option>vorhanden</option><option>fehlt</option><option>abgelaufen</option><option>widerrufen</option><option>gesperrt</option></select></label><label>Beauftragung gültig ab<input type="date"/></label><label>Beauftragung gültig bis<input type="date"/></label><label>Beauftragende Person<input defaultValue="Christian Janning"/></label><label>Beauftragungsstatus<select><option>vorhanden</option><option>fehlt</option><option>abgelaufen</option><option>widerrufen</option><option>gesperrt</option></select></label><label>Stellvertretung<input placeholder="optional"/></label></div>}{createStep===5&&<div className="emp-form-grid"><label>Freigabe für Mitarbeiter<select><option>freigegeben</option><option>nicht freigegeben</option><option>nur Status sichtbar</option><option>Status und Dokument sichtbar</option></select></label><label>Qualifikationsnachweis<input type="file" accept=".pdf,.jpg,.jpeg,.png"/></label><label>Beauftragungsdokument<input type="file" accept=".pdf,.jpg,.jpeg,.png"/></label><label>Weitere Dokumente<input type="file" multiple accept=".pdf,.jpg,.jpeg,.png"/></label><label className="is-wide">Bemerkung<textarea rows="3"/></label><label className="is-wide">Beschreibung<textarea rows="3"/></label></div>}{createStep===6&&<div className="emp-create-summary"><strong>Zusammenfassung</strong><span>Mitarbeiter: {currentScopeLabel}</span><span>Arbeitsmittelbereich: Erdbaumaschinen</span><span>Rechtsgrundlage: BetrSichV / TRBS 1203</span><span>Beauftragung: schriftlich vorhanden</span><span>Freigabe: Status und Dokument sichtbar</span></div>}</div><footer><button onClick={()=>setCreateOpen(false)}>Abbrechen</button><button onClick={()=>setCreateOpen(false)}>Als Entwurf speichern</button>{createStep>1&&<button onClick={()=>setCreateStep(step=>step-1)}>Zurück</button>}{createStep<6?<button className="btn btn--primary" onClick={()=>setCreateStep(step=>step+1)}>Weiter</button>:<button className="btn btn--primary" onClick={()=>setCreateOpen(false)}>Prüfberechtigung hinzufügen</button>}</footer></section></div>}
+  </div>;
+}
+
 function EmployeeEquipmentCheckRecord({emp,record,onBack}) {
   const [editing,setEditing]=React.useState(false);
   const [docs,setDocs]=React.useState([record.document]);
@@ -2119,10 +2233,20 @@ function employeeSiteRecords(emp) {
     {id:'site-1',name:'Baustelle Alex Barum',projectName:'Kanalsanierung Nordhorn',company:'Janning Tiefbau GmbH',projectNr:'BAU-2026-014',client:'Stadt Nordhorn',manager:'Alexander Petersen',foreman:'Markus Brinker',address:'Lingener Straße 42, 48529 Nordhorn',ownRole:'Baumaschinist / Ersthelfer',start:'15.04.2026',end:'28.06.2026',assignmentStatus:'Im Einsatz',assignmentNotice:'Einsatz endet in 7 Tagen',siteStatus:'Aktiv',accessStatus:'Vollständiger Baustellenbereich',released:true,documentSummary:'4 Dokumente · 1 neu · 1 Bestätigung offen',documents:['Alarmplan_BAU-2026-014.pdf','Baustellenaushang_BGBAU.pdf','GBU_Kanalsanierung.pdf','Unterweisung_Baustelle.pdf'],lastUpdate:'12.07.2026 · Alarmplan aktualisiert',contacts:'Bauleiter: Alexander Petersen · Vorarbeiter: Markus Brinker',firstAid:'Markus Brinker, Dirk Jürgens',riskAssessment:'3 Gefährdungsbeurteilungen freigegeben',instruction:'Projektbezogene Unterweisung abgeschlossen',description:'Kanalsanierung Nordhorn mit Tiefbau-, Rohrbau- und Wiederherstellungsarbeiten.',visibleFor:['all']},
     {id:'site-2',name:'Rohrgraben Suedring',projectName:'Hausanschlüsse Suedring',company:'Janning Rohrbau GmbH',projectNr:'BAU-2026-021',client:'Wasserverband Nordhorn',manager:'Stefan Mueller',foreman:'Thomas Wegener',address:'Südring 18, 48527 Nordhorn',ownRole:'Geräteführer',start:'20.05.2026',end:'10.07.2026',assignmentStatus:'Eingeplant',assignmentNotice:'Zugriff ab 20.05.2026',siteStatus:'Geplant',accessStatus:'Stammdaten und Dokumente',released:true,documentSummary:'2 Dokumente · Alarmplan freigegeben',documents:['Alarmplan_BAU-2026-021.pdf','Baustellenaushang_Suedring.pdf'],lastUpdate:'08.07.2026 · Baustellenaushang freigegeben',contacts:'Bauleiter: Stefan Mueller · Vorarbeiter: Thomas Wegener',firstAid:'Thomas Wegener',riskAssessment:'Gefährdungsbeurteilung noch nicht freigegeben',instruction:'Unterweisung geplant',description:'Hausanschlüsse und Rohrleitungsarbeiten am Südring.',visibleFor:['rohrbau','all']},
     {id:'site-3',name:'Bohrung Gewerbepark',projectName:'Horizontalbohrung Gewerbepark',company:'Janning Bohrtechnik GmbH',projectNr:'BAU-2026-028',client:'Gewerbepark Bentheim GmbH',manager:'Dirk Berg',foreman:'Mehmet Brinker',address:'Industriestraße 7, 48455 Bad Bentheim',ownRole:'Mitarbeiter',start:'03.02.2026',end:'30.04.2026',assignmentStatus:'Einsatz beendet',assignmentNotice:'Einsatzzeitraum abgelaufen',siteStatus:'Abgeschlossen',accessStatus:'Keine Freigabe',released:false,documentSummary:'-',documents:[],lastUpdate:'-',contacts:'-',firstAid:'-',riskAssessment:'-',instruction:'-',description:'Horizontalbohrung und Leitungsverlegung im Gewerbepark.',visibleFor:[]},
-  ].filter(row => row.released && (row.visibleFor.includes('all') || row.visibleFor.includes(emp.company) || row.company === companyName));
+  ].filter(row => row.released && (row.visibleFor.includes('all') || row.visibleFor.includes(emp.company) || row.company === companyName)).map(row => ({
+    ...row,
+    id: `${emp.id}-${row.id}`,
+    employee: emp,
+    employeeName: `${emp.lastName}, ${emp.firstName}`,
+    companyShort: window.company(emp.company)?.short || emp.company,
+    releaseStatus: row.accessStatus || 'Freigegeben',
+    newDocuments: String(row.documentSummary || '').toLowerCase().includes('neu'),
+    instructionOpen: String(row.instruction || '').toLowerCase().includes('geplant') || String(row.instruction || '').toLowerCase().includes('offen'),
+    updateBy: 'Sabine Janning',
+  }));
 }
 
-function EmployeeSiteArea({emp,onBack,onOpen}) {
+function EmployeeSiteAreaLegacy({emp,onBack,onOpen}) {
   const records=React.useMemo(()=>employeeSiteRecords(emp),[emp]);
   const [sort,setSort]=React.useState({key:'name',dir:'asc'});
   const [menu,setMenu]=React.useState(null);
@@ -2150,7 +2274,116 @@ function EmployeeSiteArea({emp,onBack,onOpen}) {
   </div>;
 }
 
-function EmployeeSiteRecord({emp,record,onBack}) {
+function EmployeeSiteArea({emp,onBack,onOpen}) {
+  const [scope,setScope]=React.useState(emp.id);
+  const [viewMode,setViewMode]=React.useState(()=>localStorage.getItem('employeeSiteView') || 'list');
+  const [employeePickerOpen,setEmployeePickerOpen]=React.useState(false);
+  const [employeeSearch,setEmployeeSearch]=React.useState('');
+  const [employeeCompanyFilter,setEmployeeCompanyFilter]=React.useState('all');
+  const [employeeDepartmentFilter,setEmployeeDepartmentFilter]=React.useState('all');
+  const [employeePositionFilter,setEmployeePositionFilter]=React.useState('');
+  const [employeeStatusFilter,setEmployeeStatusFilter]=React.useState('all');
+  const [filterOpen,setFilterOpen]=React.useState(false);
+  const [filters,setFilters]=React.useState({employee:'',company:'all',project:'',projectNr:'',role:'',assignment:'all',startFrom:'',startTo:'',endFrom:'',endTo:'',manager:'',foreman:'',siteStatus:'all',access:'all',newDocs:false,instructionOpen:false,archived:false});
+  const [sort,setSort]=React.useState({key:'name',dir:'asc'});
+  const [menu,setMenu]=React.useState(null);
+  const [group,setGroup]=React.useState('');
+  const [tab,setTab]=React.useState('Alle');
+  const [hiddenColumns,setHiddenColumns]=React.useState(new Set(['company','projectNr','foreman','lastUpdate']));
+  const sourceEmployees=React.useMemo(()=>window.SEED.employees,[]);
+  const departments=React.useMemo(()=>[...new Set(sourceEmployees.map(item=>item.department).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'de')),[sourceEmployees]);
+  const activeEmployees=React.useMemo(()=>{
+    if(scope==='all') return sourceEmployees;
+    if(scope.startsWith('company:')) return sourceEmployees.filter(item=>item.company===scope.replace('company:',''));
+    if(scope.startsWith('department:')) return sourceEmployees.filter(item=>item.department===scope.replace('department:',''));
+    return sourceEmployees.filter(item=>item.id===scope);
+  },[scope,sourceEmployees]);
+  const isAllView=scope!==emp.id;
+  const currentEmployee=activeEmployees.length===1?activeEmployees[0]:emp;
+  const currentScopeLabel=scope==='all'?'Alle Mitarbeiter':scope.startsWith('company:')?(window.company(scope.replace('company:',''))?.name || 'Firma'):scope.startsWith('department:')?`Abteilung: ${scope.replace('department:','')}`:(currentEmployee?.name || emp.name);
+  const records=React.useMemo(()=>activeEmployees.flatMap(employeeSiteRecords),[activeEmployees]);
+  React.useEffect(()=>localStorage.setItem('employeeSiteView',viewMode),[viewMode]);
+  const statusTabs=['Alle','Aktiv','Geplant','Abgeschlossen','Einsatz beendet','Archiviert'];
+  const parseDate=value=>{ const [day,month,year]=String(value||'').split('.'); return year&&month&&day?`${year}-${month.padStart(2,'0')}-${day.padStart(2,'0')}`:''; };
+  const matchesDate=(value,from,to)=>{ const date=parseDate(value); if(from&&date<from) return false; if(to&&date>to) return false; return true; };
+  const value=(row,key)=>{
+    if(key==='period') return `${row.start} - ${row.end}`;
+    if(key==='employeeName') return row.employeeName;
+    if(key==='project') return `${row.name} ${row.projectName} ${row.address}`;
+    return row[key] || '';
+  };
+  const filteredRecords=records.filter(row=>{
+    if(tab!=='Alle' && tab!=='Einsatz beendet' && row.siteStatus!==tab) return false;
+    if(tab==='Einsatz beendet' && row.assignmentStatus!=='Einsatz beendet') return false;
+    if(filters.employee && !String(row.employeeName||'').toLowerCase().includes(filters.employee.toLowerCase())) return false;
+    if(filters.company!=='all' && row.employee.company!==filters.company) return false;
+    if(filters.project && !String(`${row.name} ${row.projectName}`).toLowerCase().includes(filters.project.toLowerCase())) return false;
+    if(filters.projectNr && !String(row.projectNr).toLowerCase().includes(filters.projectNr.toLowerCase())) return false;
+    if(filters.role && !String(row.ownRole).toLowerCase().includes(filters.role.toLowerCase())) return false;
+    if(filters.assignment!=='all' && row.assignmentStatus!==filters.assignment) return false;
+    if(!matchesDate(row.start,filters.startFrom,filters.startTo)) return false;
+    if(!matchesDate(row.end,filters.endFrom,filters.endTo)) return false;
+    if(filters.manager && !String(row.manager).toLowerCase().includes(filters.manager.toLowerCase())) return false;
+    if(filters.foreman && !String(row.foreman).toLowerCase().includes(filters.foreman.toLowerCase())) return false;
+    if(filters.siteStatus!=='all' && row.siteStatus!==filters.siteStatus) return false;
+    if(filters.access!=='all' && row.accessStatus!==filters.access) return false;
+    if(filters.newDocs && !row.newDocuments) return false;
+    if(filters.instructionOpen && !row.instructionOpen) return false;
+    if(!filters.archived && row.siteStatus==='Archiviert') return false;
+    return true;
+  });
+  const rows=[...filteredRecords].sort((a,b)=>(sort.dir==='asc'?1:-1)*String(value(a,sort.key)).localeCompare(String(value(b,sort.key)),'de',{numeric:true}));
+  const columns=[
+    ...(isAllView?[['employeeName','Mitarbeiter']]:[]),
+    ['project','Baustelle / Projektname'],
+    ['ownRole','Meine Rolle'],
+    ['period','Einsatzzeitraum'],
+    ['assignmentStatus','Mein Einsatzstatus'],
+    ['manager','Bauleiter'],
+    ['siteStatus','Baustellenstatus'],
+    ['accessStatus','Zugriffsrechte'],
+    ['documentSummary','Dokumente'],
+    ['company','Firma'],
+    ['projectNr','Projekt-Nr.'],
+    ['foreman','Vorarbeiter'],
+    ['lastUpdate','Letzte Aktualisierung'],
+    ['actions','Aktionen'],
+  ].filter(([key])=>!hiddenColumns.has(key) || key==='actions');
+  const activeFilterCount=Object.entries(filters).filter(([key,val])=>key==='archived'||key==='newDocs'||key==='instructionOpen'?Boolean(val):val&&val!=='all').length;
+  const labels={valid:'valid',warn:'warn',missing:'missing'};
+  const statusTone=status=>status==='Aktiv'||status==='Freigegeben'||String(status).includes('Vollst')?'valid':status==='Geplant'||status==='Eingeplant'||String(status).includes('Dokumente')||String(status).includes('Stammdaten')?'warn':'missing';
+  const cellValue=(row,key)=>{
+    if(key==='employeeName') return <div><strong>{row.employeeName}</strong><small>PN {row.employee.personalNr}</small></div>;
+    if(key==='project') return <div><strong>{row.name}</strong><small>{row.projectName} · {row.address}</small></div>;
+    if(key==='period') return <span>{row.start} - {row.end}</span>;
+    if(key==='assignmentStatus') return <div><span className={`badge badge--${statusTone(row.assignmentStatus)}`}><span className="badge__dot" />{row.assignmentStatus}</span><small>{row.assignmentNotice}</small></div>;
+    if(key==='siteStatus'||key==='accessStatus') return <span className={`badge badge--${statusTone(row[key])}`}><span className="badge__dot" />{row[key]}</span>;
+    if(key==='documentSummary') return <span className={'emp-doc-count ' + (row.newDocuments?'is-new':'')}><Icon name="doc" size={13}/>{row.documentSummary}</span>;
+    if(key==='actions') return <button className="emp-row-menu-btn" onClick={event=>{event.stopPropagation();onOpen(row);}}>⋮</button>;
+    return row[key] || '-';
+  };
+  const pickerEmployees=sourceEmployees.filter(item=>{
+    const term=employeeSearch.toLowerCase();
+    const companyMatch=employeeCompanyFilter==='all'||item.company===employeeCompanyFilter;
+    const departmentMatch=employeeDepartmentFilter==='all'||item.department===employeeDepartmentFilter;
+    const positionMatch=!employeePositionFilter||String(item.position||'').toLowerCase().includes(employeePositionFilter.toLowerCase());
+    const statusMatch=employeeStatusFilter==='all'||(employeeStatusFilter==='aktiv'?item.active:item.active===false);
+    const text=`${item.firstName} ${item.lastName} ${item.personalNr}`.toLowerCase();
+    return companyMatch&&departmentMatch&&positionMatch&&statusMatch&&(!term||text.includes(term));
+  });
+  const resetFilters=()=>setFilters({employee:'',company:'all',project:'',projectNr:'',role:'',assignment:'all',startFrom:'',startTo:'',endFrom:'',endTo:'',manager:'',foreman:'',siteStatus:'all',access:'all',newDocs:false,instructionOpen:false,archived:false});
+  return <div className="emp-full">
+    <EmpPageTitle title={isAllView?'Baustellen - alle Mitarbeiter':`Baustellen (${currentEmployee.name})`} onBack={onBack} action={<div className="emp-appointment-actions"><button className="btn btn--ghost" onClick={()=>setEmployeePickerOpen(true)}><Icon name="users" size={14}/>Mitarbeiter: {currentScopeLabel}</button><div className="emp-segmented"><button className={viewMode==='cards'?'is-active':''} onClick={()=>setViewMode('cards')}>Kacheln</button><button className={viewMode==='list'?'is-active':''} onClick={()=>setViewMode('list')}>Liste</button></div><button className="btn btn--ghost" onClick={()=>setFilterOpen(true)}><Icon name="filter" size={14}/>Filter{activeFilterCount?` (${activeFilterCount})`:''}</button></div>}/>
+    <div className="emp-training-tabs emp-site-tabs">{statusTabs.map(item=><button key={item} className={tab===item?'is-active':''} onClick={()=>setTab(item)}>{item} {item==='Alle'?records.length:item==='Einsatz beendet'?records.filter(row=>row.assignmentStatus==='Einsatz beendet').length:records.filter(row=>row.siteStatus===item).length}</button>)}{group&&<button className="emp-clear-group" onClick={()=>setGroup('')}>Gruppierung aufheben</button>}</div>
+    {activeFilterCount>0&&<div className="emp-active-filter-chips">{filters.project&&<button onClick={()=>setFilters(old=>({...old,project:''}))}>Projekt: {filters.project} ×</button>}{filters.role&&<button onClick={()=>setFilters(old=>({...old,role:''}))}>Rolle: {filters.role} ×</button>}{filters.assignment!=='all'&&<button onClick={()=>setFilters(old=>({...old,assignment:'all'}))}>Einsatz: {filters.assignment} ×</button>}{filters.siteStatus!=='all'&&<button onClick={()=>setFilters(old=>({...old,siteStatus:'all'}))}>Status: {filters.siteStatus} ×</button>}</div>}
+    {viewMode==='cards'&&<div className="emp-site-card-grid">{rows.map(row=><button key={row.id} className="emp-site-card" onClick={()=>onOpen(row)}><header><div><strong>{row.name}</strong><span>{row.projectName}</span></div><span className={`badge badge--${statusTone(row.siteStatus)}`}><span className="badge__dot" />{row.siteStatus}</span></header><dl><div><dt>{isAllView?'Mitarbeiter':'Firma'}</dt><dd>{isAllView?row.employeeName:row.company}</dd></div><div><dt>Meine Rolle</dt><dd>{row.ownRole}</dd></div><div><dt>Einsatzzeitraum</dt><dd>{row.start} - {row.end}</dd></div><div><dt>Zugriffsrechte</dt><dd>{row.accessStatus}</dd></div></dl><footer><span>{row.documentSummary}</span><b>Baustelle öffnen</b></footer></button>)}</div>}
+    {viewMode==='list'&&<div className="emp-table-wrap emp-site-table-wrap"><table className="emp-site-table emp-site-table--compact"><thead><tr>{columns.map(([key,label],index)=><th key={key} className={key==='employeeName'?'emp-sticky-employee':key==='project'?'emp-sticky-project':key==='actions'?'emp-sticky-actions':''}><button onClick={()=>setMenu(menu===key?null:key)}>{label}<span>{sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'}</span></button>{menu===key&&key!=='actions'&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={()=>setMenu(null)}>Filtern nach</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Gruppieren nach "{label}"</button><button onClick={()=>{setHiddenColumns(old=>new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button><button onClick={()=>{setHiddenColumns(new Set());setMenu(null);}}>Spalten verwalten</button><button onClick={()=>{setHiddenColumns(new Set(['company','projectNr','foreman','lastUpdate']));setMenu(null);}}>Standardansicht wiederherstellen</button></div>}</th>)}</tr></thead><tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||value(rows[index-1],group)!==value(row,group))&&<tr className="emp-group-row"><td colSpan={columns.length}>{columns.find(col=>col[0]===group)?.[1]}: {String(value(row,group))}</td></tr>}<tr onClick={()=>onOpen(row)}>{columns.map(([key])=><td key={key} className={key==='employeeName'?'emp-sticky-employee':key==='project'?'emp-sticky-project':key==='actions'?'emp-sticky-actions':''}>{cellValue(row,key)}</td>)}</tr></React.Fragment>)}</tbody></table></div>}
+    {employeePickerOpen&&<div className="emp-picker-backdrop" onClick={()=>setEmployeePickerOpen(false)}><section className="emp-picker-modal" onClick={event=>event.stopPropagation()}><header><div><span>Baustellen</span><h2>Mitarbeiter auswählen</h2></div><button onClick={()=>setEmployeePickerOpen(false)}>×</button></header><div className="emp-picker-filters"><input placeholder="Name oder Personalnummer" value={employeeSearch} onChange={event=>setEmployeeSearch(event.target.value)}/><select value={employeeCompanyFilter} onChange={event=>setEmployeeCompanyFilter(event.target.value)}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company=><option key={company.id} value={company.id}>{company.name}</option>)}</select><select value={employeeDepartmentFilter} onChange={event=>setEmployeeDepartmentFilter(event.target.value)}><option value="all">Alle Abteilungen</option>{departments.map(item=><option key={item}>{item}</option>)}</select><input placeholder="Position" value={employeePositionFilter} onChange={event=>setEmployeePositionFilter(event.target.value)}/><select value={employeeStatusFilter} onChange={event=>setEmployeeStatusFilter(event.target.value)}><option value="all">Alle Status</option><option value="aktiv">Aktiv</option><option value="inaktiv">Ausgeschieden</option></select><button type="button" onClick={()=>{setScope('all');setEmployeePickerOpen(false);}}>Alle Mitarbeiter</button></div><div className="emp-picker-table"><table><thead><tr><th>Mitarbeiter</th><th>Firma</th><th>Abteilung</th><th>Position</th></tr></thead><tbody>{pickerEmployees.map(item=><tr key={item.id} onClick={()=>{setScope(item.id);setEmployeePickerOpen(false);}}><td><strong>{item.lastName}, {item.firstName}</strong><small>PN {item.personalNr}</small></td><td>{window.company(item.company)?.name || item.company}</td><td>{item.department}</td><td>{item.position}</td></tr>)}</tbody></table></div></section></div>}
+    {filterOpen&&<div className="emp-filter-backdrop" onClick={()=>setFilterOpen(false)}><aside className="emp-filter-panel" onClick={event=>event.stopPropagation()}><header><div><span>Baustellen</span><h2>Filter</h2></div><button onClick={()=>setFilterOpen(false)}>×</button></header><div className="emp-filter-grid"><label>Mitarbeiter<input value={filters.employee} onChange={event=>setFilters(old=>({...old,employee:event.target.value}))}/></label><label>Firma<select value={filters.company} onChange={event=>setFilters(old=>({...old,company:event.target.value}))}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company=><option key={company.id} value={company.id}>{company.name}</option>)}</select></label><label>Baustelle / Projekt<input value={filters.project} onChange={event=>setFilters(old=>({...old,project:event.target.value}))}/></label><label>Projektnummer<input value={filters.projectNr} onChange={event=>setFilters(old=>({...old,projectNr:event.target.value}))}/></label><label>Eigene Rolle<input value={filters.role} onChange={event=>setFilters(old=>({...old,role:event.target.value}))}/></label><label>Eigener Einsatzstatus<select value={filters.assignment} onChange={event=>setFilters(old=>({...old,assignment:event.target.value}))}><option value="all">Alle</option><option>Im Einsatz</option><option>Eingeplant</option><option>Einsatz beendet</option><option>Vertretung</option><option>Zuordnung pausiert</option></select></label><label>Einsatzbeginn von<input type="date" value={filters.startFrom} onChange={event=>setFilters(old=>({...old,startFrom:event.target.value}))}/></label><label>Einsatzbeginn bis<input type="date" value={filters.startTo} onChange={event=>setFilters(old=>({...old,startTo:event.target.value}))}/></label><label>Einsatzende von<input type="date" value={filters.endFrom} onChange={event=>setFilters(old=>({...old,endFrom:event.target.value}))}/></label><label>Einsatzende bis<input type="date" value={filters.endTo} onChange={event=>setFilters(old=>({...old,endTo:event.target.value}))}/></label><label>Bauleiter<input value={filters.manager} onChange={event=>setFilters(old=>({...old,manager:event.target.value}))}/></label><label>Vorarbeiter<input value={filters.foreman} onChange={event=>setFilters(old=>({...old,foreman:event.target.value}))}/></label><label>Baustellenstatus<select value={filters.siteStatus} onChange={event=>setFilters(old=>({...old,siteStatus:event.target.value}))}><option value="all">Alle</option><option>Geplant</option><option>Aktiv</option><option>Pausiert</option><option>Abgeschlossen</option><option>Archiviert</option></select></label><label>Zugriffsrechte<select value={filters.access} onChange={event=>setFilters(old=>({...old,access:event.target.value}))}><option value="all">Alle</option><option>Vollständiger Baustellenbereich</option><option>Stammdaten und Dokumente</option><option>Nur Stammdaten</option><option>Nur Dokumente</option><option>Keine Freigabe</option></select></label><label className="emp-checkline"><input type="checkbox" checked={filters.newDocs} onChange={event=>setFilters(old=>({...old,newDocs:event.target.checked}))}/>Neue Dokumente vorhanden</label><label className="emp-checkline"><input type="checkbox" checked={filters.instructionOpen} onChange={event=>setFilters(old=>({...old,instructionOpen:event.target.checked}))}/>Unterweisung offen</label><label className="emp-checkline"><input type="checkbox" checked={filters.archived} onChange={event=>setFilters(old=>({...old,archived:event.target.checked}))}/>Archivierte Baustellen anzeigen</label></div><footer><button onClick={resetFilters}>Zurücksetzen</button><button onClick={()=>setFilterOpen(false)}>Schließen</button><button className="btn btn--primary" onClick={()=>setFilterOpen(false)}>Filter anwenden</button></footer></aside></div>}
+  </div>;
+}
+
+function EmployeeSiteRecordLegacy({emp,record,onBack}) {
   const [form]=React.useState({...record});
   return <div className="emp-full emp-training-record-page">
     <EmpPageTitle title={`${record.name} (${emp.name})`} onBack={onBack}/>
@@ -2177,6 +2410,65 @@ function EmployeeSiteRecord({emp,record,onBack}) {
         <div className="emp-training-record-field is-wide emp-training-record-docs"><Icon name="link" size={20}/><div><label>Freigegebene Dokumente</label><div className="emp-file-list">{(form.documents||[]).map(doc=><span className="emp-file-chip" key={doc}><Icon name="doc" size={14}/><span>{doc}</span></span>)}</div></div></div>
       </div>
     </section>
+  </div>;
+}
+
+function EmployeeSiteRecord({emp,record,onBack}) {
+  const form={...record};
+  const displayEmp=form.employee || emp;
+  const fullAccess=String(form.accessStatus||'').includes('Vollst');
+  const dataAccess=!String(form.accessStatus||'').includes('Nur Dokumente');
+  const documentAccess=String(form.accessStatus||'').includes('Dokumente') || String(form.accessStatus||'').includes('Nur Dokumente') || fullAccess;
+  const safetyAccess=fullAccess;
+  const docRows=(form.documents||[]).map((doc,index)=>({name:doc,category:index===0?'Alarmplan':index===1?'Baustellenaushang':'Sicherheit',date:index===0?'12.07.2026':index===1?'08.07.2026':'05.07.2026',state:index===0&&form.newDocuments?'neu':'gelesen'}));
+  const section=(title,subtitle,children,wide=false)=><section className={'emp-site-detail-card' + (wide?' is-wide':'')}><header><div><h3>{title}</h3>{subtitle&&<p>{subtitle}</p>}</div></header>{children}</section>;
+  const info=(label,value,icon='doc')=><div className="emp-site-info-line"><Icon name={icon} size={16}/><span>{label}</span><strong>{value || '-'}</strong></div>;
+  const actionInfo=(label,value,button,icon='doc')=><div className="emp-site-info-line emp-site-action-line"><Icon name={icon} size={16}/><span>{label}</span><strong>{value || '-'}</strong><button>{button}</button></div>;
+  return <div className="emp-full emp-training-record-page">
+    <EmpPageTitle title={`${form.name} (${displayEmp.name})`} onBack={onBack} action={<button className="btn btn--ghost"><Icon name="pin" size={14}/>Adresse anzeigen</button>}/>
+    <section className="emp-site-personal-hero">
+      <div className="emp-avatar">{displayEmp.initials}</div>
+      <div><h2>{form.name}</h2><p>{form.projectName} · {form.company}</p><div><span className="badge badge--valid"><span className="badge__dot" />{form.releaseStatus}</span><span className="badge badge--warn"><span className="badge__dot" />{form.assignmentStatus}</span></div></div>
+      <dl><div><dt>Meine Rolle</dt><dd>{form.ownRole}</dd></div><div><dt>Einsatzzeitraum</dt><dd>{form.start} - {form.end}</dd></div><div><dt>Dokumente</dt><dd>{form.documentSummary}</dd></div></dl>
+    </section>
+    <div className="emp-site-detail-grid">
+      <div className="emp-site-alerts">
+        {form.assignmentNotice&&<span>{form.assignmentNotice}</span>}
+        {form.newDocuments&&<span>Neues Dokument verfügbar</span>}
+        {form.instructionOpen&&<span>Neue Baustellenunterweisung erforderlich</span>}
+      </div>
+      {dataAccess&&section('Meine Zuordnung','Persönliche Einsatzdaten auf dieser Baustelle',<>
+        {info('Mitarbeiter',`${displayEmp.lastName}, ${displayEmp.firstName}`,'users')}
+        {info('Eigene Rolle',form.ownRole,'shield')}
+        {info('Einsatzbeginn',form.start,'cal')}
+        {info('Einsatzende',form.end,'cal')}
+        {info('Einsatzstatus',`${form.assignmentStatus} · ${form.assignmentNotice}`,'flag')}
+        {info('Zugriffsrechte',form.accessStatus,'shield')}
+      </>)}
+      {dataAccess&&section('Baustellendaten','Nur freigegebene Stammdaten',<>
+        {info('Firma',form.company,'building')}
+        {info('Projekt-Nr.',form.projectNr,'doc')}
+        {info('Adresse',form.address,'pin')}
+        {info('Bauleiter',form.manager,'users')}
+        {info('Vorarbeiter',form.foreman,'users')}
+        {info('Weitere Ansprechpartner',form.contacts,'users')}
+      </>)}
+      {safetyAccess&&section('Sicherheit','Freigegebene Sicherheitsinformationen',<>
+        {actionInfo('Alarmplan','freigegeben','Öffnen','doc')}
+        {actionInfo('Baustellenaushang','freigegeben','Öffnen','doc')}
+        {actionInfo('Gefährdungsbeurteilungen',form.riskAssessment,'Anzeigen','shield')}
+        {actionInfo('Eigene Unterweisungen',form.instruction,'Anzeigen','flag')}
+        {info('Ersthelfer',form.firstAid,'users')}
+      </>,true)}
+      {documentAccess&&section('Dokumente','Für diesen Mitarbeiter freigegebene Dateien',<div className="emp-site-doc-table"><table><thead><tr><th>Dokumentname</th><th>Kategorie</th><th>Datum</th><th>Status</th><th>Aktionen</th></tr></thead><tbody>{docRows.map(doc=><tr key={doc.name}><td><Icon name="doc" size={14}/><strong>{doc.name}</strong></td><td>{doc.category}</td><td>{doc.date}</td><td><span className={`badge badge--${doc.state==='neu'?'warn':'valid'}`}><span className="badge__dot" />{doc.state}</span></td><td><button>Öffnen</button><button>Herunterladen</button></td></tr>)}</tbody></table></div>,true)}
+      {section('Aktualisierungen','Letzte freigegebene Änderungen',<>
+        {info('Letzte Aktualisierung',form.lastUpdate,'history')}
+        {info('Was wurde geändert',form.newDocuments?'Alarmplan wurde aktualisiert':'Baustellendaten freigegeben','doc')}
+        {info('Geändert von',form.updateBy,'users')}
+        {info('Neue Dokumente',form.newDocuments?'1 neues Dokument':'keine neuen Dokumente','doc')}
+        {info('Beschreibung',form.description,'doc')}
+      </>,true)}
+    </div>
   </div>;
 }
 

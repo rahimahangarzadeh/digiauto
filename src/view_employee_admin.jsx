@@ -413,6 +413,136 @@ function EmployeeInformationMatrixArea({ emp, onBack }) {
   </div>;
 }
 
+EmployeeInformationMatrixArea = function EmployeeInformationMatrixArea({ emp, onBack }) {
+  const [scope, setScope] = React.useState(emp.id);
+  const [viewMode, setViewMode] = React.useState(() => localStorage.getItem('employeeInfoMatrixView') || 'cards');
+  const [selected, setSelected] = React.useState(null);
+  const [selectedIds, setSelectedIds] = React.useState([]);
+  const [sort, setSort] = React.useState({ key:'designation', dir:'asc' });
+  const [groupBy, setGroupBy] = React.useState('');
+  const [columnMenu, setColumnMenu] = React.useState(null);
+  const [kpiFilter, setKpiFilter] = React.useState('all');
+  const allEmployees = React.useMemo(() => window.SEED.employees || [], []);
+  const currentEmployee = scope === 'all' ? emp : (allEmployees.find(item => item.id === scope) || emp);
+  const isAllView = scope === 'all';
+  const activeEmployees = isAllView ? allEmployees.filter(item => item.status === 'aktiv') : [currentEmployee];
+  const baseRows = React.useMemo(() => activeEmployees.flatMap(employeeInformationMatrixRows), [activeEmployees]);
+  React.useEffect(() => localStorage.setItem('employeeInfoMatrixView', viewMode), [viewMode]);
+  const infoCounts = {
+    all: baseRows.length,
+    released: baseRows.filter(row => row.release === 'Freigegeben').length,
+    notReleased: baseRows.filter(row => row.release !== 'Freigegeben').length,
+    destroy: baseRows.filter(row => row.documentStatus === 'fehlt' || row.status === 'In Prüfung').length,
+    archived: baseRows.filter(row => row.status === 'Archiviert').length,
+  };
+  const rows = baseRows
+    .filter(row => kpiFilter === 'all'
+      || (kpiFilter === 'released' && row.release === 'Freigegeben')
+      || (kpiFilter === 'notReleased' && row.release !== 'Freigegeben')
+      || (kpiFilter === 'destroy' && (row.documentStatus === 'fehlt' || row.status === 'In Prüfung'))
+      || (kpiFilter === 'archived' && row.status === 'Archiviert'))
+    .slice()
+    .sort((a, b) => {
+      const av = String(a[sort.key] ?? '');
+      const bv = String(b[sort.key] ?? '');
+      return sort.dir === 'asc' ? av.localeCompare(bv, 'de') : bv.localeCompare(av, 'de');
+    });
+  const columns = [
+    ...(isAllView ? [['employeeName', 'Mitarbeiter']] : []),
+    ['designation', 'Bezeichnung Dokument/ Nachweis'],
+    ['companyName', 'Firma'],
+    ['category', 'Kategorie'],
+    ['location', 'Standort'],
+    ['createdBy', 'erstellt von'],
+    ['checkedBy', 'geprüft von'],
+    ['approval', 'Freigabe'],
+    ['release', 'Freigabe für Mitarbeiter'],
+    ['archiveType', 'Archivierung'],
+    ['retention', 'Aufbewahrungsfrist'],
+    ['retentionStart', 'gesetzt'],
+    ['retentionEnd', 'Fristende'],
+    ['legal', 'gesetzliche Grundlage'],
+    ['destroyResponsible', 'Verantwortlich für Vernichtung'],
+    ['status', 'Status'],
+    ['document', 'Dokument'],
+  ];
+  const groupedRows = groupBy ? Object.entries(rows.reduce((acc, row) => {
+    const key = String(row[groupBy] ?? '-');
+    acc[key] = acc[key] || [];
+    acc[key].push(row);
+    return acc;
+  }, {})) : [['', rows]];
+  const allVisibleSelected = rows.length > 0 && rows.every(row => selectedIds.includes(row.id));
+  const changeSort = (key, dir) => { setSort({ key, dir }); setColumnMenu(null); };
+  const toggleSelected = id => setSelectedIds(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id]);
+  const toggleAll = () => setSelectedIds(current => allVisibleSelected ? current.filter(id => !rows.some(row => row.id === id)) : Array.from(new Set([...current, ...rows.map(row => row.id)])));
+  const statusTone = status => status === 'Freigegeben' ? 'valid' : status === 'Archiviert' ? 'planned' : status === 'Aufbewahrung läuft' || status === 'In Prüfung' ? 'warn' : 'missing';
+  const menuFor = key => columnMenu === key && <div className="company-column-menu" onClick={event => event.stopPropagation()}>
+    <button onClick={() => changeSort(key, 'asc')}>A bis Z</button>
+    <button onClick={() => changeSort(key, 'desc')}>Z bis A</button>
+    <button onClick={() => setColumnMenu(null)}>Filtern nach</button>
+    <button onClick={() => { setGroupBy(key); setColumnMenu(null); }}>Gruppieren nach "{columns.find(column => column[0] === key)?.[1] || key}"</button>
+    <button onClick={() => setGroupBy('')}>Gruppierung aufheben</button>
+  </div>;
+  if (selected) {
+    const selectedEmp = allEmployees.find(item => item.id === selected.employeeId) || emp;
+    return <EmployeeInformationMatrixRecord emp={selectedEmp} row={selected} onBack={() => setSelected(null)} />;
+  }
+  const titleActions = <div className="company-info-toolbar">
+    <select value={scope} onChange={event => { setScope(event.target.value); setSelectedIds([]); }}>
+      <option value={emp.id}>{emp.name}</option>
+      <option value="all">Alle Mitarbeiter</option>
+      {allEmployees.filter(item => item.id !== emp.id).map(item => <option key={item.id} value={item.id}>{item.lastName}, {item.firstName}</option>)}
+    </select>
+    <div className="segmented">
+      <button className={viewMode === 'cards' ? 'is-active' : ''} onClick={() => setViewMode('cards')}><Icon name="dashboard" size={14} />Kacheln</button>
+      <button className={viewMode === 'list' ? 'is-active' : ''} onClick={() => setViewMode('list')}><Icon name="matrix" size={14} />Liste</button>
+    </div>
+    <button className="btn btn--ghost"><Icon name="filter" size={14} />Filter</button>
+    <button className="btn btn--ghost"><Icon name="download" size={14} />Excel</button>
+    <button className="btn btn--primary"><Icon name="plus" size={14} />Eintrag anlegen</button>
+  </div>;
+  return <div className="emp-full company-info-matrix-page employee-info-matrix-page">
+    <EmpPageTitle title={`Informationslenkungsmatrix (${isAllView ? 'Alle Mitarbeiter' : currentEmployee.name})`} onBack={onBack} action={titleActions} />
+    <div className="company-site-kpis company-info-kpis">
+      <button className={'company-site-kpi ' + (kpiFilter === 'all' ? 'is-active' : '')} onClick={() => setKpiFilter('all')}><span>Einträge gesamt</span><strong>{infoCounts.all}</strong><small>in Ansicht</small></button>
+      <button className={'company-site-kpi ' + (kpiFilter === 'released' ? 'is-active' : '')} onClick={() => setKpiFilter('released')}><span>Freigegeben</span><strong>{infoCounts.released}</strong><small>Portal bereit</small></button>
+      <button className={'company-site-kpi ' + (kpiFilter === 'notReleased' ? 'is-active' : '')} onClick={() => setKpiFilter('notReleased')}><span>Nicht freigegeben</span><strong>{infoCounts.notReleased}</strong><small>prüfen</small></button>
+      <button className={'company-site-kpi ' + (kpiFilter === 'destroy' ? 'is-active' : '')} onClick={() => setKpiFilter('destroy')}><span>Zur Vernichtung</span><strong>{infoCounts.destroy}</strong><small>offen</small></button>
+      <button className={'company-site-kpi ' + (kpiFilter === 'archived' ? 'is-active' : '')} onClick={() => setKpiFilter('archived')}><span>Archiviert</span><strong>{infoCounts.archived}</strong><small>Ablage</small></button>
+    </div>
+    {selectedIds.length > 0 && <div className="company-bulkbar"><strong>{selectedIds.length} Eintrag(e) ausgewählt</strong><button>Freigabestatus ändern</button><button>Verantwortliche ändern</button><button>PDF exportieren</button><button>Excel exportieren</button><button>Archivieren</button><button className="is-danger">Löschen</button></div>}
+    {viewMode === 'cards' ? <div className="company-info-card-grid">
+      {rows.map(row => <article key={row.id} className="company-info-entry-card" onClick={() => setSelected(row)}>
+        <header><div><span>{row.category}</span><h3>{row.designation}</h3><p>{isAllView ? row.employeeName : row.companyName}</p></div><span className={`badge badge--${statusTone(row.status)}`}>{row.status}</span></header>
+        <dl><div><dt>Standort</dt><dd>{row.location}</dd></div><div><dt>Fristende</dt><dd>{row.retentionEnd}</dd></div><div><dt>Verantwortlich</dt><dd>{row.responsible}</dd></div></dl>
+        <footer><span>{row.release}</span><button onClick={event => { event.stopPropagation(); setSelected(row); }}>Bearbeiten</button></footer>
+      </article>)}
+    </div> : <section className="card company-info-matrix-card">
+      <div className="company-info-matrix-wrap">
+        <table className="company-info-matrix-table">
+          <thead><tr><th><input type="checkbox" checked={allVisibleSelected} onChange={toggleAll} /></th>{columns.map(([key, label]) => <th key={key}><div className="company-list-th"><button onClick={() => setColumnMenu(columnMenu === key ? null : key)}>{label}<span>{sort.key === key ? (sort.dir === 'asc' ? '↑' : '↓') : '⌄'}</span></button>{menuFor(key)}</div></th>)}<th>Aktionen</th></tr></thead>
+          <tbody>{groupedRows.flatMap(([group, items]) => [
+            groupBy && <tr key={'group-' + group} className="company-group-row"><td colSpan={columns.length + 2}>{columns.find(column => column[0] === groupBy)?.[1]}: {group} <span>{items.length}</span></td></tr>,
+            ...items.map(row => <tr key={row.id} onClick={() => setSelected(row)}>
+              <td onClick={event => event.stopPropagation()}><input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleSelected(row.id)} /></td>
+              {columns.map(([key]) => {
+                if (key === 'designation') return <td key={key}><strong>{row.designation}</strong><small>{row.description}</small></td>;
+                if (key === 'employeeName') return <td key={key}><strong>{row.employeeName}</strong><small>{row.employeePosition}</small></td>;
+                if (key === 'release') return <td key={key}><span className={'badge ' + (row.release === 'Freigegeben' ? 'badge--valid' : 'badge--missing')}><span className="badge__dot" />{row.release}</span></td>;
+                if (key === 'status') return <td key={key}><span className={`badge badge--${statusTone(row.status)}`}>{row.status}</span></td>;
+                if (key === 'document') return <td key={key}>{row.documentStatus === 'vorhanden' ? <button className="btn btn--ghost" onClick={event => event.stopPropagation()}><Icon name="doc" size={13} />{row.document}</button> : <span className="muted">fehlt</span>}</td>;
+                return <td key={key}>{row[key] || '-'}</td>;
+              })}
+              <td onClick={event => event.stopPropagation()}><div className="company-row-actions"><button className="btn btn--ghost" onClick={() => setSelected(row)}><Icon name="eye" size={13} />Details</button><button className="btn btn--ghost"><Icon name="edit" size={13} />Bearbeiten</button></div></td>
+            </tr>)
+          ])}</tbody>
+        </table>
+      </div>
+    </section>}
+  </div>;
+};
+
 function EmployeeInformationMatrixRecord({ emp, row, onBack }) {
   return <div className="emp-full emp-info-record">
     <EmpPageTitle title={`${row.designation} (${emp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all"><Icon name="doc" size={15}/>Dokument öffnen</button><button className="emp-edit-all"><Icon name="download" size={15}/>Herunterladen</button></div>} />

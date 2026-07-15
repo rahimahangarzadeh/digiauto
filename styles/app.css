@@ -9795,6 +9795,87 @@ a.subtle:hover { text-decoration: underline; }
 .emp-job-table th:nth-child(2){width:170px}.emp-job-table th:nth-child(3){width:105px}.emp-job-table th:nth-child(4){width:120px}.emp-job-table th:nth-child(5){width:150px}.emp-job-table th:nth-child(6){width:235px}.emp-job-table th:nth-child(7){width:175px}.emp-job-table th:nth-child(8){width:95px}.emp-job-table th:nth-child(9),.emp-job-table th:nth-child(10),.emp-job-table th:nth-child(11),.emp-job-table th:nth-child(12){width:118px}.emp-job-table th:nth-child(13){width:145px}.emp-job-table th:nth-child(14){width:145px}.emp-job-table th:nth-child(15){width:125px}.emp-job-table th:nth-child(16){width:280px}.emp-job-table th:nth-child(17){width:90px}.emp-job-table th:nth-child(18){width:75px}
 .emp-job-table tbody tr:not(.emp-group-row){cursor:pointer}.emp-job-table tbody tr:not(.emp-group-row):hover{background:#faf9f6}.emp-job-table tbody tr.is-open,.emp-job-table tbody tr.is-open:hover{background:#fff9eb}.emp-job-table tbody tr.is-open td{border-color:#eee0b9}.emp-job-table td strong{color:var(--fg-1);font-weight:750}
 
+.emp-job-card-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.emp-job-card.is-open {
+  background: #fff9eb;
+  border-color: #eadba9;
+}
+
+.emp-job-table {
+  min-width: 1120px;
+}
+
+.emp-job-table th {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: #f4f1ea;
+}
+
+.emp-job-table th.emp-check,
+.emp-job-table td.emp-check {
+  position: sticky;
+  left: 0;
+  z-index: 7;
+  width: 34px;
+  min-width: 34px;
+  background: inherit;
+  box-shadow: 1px 0 0 var(--border-1);
+}
+
+.emp-job-table thead th.emp-check {
+  z-index: 9;
+  background: #f4f1ea;
+}
+
+.emp-job-table th:nth-child(2),
+.emp-job-table td:nth-child(2) {
+  position: sticky;
+  left: 35px;
+  z-index: 7;
+  background: inherit;
+  box-shadow: 1px 0 0 var(--border-1);
+}
+
+.emp-job-table thead th:nth-child(2) {
+  z-index: 9;
+  background: #f4f1ea;
+}
+
+.emp-job-table th:last-child,
+.emp-job-table td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 7;
+  background: inherit;
+  box-shadow: -1px 0 0 var(--border-1);
+}
+
+.emp-job-table thead th:last-child {
+  z-index: 9;
+  background: #f4f1ea;
+}
+
+.emp-job-table th:nth-child(n),
+.emp-job-table td:nth-child(n) {
+  width: auto;
+}
+
+@media (max-width: 1100px) {
+  .emp-job-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .emp-job-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Employee medical precaution list */
 .emp-medical-table { width:100%; min-width:2500px; border-collapse:collapse; table-layout:fixed; }
 .emp-medical-table th,.emp-medical-table td { border-bottom:1px solid var(--border-1); padding:10px 11px; color:var(--fg-2); font-size:10.5px; line-height:1.35; text-align:left; vertical-align:middle; }

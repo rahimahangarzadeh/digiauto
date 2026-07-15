@@ -10,6 +10,7 @@ const EMPLOYEE_DETAIL_AREAS = [
 
 function EmployeeAdminDetail({ emp, onBack }) {
   const [area, setArea] = React.useState('dashboard');
+  const [navCollapsed, setNavCollapsed] = React.useState(() => window.localStorage?.getItem('employee-detail-nav') === 'collapsed');
   const [record, setRecord] = React.useState(null);
   const [masterRecord, setMasterRecord] = React.useState(null);
   const [instructionRecord, setInstructionRecord] = React.useState(null);
@@ -25,6 +26,9 @@ function EmployeeAdminDetail({ emp, onBack }) {
   const currentIndex = Math.max(0, employeeChoices.findIndex(item => item.id === currentEmployeeId));
   emp = employeeChoices[currentIndex] || emp;
   const company = window.company(emp.company);
+  React.useEffect(() => {
+    window.localStorage?.setItem('employee-detail-nav', navCollapsed ? 'collapsed' : 'open');
+  }, [navCollapsed]);
   const openEmployee = (id, keepMasterOpen = false) => {
     const nextEmp = employeeChoices.find(item => item.id === id);
     if (!nextEmp) return;
@@ -38,10 +42,27 @@ function EmployeeAdminDetail({ emp, onBack }) {
     setEquipmentCheckRecord(null);
     setSiteRecord(null);
     if (keepMasterOpen) {
+      setArea('master');
       setMasterRecord(employeeMasterRecord(nextEmp));
     } else {
       setMasterRecord(null);
       setArea('dashboard');
+    }
+  };
+  const openArea = (id) => {
+    setRecord(null);
+    setInstructionRecord(null);
+    setJobRecord(null);
+    setMedicalRecord(null);
+    setLicenseRecord(null);
+    setOperatorRecord(null);
+    setEquipmentCheckRecord(null);
+    setSiteRecord(null);
+    setArea(id);
+    if (id === 'master') {
+      setMasterRecord(employeeMasterRecord(emp));
+    } else {
+      setMasterRecord(null);
     }
   };
   const goEmployee = (offset, keepMasterOpen = false) => {
@@ -57,18 +78,34 @@ function EmployeeAdminDetail({ emp, onBack }) {
   if (medicalRecord) return <EmployeeMedicalRecord emp={emp} record={medicalRecord} onBack={() => setMedicalRecord(null)} />;
   if (jobRecord) return <EmployeeJobRecord emp={emp} record={jobRecord} onBack={() => setJobRecord(null)} />;
   if (instructionRecord) return <EmployeeInstructionRecord emp={emp} record={instructionRecord} onBack={() => setInstructionRecord(null)} />;
-  if (masterRecord) return <EmployeeMasterRecord emp={emp} record={masterRecord} onBack={() => setMasterRecord(null)} employeeChoices={employeeChoices} onSelectEmployee={id => openEmployee(id, true)} onPrevEmployee={() => goEmployee(-1, true)} onNextEmployee={() => goEmployee(1, true)} />;
   if (record) return <EmployeeTrainingRecord emp={emp} record={record} onBack={() => setRecord(null)} />;
-  if (area === 'instructions') return <EmployeeInstructionArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setInstructionRecord} />;
-  if (area === 'jobs') return <EmployeeJobArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setJobRecord} />;
-  if (area === 'medical') return <EmployeeMedicalArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setMedicalRecord} />;
-  if (area === 'license') return <EmployeeLicenseArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setLicenseRecord} />;
-  if (area === 'operators') return <EmployeeOperatorArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setOperatorRecord} />;
-  if (area === 'checks') return <EmployeeEquipmentCheckArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setEquipmentCheckRecord} />;
-  if (area === 'sites') return <EmployeeSiteArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setSiteRecord} />;
-  if (area === 'appointments') return <EmployeeAppointmentsArea emp={emp} onBack={() => setArea('dashboard')} />;
-  if (area === 'infoMatrix') return <EmployeeInformationMatrixArea emp={emp} onBack={() => setArea('dashboard')} />;
-  if (area === 'trainings') return <EmployeeTrainingArea emp={emp} onBack={() => setArea('dashboard')} onOpen={setRecord} />;
+
+  let detailContent;
+  if (masterRecord) {
+    detailContent = <main className="emp-detail-content"><EmployeeMasterRecord emp={emp} record={masterRecord} onBack={() => openArea('dashboard')} employeeChoices={employeeChoices} onSelectEmployee={id => openEmployee(id, true)} onPrevEmployee={() => goEmployee(-1, true)} onNextEmployee={() => goEmployee(1, true)} /></main>;
+  } else if (area === 'instructions') {
+    detailContent = <main className="emp-detail-content"><EmployeeInstructionArea emp={emp} onBack={() => openArea('dashboard')} onOpen={setInstructionRecord} /></main>;
+  } else if (area === 'jobs') {
+    detailContent = <main className="emp-detail-content"><EmployeeJobArea emp={emp} onBack={() => openArea('dashboard')} onOpen={setJobRecord} /></main>;
+  } else if (area === 'medical') {
+    detailContent = <main className="emp-detail-content"><EmployeeMedicalArea emp={emp} onBack={() => openArea('dashboard')} onOpen={setMedicalRecord} /></main>;
+  } else if (area === 'license') {
+    detailContent = <main className="emp-detail-content"><EmployeeLicenseArea emp={emp} onBack={() => openArea('dashboard')} onOpen={setLicenseRecord} /></main>;
+  } else if (area === 'operators') {
+    detailContent = <main className="emp-detail-content"><EmployeeOperatorArea emp={emp} onBack={() => openArea('dashboard')} onOpen={setOperatorRecord} /></main>;
+  } else if (area === 'checks') {
+    detailContent = <main className="emp-detail-content"><EmployeeEquipmentCheckArea emp={emp} onBack={() => openArea('dashboard')} onOpen={setEquipmentCheckRecord} /></main>;
+  } else if (area === 'sites') {
+    detailContent = <main className="emp-detail-content"><EmployeeSiteArea emp={emp} onBack={() => openArea('dashboard')} onOpen={setSiteRecord} /></main>;
+  } else if (area === 'appointments') {
+    detailContent = <main className="emp-detail-content"><EmployeeAppointmentsArea emp={emp} onBack={() => openArea('dashboard')} /></main>;
+  } else if (area === 'infoMatrix') {
+    detailContent = <main className="emp-detail-content"><EmployeeInformationMatrixArea emp={emp} onBack={() => openArea('dashboard')} /></main>;
+  } else if (area === 'trainings') {
+    detailContent = <main className="emp-detail-content"><EmployeeTrainingArea emp={emp} onBack={() => openArea('dashboard')} onOpen={setRecord} /></main>;
+  } else {
+    detailContent = <><EmployeeOverviewCenter onOpenArea={openArea} onOpenMaster={() => openArea('master')} /><EmployeeOverviewAside onOpenArea={openArea} /></>;
+  }
 
   return (
     <div className="emp-detail-dashboard">
@@ -104,19 +141,42 @@ function EmployeeAdminDetail({ emp, onBack }) {
         </section>
       </div>
 
-      <div className="emp-detail-body">
-        <nav className="emp-section-nav">
-          {EMPLOYEE_DETAIL_AREAS.map(([id, label, icon]) => (
-            <button key={id} className={area === id ? 'is-active' : ''} onClick={() => id === 'master' ? setMasterRecord(employeeMasterRecord(emp)) : setArea(id)}>
-              <Icon name={icon} size={16} /><span>{label}</span><Icon name="chevR" size={13} />
-            </button>
-          ))}
-        </nav>
-        {area === 'dashboard'
-          ? <><EmployeeOverviewCenter onOpenArea={setArea} onOpenMaster={() => setMasterRecord(employeeMasterRecord(emp))} /><EmployeeOverviewAside onOpenArea={setArea} /></>
-          : <main className="emp-workspace__content emp-workspace__content--wide"><EmployeeAreaPlaceholder area={area} /></main>}
+      <div className={`emp-detail-body ${navCollapsed ? 'is-nav-collapsed' : ''}`}>
+        <EmployeeDetailNav area={area} collapsed={navCollapsed} onToggle={() => setNavCollapsed(value => !value)} onSelect={openArea} />
+        {detailContent}
       </div>
     </div>
+  );
+}
+
+function EmployeeDetailNav({ area, collapsed, onToggle, onSelect }) {
+  const groups = [
+    ['Übersicht', ['dashboard', 'master']],
+    ['Qualifikationen', ['trainings', 'instructions', 'jobs', 'medical', 'license', 'operators', 'checks']],
+    ['Einsatz', ['sites', 'appointments']],
+    ['Dokumentation', ['infoMatrix']],
+  ];
+  const entries = Object.fromEntries(EMPLOYEE_DETAIL_AREAS.map(item => [item[0], item]));
+  return (
+    <nav className={`emp-section-nav emp-section-nav--collapsible ${collapsed ? 'is-collapsed' : ''}`} aria-label="Mitarbeiter Navigation">
+      <button className="emp-nav-toggle" type="button" onClick={onToggle} title={collapsed ? 'Navigation ausklappen' : 'Navigation einklappen'}>
+        <Icon name={collapsed ? 'chevR' : 'chevL'} size={15} />
+        {!collapsed && <span>Navigation einklappen</span>}
+      </button>
+      {groups.map(([groupLabel, ids]) => (
+        <div className="emp-nav-group" key={groupLabel}>
+          {!collapsed && <strong>{groupLabel}</strong>}
+          {ids.map(id => {
+            const [, label, icon] = entries[id];
+            return (
+              <button key={id} title={label} aria-label={label} className={area === id ? 'is-active' : ''} onClick={() => onSelect(id)}>
+                <Icon name={icon} size={16} /><span>{label}</span><Icon className="emp-nav-chevron" name="chevR" size={13} />
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </nav>
   );
 }
 

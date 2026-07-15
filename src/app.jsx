@@ -200,7 +200,7 @@ function App() {
     case 'chatbot': view = <ChatbotView activeCompany={activeCompany} role={role} />; break;
     case 'matrix':    view = <MatrixView activeCompany={activeCompany} />; break;
     case 'employees': view = <EmployeesView activeCompany={activeCompany} />; break;
-    case 'message_center': view = <MessageCenterView />; break;
+    case 'message_center': view = <MessageCenterView role={role} />; break;
     case 'trainings': view = <TrainingsView />; break;
     case 'calendar':  view = <CalendarView activeCompany={activeCompany} selectedTraining={selectedTrainingForCalendar} selectedInstruction={selectedInstructionForCalendar} selectedDate={selectedDateForCalendar} onTrainingSelected={() => { setSelectedTrainingForCalendar(null); setSelectedInstructionForCalendar(null); setSelectedDateForCalendar(''); }} />; break;
     case 'certs':     view = <CertsView activeCompany={activeCompany} />; break;

@@ -216,7 +216,7 @@ function EmployeeAreaPlaceholder({ area }) {
   return <div className="emp-placeholder"><Icon name={found?.[2] || 'doc'} size={24} /><h2>{found?.[1]}</h2><p>Dieser Bereich wird im nächsten Schritt ausgearbeitet.</p></div>;
 }
 
-function EmployeeInformationMatrixArea({ emp, onBack }) {
+function EmployeeInformationMatrixAreaLegacy({ emp, onBack }) {
   const [selected, setSelected] = React.useState(null);
   const rows = (window.companyInformationMatrixRows ? window.companyInformationMatrixRows() : [])
     .filter(row => row.company === emp.company && row.released);
@@ -249,7 +249,7 @@ function EmployeeInformationMatrixArea({ emp, onBack }) {
   </div>;
 }
 
-function EmployeeInformationMatrixDetail({ emp, row, onBack }) {
+function EmployeeInformationMatrixDetailLegacy({ emp, row, onBack }) {
   return <div className="emp-full emp-master-detail company-info-matrix-detail">
     <EmpPageTitle title={`${row.bezeichnung} (${emp.firstName} ${emp.lastName})`} onBack={onBack} />
     <section className="emp-master-hero"><span className="emp-avatar">IL</span><div><div className="emp-master-hero__name"><h2>{row.bezeichnung}</h2><span className="emp-active"><i />Freigegeben</span></div><dl><div><dt>Firma</dt><dd>{row.companyName}</dd></div><div><dt>Stand</dt><dd>{row.stand}</dd></div><div><dt>Vorlage</dt><dd>{row.source}</dd></div></dl></div></section>
@@ -270,6 +270,159 @@ function EmployeeInformationMatrixDetail({ emp, row, onBack }) {
       <MasterDataCard title="Mitarbeiterfreigabe" icon="check"><p className="emp-last-change">Dieser Eintrag ist für Mitarbeiter sichtbar.</p></MasterDataCard>
       <MasterDataCard title="Vorlage" icon="doc"><p className="emp-last-change"><strong>{row.source}</strong><br />Interne Nr.: SGU_036<br />Stand: {row.stand}</p></MasterDataCard>
     </aside></div>
+  </div>;
+}
+
+function employeeInformationMatrixRows(emp) {
+  const companyInfo = window.company(emp.company) || {};
+  const companyName = companyInfo.name || emp.company;
+  const seed = [
+    {id:'info-offer',designation:'Angebote',category:'Angebot',location:'Büro Kalkulation',department:'Kalkulation',release:'Freigegeben',retention:'6 Jahre',retentionEnd:'31.12.2032',responsible:'Sabine Janning',status:'Freigegeben',document:'Angebote_Richtlinie.pdf',documentStatus:'vorhanden',createdBy:'Sabine Janning',checkedBy:'Christian Janning',approval:'Christian Janning',archiveType:'Digitalarchiv',retentionStart:'01.01.2026',legal:'HGB / AO',destroyResponsible:'Verwaltung',description:'Freigegebene Angebotsunterlagen und zugehörige Nachweise.',scope:'Kaufmännische Mitarbeiter',access:'Lesen und herunterladen',protection:'für Mitarbeiter freigegeben',storage:'SharePoint / Angebote / 2026',version:'v2.1',releaseDate:'15.05.2026',lastChange:'12.07.2026'},
+    {id:'info-site',designation:'Baustellenaushänge',category:'Baustelle',location:'Projektordner Baustellen',department:'Bauleitung',release:'Freigegeben',retention:'10 Jahre',retentionEnd:'31.12.2036',responsible:'Alexander Petersen',status:'Freigegeben',document:'Baustellenaushang_BGBAU.pdf',documentStatus:'vorhanden',createdBy:'Rahim Ahangarzadeh',checkedBy:'Alexander Petersen',approval:'Christian Janning',archiveType:'Projektarchiv',retentionStart:'28.06.2026',legal:'BG BAU / SCC',destroyResponsible:'HSE',description:'Aushangunterlagen für freigegebene Baustellen.',scope:'Baustellenpersonal',access:'Nur freigegebene Baustellen',protection:'für Mitarbeiter freigegeben',storage:'SharePoint / Baustellen / Aushänge',version:'v1.4',releaseDate:'18.06.2026',lastChange:'10.07.2026'},
+    {id:'info-license',designation:'Führerscheinkontrolle',category:'Fahrerlaubnis',location:'Fuhrpark / Personalakte',department:'Fuhrpark',release:'Nicht freigegeben',retention:'3 Jahre',retentionEnd:'31.12.2029',responsible:'Sabine Janning',status:'Nicht freigegeben',document:'SGU_007_Fuehrerscheinkontrolle.pdf',documentStatus:'vorhanden',createdBy:'Fuhrpark',checkedBy:'Sabine Janning',approval:'Michael Janning',archiveType:'Personalakte',retentionStart:'01.01.2026',legal:'StVG / StVO / StVZO',destroyResponsible:'Fuhrpark',description:'Nachweisformular für halbjährliche Führerscheinkontrollen.',scope:'Fahrzeugführer',access:'Status sichtbar',protection:'vertraulich',storage:'Personalakte / Fahrerlaubnis',version:'Rev. 2',releaseDate:'01.04.2026',lastChange:'08.07.2026'},
+    {id:'info-instruction',designation:'Unterweisungsnachweise',category:'Unterweisung',location:'Schulungsarchiv',department:'HSE',release:'Freigegeben',retention:'5 Jahre',retentionEnd:'31.12.2031',responsible:'Rahim Ahangarzadeh',status:'Aufbewahrung läuft',document:'Unterweisungsnachweis_2026.pdf',documentStatus:'vorhanden',createdBy:'HSE',checkedBy:'Rahim Ahangarzadeh',approval:'Christian Janning',archiveType:'Digitalarchiv',retentionStart:'31.12.2026',legal:'ArbSchG / DGUV',destroyResponsible:'HSE',description:'Teilnahmenachweise und Bestätigungen zu Unterweisungen.',scope:'Alle Mitarbeiter',access:'Eigene Nachweise',protection:'für Mitarbeiter freigegeben',storage:'SharePoint / HSE / Unterweisungen',version:'v3.0',releaseDate:'12.02.2026',lastChange:'05.07.2026'},
+    {id:'info-checks',designation:'Prüfprotokolle Arbeitsmittel',category:'Geräteprüfung',location:'Werkstatt / Prüfordner',department:'Werkstatt',release:'Nicht freigegeben',retention:'4 Jahre',retentionEnd:'31.12.2030',responsible:'Dirk Berg',status:'In Prüfung',document:'Pruefprotokoll_Arbeitsmittel.pdf',documentStatus:'fehlt',createdBy:'Werkstatt',checkedBy:'Dirk Berg',approval:'offen',archiveType:'Projektarchiv',retentionStart:'01.01.2026',legal:'BetrSichV / TRBS 1201',destroyResponsible:'Werkstatt',description:'Prüfprotokolle für Arbeitsmittel und Geräte.',scope:'Befähigte Personen',access:'Nach Freigabe',protection:'intern',storage:'Werkstatt / Prüfungen',version:'v0.9',releaseDate:'-',lastChange:'02.07.2026'},
+    {id:'info-forms',designation:'Alte Formulare SGU',category:'Formular',location:'Archiv SGU',department:'Administration',release:'Freigegeben',retention:'10 Jahre',retentionEnd:'31.12.2030',responsible:'Christian Janning',status:'Archiviert',document:'SGU_Formulare_Archiv.zip',documentStatus:'vorhanden',createdBy:'Administration',checkedBy:'Christian Janning',approval:'Christian Janning',archiveType:'Langzeitarchiv',retentionStart:'31.12.2020',legal:'SCC / interne Vorgabe',destroyResponsible:'Administration',description:'Archivierte alte SGU-Formulare mit Leserechten.',scope:'Führungskräfte',access:'Lesen',protection:'intern',storage:'Archiv / SGU / Formulare',version:'Archiv 2020',releaseDate:'01.01.2021',lastChange:'24.06.2026'},
+  ];
+  return seed.map(item => ({
+    ...item,
+    id: `${emp.id}-${item.id}`,
+    employeeId: emp.id,
+    employeeName: `${emp.lastName}, ${emp.firstName}`,
+    employeeLabel: `${emp.lastName}, ${emp.firstName} · PN ${emp.personalNr}`,
+    company: emp.company,
+    companyName,
+    employeeDepartment: emp.department,
+    employeePosition: emp.position,
+  }));
+}
+
+function EmployeeInformationMatrixArea({ emp, onBack }) {
+  const [scope,setScope]=React.useState(emp.id);
+  const [viewMode,setViewMode]=React.useState(()=>localStorage.getItem('employeeInfoMatrixView')||'cards');
+  const [tab,setTab]=React.useState('Alle');
+  const [menu,setMenu]=React.useState(null);
+  const [sort,setSort]=React.useState({key:'designation',dir:'asc'});
+  const [group,setGroup]=React.useState('');
+  const [selected,setSelected]=React.useState(new Set());
+  const [detail,setDetail]=React.useState(null);
+  const [filterOpen,setFilterOpen]=React.useState(false);
+  const [createOpen,setCreateOpen]=React.useState(false);
+  const [createStep,setCreateStep]=React.useState(1);
+  const [employeePickerOpen,setEmployeePickerOpen]=React.useState(false);
+  const [employeeSearch,setEmployeeSearch]=React.useState('');
+  const [employeeCompanyFilter,setEmployeeCompanyFilter]=React.useState('all');
+  const [employeeDepartmentFilter,setEmployeeDepartmentFilter]=React.useState('all');
+  const [employeePositionFilter,setEmployeePositionFilter]=React.useState('');
+  const [employeeStatusFilter,setEmployeeStatusFilter]=React.useState('all');
+  const [filters,setFilters]=React.useState({employee:'',company:'all',department:'all',category:'all',documentType:'',location:'',release:'all',retention:'all',responsible:'',document:'all',archived:'all',releasedOnly:false,legal:''});
+  const defaultHidden=React.useMemo(()=>new Set(['companyName','createdBy','checkedBy','approval','archiveType','retentionStart','legal','destroyResponsible','description']),[]);
+  const [hiddenColumns,setHiddenColumns]=React.useState(defaultHidden);
+  React.useEffect(()=>localStorage.setItem('employeeInfoMatrixView',viewMode),[viewMode]);
+  const allEmployees=React.useMemo(()=>window.SEED.employees||[],[]);
+  const currentEmployee=scope==='all'?emp:(allEmployees.find(item=>item.id===scope)||emp);
+  const isAllView=scope==='all';
+  const departments=React.useMemo(()=>Array.from(new Set(allEmployees.map(item=>item.department).filter(Boolean))).sort(),[allEmployees]);
+  const positions=React.useMemo(()=>Array.from(new Set(allEmployees.map(item=>item.position).filter(Boolean))).sort(),[allEmployees]);
+  const pickerEmployees=allEmployees.filter(item=>{
+    const text=`${item.firstName} ${item.lastName} ${item.personalNr}`.toLowerCase();
+    return (!employeeSearch||text.includes(employeeSearch.toLowerCase()))
+      && (employeeCompanyFilter==='all'||item.company===employeeCompanyFilter)
+      && (employeeDepartmentFilter==='all'||item.department===employeeDepartmentFilter)
+      && (!employeePositionFilter||item.position.toLowerCase().includes(employeePositionFilter.toLowerCase()))
+      && (employeeStatusFilter==='all'||item.status===employeeStatusFilter);
+  });
+  const activeEmployees=scope==='all'?allEmployees.filter(item=>item.status==='aktiv'):[currentEmployee];
+  const baseRows=React.useMemo(()=>activeEmployees.flatMap(employeeInformationMatrixRows),[activeEmployees]);
+  const categories=React.useMemo(()=>Array.from(new Set(baseRows.map(row=>row.category))).sort(),[baseRows]);
+  const filteredRows=baseRows.filter(row=>{
+    const matchesTab=tab==='Alle'||(tab==='Aufbewahrung läuft'?row.status==='Aufbewahrung läuft':row.status===tab);
+    return matchesTab
+      && (!filters.employee||row.employeeName.toLowerCase().includes(filters.employee.toLowerCase()))
+      && (filters.company==='all'||row.company===filters.company)
+      && (filters.department==='all'||row.employeeDepartment===filters.department||row.department===filters.department)
+      && (filters.category==='all'||row.category===filters.category)
+      && (!filters.documentType||row.designation.toLowerCase().includes(filters.documentType.toLowerCase()))
+      && (!filters.location||row.location.toLowerCase().includes(filters.location.toLowerCase()))
+      && (filters.release==='all'||row.release===filters.release)
+      && (!filters.responsible||row.responsible.toLowerCase().includes(filters.responsible.toLowerCase()))
+      && (filters.document==='all'||row.documentStatus===filters.document)
+      && (filters.archived==='all'||(filters.archived==='yes')===(row.status==='Archiviert'))
+      && (!filters.releasedOnly||row.release==='Freigegeben')
+      && (!filters.legal||row.legal.toLowerCase().includes(filters.legal.toLowerCase()));
+  });
+  const rows=filteredRows.slice().sort((a,b)=>{
+    const av=String(a[sort.key]??'');
+    const bv=String(b[sort.key]??'');
+    return sort.dir==='asc'?av.localeCompare(bv,'de'):bv.localeCompare(av,'de');
+  });
+  const tabs=[
+    ['Alle',baseRows.length],
+    ['Freigegeben',baseRows.filter(row=>row.status==='Freigegeben').length],
+    ['Nicht freigegeben',baseRows.filter(row=>row.status==='Nicht freigegeben').length],
+    ['Aufbewahrung läuft',baseRows.filter(row=>row.status==='Aufbewahrung läuft').length],
+    ['Archiviert',baseRows.filter(row=>row.status==='Archiviert').length],
+  ];
+  const activeFilterCount=Object.entries(filters).filter(([key,value])=>key==='releasedOnly'?value:value&&value!=='all').length;
+  const columns=React.useMemo(()=>{
+    const all=[
+      ...(isAllView?[['employeeName','Mitarbeiter / Zielgruppe']]:[]),
+      ['designation','Bezeichnung'],
+      ['category','Kategorie'],
+      ['location','Standort'],
+      ['release','Freigabe für Mitarbeiter'],
+      ['retentionEnd','Aufbewahrung bis'],
+      ['responsible','Verantwortlich'],
+      ['status','Status'],
+      ['document','Dokument'],
+      ['companyName','Firma'],
+      ['createdBy','erstellt von'],
+      ['checkedBy','geprüft von'],
+      ['approval','Freigabe'],
+      ['archiveType','Archivierungsart'],
+      ['retentionStart','Beginn der Frist'],
+      ['legal','gesetzliche Grundlage'],
+      ['destroyResponsible','verantwortlich für Vernichtung'],
+      ['description','Beschreibung'],
+      ['actions','Aktionen'],
+    ];
+    return all.filter(([key])=>key==='actions'||!hiddenColumns.has(key));
+  },[hiddenColumns,isAllView]);
+  const toggle=id=>setSelected(old=>{ const next=new Set(old); next.has(id)?next.delete(id):next.add(id); return next; });
+  const clearFilter=key=>setFilters(old=>({...old,[key]:key==='releasedOnly'?false:['company','department','category','release','retention','document','archived'].includes(key)?'all':''}));
+  const tone=status=>status==='Freigegeben'?'valid':status==='Aufbewahrung läuft'||status==='In Prüfung'?'warn':status==='Archiviert'?'planned':'missing';
+  const cellValue=(row,key)=>{
+    if(key==='employeeName') return <><strong>{row.employeeName}</strong><small>{row.employeePosition}</small></>;
+    if(key==='designation') return <><strong>{row.designation}</strong><small>{row.description}</small></>;
+    if(key==='release') return <span className={`badge badge--${row.release==='Freigegeben'?'valid':'warn'}`}>{row.release}</span>;
+    if(key==='status') return <span className={`badge badge--${tone(row.status)}`}>{row.status}</span>;
+    if(key==='document') return <button className="emp-link-chip" onClick={event=>event.stopPropagation()}><Icon name="doc" size={13}/>{row.documentStatus==='vorhanden'?row.document:'Dokument fehlt'}</button>;
+    if(key==='actions') return <div className="emp-row-actions" onClick={event=>event.stopPropagation()}><button className="emp-row-menu-btn" onClick={()=>setMenu(menu===row.id?null:row.id)}>⋮</button>{menu===row.id&&<div className="emp-row-action-menu"><button onClick={()=>setDetail(row)}>Details anzeigen</button><button>Dokument öffnen</button><button>Dokument herunterladen</button><button>Speicherort anzeigen</button><button>Rückfrage an Admin senden</button><button>Bearbeiten</button><button>neue Version anlegen</button><button>Freigabe ändern</button><button>Archivieren</button></div>}</div>;
+    return row[key] || '-';
+  };
+  if(detail) return <EmployeeInformationMatrixRecord emp={detail.employeeId===emp.id?emp:(allEmployees.find(item=>item.id===detail.employeeId)||emp)} row={detail} onBack={()=>setDetail(null)} />;
+  return <div className="emp-full emp-info-matrix-area">
+    <EmpPageTitle title={isAllView?'Informationslenkungsmatrix - alle Mitarbeiter':`Informationslenkungsmatrix (${currentEmployee.name})`} onBack={onBack} action={<div className="emp-training-toolbar"><button onClick={()=>setEmployeePickerOpen(true)}><Icon name="users" size={14}/>Mitarbeiter: {isAllView?'Alle Mitarbeiter':currentEmployee.name}</button><div className="emp-view-toggle"><button className={viewMode==='cards'?'is-active':''} onClick={()=>setViewMode('cards')}>Kacheln</button><button className={viewMode==='list'?'is-active':''} onClick={()=>setViewMode('list')}>Liste</button></div><button onClick={()=>setFilterOpen(true)}><Icon name="filter" size={14}/>Filter{activeFilterCount?` (${activeFilterCount})`:''}</button><button onClick={()=>setCreateOpen(true)}><Icon name="plus" size={14}/>Eintrag anlegen</button></div>}/>
+    <div className="emp-info-tabs">{tabs.map(([label,count])=><button key={label} className={tab===label?'is-active':''} onClick={()=>setTab(label)}>{label}<span>{count}</span></button>)}</div>
+    {activeFilterCount>0&&<div className="emp-active-filter-chips">{Object.entries(filters).filter(([key,value])=>key==='releasedOnly'?value:value&&value!=='all').map(([key,value])=><button key={key} onClick={()=>clearFilter(key)}>{key}: {String(value)} ×</button>)}</div>}
+    {selected.size>0&&<div className="emp-bulk"><strong>{selected.size} ausgewählt</strong><button><Icon name="download" size={14}/>aktuelle Ansicht exportieren</button><button><Icon name="doc" size={14}/>sichtbare Spalten</button><button><Icon name="filter" size={14}/>gefilterte Einträge</button></div>}
+    {viewMode==='cards'?<div className="emp-info-card-grid">{rows.map(row=><article key={row.id} className="emp-info-card" onClick={()=>setDetail(row)}><header><div><span>{row.category}</span><h3>{row.designation}</h3>{isAllView&&<small>{row.employeeName}</small>}</div><span className={`badge badge--${tone(row.status)}`}>{row.status}</span></header><dl><div><dt>Standort</dt><dd>{row.location}</dd></div><div><dt>Freigabe</dt><dd>{row.release}</dd></div><div><dt>Aufbewahrung</dt><dd>bis {row.retentionEnd}</dd></div><div><dt>Verantwortlich</dt><dd>{row.responsible}</dd></div><div><dt>Dokument</dt><dd>{row.documentStatus==='vorhanden'?row.document:'fehlt'}</dd></div></dl><footer><button>Details anzeigen</button><button>Dokument öffnen</button></footer></article>)}</div>:<div className="emp-table-wrap emp-info-table-wrap"><table className="emp-info-table emp-info-table--compact"><thead><tr><th className="emp-check emp-sticky-select"><input type="checkbox" checked={rows.length>0&&selected.size===rows.length} onChange={()=>setSelected(selected.size===rows.length?new Set():new Set(rows.map(row=>row.id)))}/></th>{columns.map(([key,label])=><th key={key} className={(key==='employeeName'?'emp-sticky-employee ':'')+(key==='designation'?'emp-sticky-title ':'')+(key==='actions'?'emp-sticky-actions':'')}><button onClick={()=>key!=='actions'&&setMenu(menu===key?null:key)}>{label}<span>{key!=='actions'?(sort.key===key?(sort.dir==='asc'?'↑':'↓'):'⌄'):''}</span></button>{menu===key&&key!=='actions'&&<div className="emp-column-menu"><button onClick={()=>{setSort({key,dir:'asc'});setMenu(null);}}>A bis Z</button><button onClick={()=>{setSort({key,dir:'desc'});setMenu(null);}}>Z bis A</button><button onClick={()=>setMenu(null)}>Filtern nach</button><button onClick={()=>{setGroup(key);setMenu(null);}}>Gruppieren nach &quot;{label}&quot;</button><button onClick={()=>{setHiddenColumns(old=>new Set([...old,key]));setMenu(null);}}>Spalte ausblenden</button><button onClick={()=>setHiddenColumns(new Set())}>Spalten verwalten</button><button onClick={()=>{setHiddenColumns(defaultHidden);setMenu(null);}}>Standardansicht wiederherstellen</button></div>}</th>)}</tr></thead><tbody>{rows.map((row,index)=><React.Fragment key={row.id}>{group&&(index===0||String(rows[index-1][group])!==String(row[group]))&&<tr className="emp-group-row"><td colSpan={columns.length+1}>{columns.find(col=>col[0]===group)?.[1]}: {String(row[group]||'-')}</td></tr>}<tr onClick={()=>setDetail(row)}><td className="emp-check emp-sticky-select" onClick={event=>event.stopPropagation()}><input type="checkbox" checked={selected.has(row.id)} onChange={()=>toggle(row.id)}/></td>{columns.map(([key])=><td key={key} className={(key==='employeeName'?'emp-sticky-employee ':'')+(key==='designation'?'emp-sticky-title ':'')+(key==='actions'?'emp-sticky-actions ':'')+(key==='description'?'emp-ellipsis':'')}>{cellValue(row,key)}</td>)}</tr></React.Fragment>)}</tbody></table></div>}
+    {employeePickerOpen&&<div className="emp-picker-backdrop" onClick={()=>setEmployeePickerOpen(false)}><section className="emp-picker-modal" onClick={event=>event.stopPropagation()}><header><div><span>Informationslenkungsmatrix</span><h2>Mitarbeiter auswählen</h2></div><button onClick={()=>setEmployeePickerOpen(false)}>×</button></header><div className="emp-picker-filters"><input placeholder="Name oder Personalnummer" value={employeeSearch} onChange={event=>setEmployeeSearch(event.target.value)}/><select value={employeeCompanyFilter} onChange={event=>setEmployeeCompanyFilter(event.target.value)}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company=><option key={company.id} value={company.id}>{company.name}</option>)}</select><select value={employeeDepartmentFilter} onChange={event=>setEmployeeDepartmentFilter(event.target.value)}><option value="all">Alle Abteilungen</option>{departments.map(item=><option key={item}>{item}</option>)}</select><select value={employeePositionFilter} onChange={event=>setEmployeePositionFilter(event.target.value)}><option value="">Alle Positionen</option>{positions.map(item=><option key={item}>{item}</option>)}</select><select value={employeeStatusFilter} onChange={event=>setEmployeeStatusFilter(event.target.value)}><option value="all">Alle Status</option><option value="aktiv">Aktiv</option><option value="inaktiv">Ausgeschieden</option></select><button type="button" onClick={()=>{setScope('all');setEmployeePickerOpen(false);setSelected(new Set());}}>Alle Mitarbeiter</button></div><div className="emp-picker-table"><table><thead><tr><th>Mitarbeiter</th><th>Firma</th><th>Abteilung</th><th>Position</th></tr></thead><tbody>{pickerEmployees.map(item=><tr key={item.id} onClick={()=>{setScope(item.id);setEmployeePickerOpen(false);setSelected(new Set());}}><td><strong>{item.lastName}, {item.firstName}</strong><small>PN {item.personalNr}</small></td><td>{window.company(item.company)?.name || item.company}</td><td>{item.department}</td><td>{item.position}</td></tr>)}</tbody></table></div></section></div>}
+    {filterOpen&&<div className="emp-training-filter-shell" onClick={()=>setFilterOpen(false)}><aside className="emp-training-filter-panel emp-info-filter-panel" onClick={event=>event.stopPropagation()}><header><div><span>Filter</span><h2>Informationslenkung filtern</h2></div><button onClick={()=>setFilterOpen(false)}>×</button></header><main><label>Mitarbeiter<input value={filters.employee} onChange={event=>setFilters({...filters,employee:event.target.value})}/></label><label>Firma<select value={filters.company} onChange={event=>setFilters({...filters,company:event.target.value})}><option value="all">Alle Firmen</option>{window.SEED.companies.map(company=><option key={company.id} value={company.id}>{company.name}</option>)}</select></label><label>Abteilung<select value={filters.department} onChange={event=>setFilters({...filters,department:event.target.value})}><option value="all">Alle Abteilungen</option>{departments.map(item=><option key={item}>{item}</option>)}</select></label><label>Kategorie<select value={filters.category} onChange={event=>setFilters({...filters,category:event.target.value})}><option value="all">Alle Kategorien</option>{categories.map(item=><option key={item}>{item}</option>)}</select></label><label>Dokumentart<input value={filters.documentType} onChange={event=>setFilters({...filters,documentType:event.target.value})}/></label><label>Standort<input value={filters.location} onChange={event=>setFilters({...filters,location:event.target.value})}/></label><label>Freigabestatus<select value={filters.release} onChange={event=>setFilters({...filters,release:event.target.value})}><option value="all">Alle</option><option>Freigegeben</option><option>Nicht freigegeben</option></select></label><label>Aufbewahrung bis<select value={filters.retention} onChange={event=>setFilters({...filters,retention:event.target.value})}><option value="all">Alle Fristen</option><option value="soon">Frist endet bald</option><option value="running">Aufbewahrung läuft</option></select></label><label>Verantwortlich<input value={filters.responsible} onChange={event=>setFilters({...filters,responsible:event.target.value})}/></label><label>Dokument<select value={filters.document} onChange={event=>setFilters({...filters,document:event.target.value})}><option value="all">Alle</option><option value="vorhanden">vorhanden</option><option value="fehlt">fehlt</option></select></label><label>Archiviert<select value={filters.archived} onChange={event=>setFilters({...filters,archived:event.target.value})}><option value="all">Alle</option><option value="yes">Archiviert</option><option value="no">Nicht archiviert</option></select></label><label>Gesetzliche Grundlage<input value={filters.legal} onChange={event=>setFilters({...filters,legal:event.target.value})}/></label><label className="emp-check-label"><input type="checkbox" checked={filters.releasedOnly} onChange={event=>setFilters({...filters,releasedOnly:event.target.checked})}/>nur für Mitarbeiter freigegebene Einträge</label></main><footer><button className="btn btn--primary" onClick={()=>setFilterOpen(false)}>Filter anwenden</button><button onClick={()=>setFilters({employee:'',company:'all',department:'all',category:'all',documentType:'',location:'',release:'all',retention:'all',responsible:'',document:'all',archived:'all',releasedOnly:false,legal:''})}>Filter zurücksetzen</button><button onClick={()=>setFilterOpen(false)}>Schließen</button></footer></aside></div>}
+    {createOpen&&<div className="emp-create-backdrop" onClick={()=>setCreateOpen(false)}><section className="emp-create-modal emp-info-create-modal" onClick={event=>event.stopPropagation()}><header><div><span>Informationslenkungsmatrix</span><h2>Eintrag anlegen</h2><p>Schritt {createStep} von 5</p></div><button onClick={()=>setCreateOpen(false)}>×</button></header><div className="emp-create-steps">{['Grunddaten','Erstellung und Freigabe','Aufbewahrung','Dokumente','Zusammenfassung'].map((item,index)=><button key={item} className={createStep===index+1?'is-active':''} onClick={()=>setCreateStep(index+1)}>{index+1}. {item}</button>)}</div><div className="emp-create-body">{createStep===1&&<div className="emp-form-grid"><label>Bezeichnung Dokument / Nachweis *<input/></label><label>Kategorie *<select>{['Angebot','Baustelle','Fahrerlaubnis','Unterweisung','Geräteprüfung','Formular'].map(item=><option key={item}>{item}</option>)}</select></label><label>Firma *<select>{window.SEED.companies.map(company=><option key={company.id}>{company.name}</option>)}</select></label><label>Abteilung<input/></label><label>Standort *<input/></label><label className="is-wide">Beschreibung<textarea rows="3"/></label></div>}{createStep===2&&<div className="emp-form-grid"><label>erstellt von *<input/></label><label>geprüft von *<input/></label><label>Freigabe durch *<input/></label><label>Freigabe für Mitarbeiter *<select><option>Freigegeben</option><option>Nicht freigegeben</option><option>Teilweise freigegeben</option></select></label><label>Zielgruppe / Geltungsbereich *<input/></label><label>Zugriffsberechtigung *<input/></label><label>Schutzklasse *<select>{['intern','vertraulich','nur Führungskräfte','für Mitarbeiter freigegeben'].map(item=><option key={item}>{item}</option>)}</select></label></div>}{createStep===3&&<div className="emp-form-grid"><label>Archivierungsart *<input/></label><label>Aufbewahrungsfrist *<input/></label><label>Beginn der Frist *<input type="date"/></label><label>Ende der Frist<input type="date"/></label><label>gesetzliche Grundlage *<input/></label><label>verantwortlich für Vernichtung *<input/></label><label>Vernichtungsart *<input/></label></div>}{createStep===4&&<div className="emp-form-grid"><label>Hauptdokument *<input type="file"/></label><label>Freigabedokument<input type="file"/></label><label>Archivierungsnachweis<input type="file"/></label><label>Vernichtungsprotokoll<input type="file"/></label></div>}{createStep===5&&<div className="emp-create-summary"><strong>Zusammenfassung</strong><span>Dokumentart, Freigabe, Aufbewahrung und Dokumente werden als Entwurf vorbereitet.</span><span>Admin-Funktionen bleiben nur berechtigten Personen sichtbar.</span><span>Mitarbeiter sehen nur freigegebene Dokumentinformationen.</span></div>}</div><footer><button onClick={()=>setCreateOpen(false)}>Abbrechen</button><button>Als Entwurf speichern</button>{createStep>1&&<button onClick={()=>setCreateStep(step=>step-1)}>Zurück</button>}{createStep<5?<button className="btn btn--primary" onClick={()=>setCreateStep(step=>step+1)}>Weiter</button>:<button className="btn btn--primary" onClick={()=>setCreateOpen(false)}>Eintrag anlegen</button>}</footer></section></div>}
+  </div>;
+}
+
+function EmployeeInformationMatrixRecord({ emp, row, onBack }) {
+  return <div className="emp-full emp-info-record">
+    <EmpPageTitle title={`${row.designation} (${emp.name})`} onBack={onBack} action={<div className="emp-training-record-actions"><button className="emp-edit-all"><Icon name="doc" size={15}/>Dokument öffnen</button><button className="emp-edit-all"><Icon name="download" size={15}/>Herunterladen</button></div>} />
+    <div className="emp-info-record-grid">
+      <MasterDataCard title="Dokumentinformationen" icon="doc"><div className="emp-master-field-grid"><MasterDataField label="Bezeichnung" icon="doc" value={row.designation}/><MasterDataField label="Kategorie" icon="doc" value={row.category}/><MasterDataField label="Firma" icon="building" value={row.companyName}/><MasterDataField label="Standort" icon="pin" value={row.location}/><MasterDataField label="Abteilung" icon="users" value={row.department}/><MasterDataField label="Beschreibung" icon="doc" value={row.description}/></div></MasterDataCard>
+      <MasterDataCard title="Freigabe und Zugriff" icon="shield"><div className="emp-master-field-grid"><MasterDataField label="für Mitarbeiter freigegeben" icon="check" value={row.release}/><MasterDataField label="Geltungsbereich" icon="users" value={row.scope}/><MasterDataField label="Zugriffsberechtigung" icon="shield" value={row.access}/><MasterDataField label="Schutzklasse" icon="shield" value={row.protection}/><MasterDataField label="Speicherort" icon="pin" value={row.storage}/></div></MasterDataCard>
+      <MasterDataCard title="Aufbewahrung" icon="history"><div className="emp-master-field-grid"><MasterDataField label="Aufbewahrungsfrist" icon="clock" value={row.retention}/><MasterDataField label="Fristende" icon="cal" value={row.retentionEnd}/><MasterDataField label="gesetzliche Grundlage" icon="doc" value={row.legal}/><MasterDataField label="Archivierungsart" icon="building" value={row.archiveType}/></div></MasterDataCard>
+      <MasterDataCard title="Dokumente" icon="doc"><div className="emp-info-doc-list"><button><Icon name="doc" size={15}/>{row.document}<span>öffnen</span></button><button><Icon name="download" size={15}/>freigegebene Anlagen<span>herunterladen</span></button></div></MasterDataCard>
+      <MasterDataCard title="Historie" icon="history"><div className="emp-master-field-grid"><MasterDataField label="letzte Änderung" icon="history" value={row.lastChange}/><MasterDataField label="neue Version" icon="doc" value={row.version}/><MasterDataField label="Freigabedatum" icon="cal" value={row.releaseDate}/></div></MasterDataCard>
+    </div>
   </div>;
 }
 

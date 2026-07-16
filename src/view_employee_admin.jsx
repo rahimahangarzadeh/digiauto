@@ -150,6 +150,12 @@ function EmployeeAdminDetail({ emp, onBack }) {
 }
 
 function EmployeeDetailNav({ area, collapsed, onToggle, onSelect }) {
+  const [hoverOpen, setHoverOpen] = React.useState(false);
+  const expanded = !collapsed || hoverOpen;
+  const handleSelect = id => {
+    onSelect(id);
+    if (collapsed) setHoverOpen(false);
+  };
   const groups = [
     ['Übersicht', ['dashboard', 'master']],
     ['Qualifikationen', ['trainings', 'instructions', 'jobs', 'medical', 'license', 'operators', 'checks']],
@@ -158,18 +164,18 @@ function EmployeeDetailNav({ area, collapsed, onToggle, onSelect }) {
   ];
   const entries = Object.fromEntries(EMPLOYEE_DETAIL_AREAS.map(item => [item[0], item]));
   return (
-    <nav className={`emp-section-nav emp-section-nav--collapsible ${collapsed ? 'is-collapsed' : ''}`} aria-label="Mitarbeiter Navigation">
+    <nav className={`emp-section-nav emp-section-nav--collapsible ${collapsed ? 'is-collapsed' : ''} ${hoverOpen ? 'is-hover-open' : ''}`} aria-label="Mitarbeiter Navigation" onMouseEnter={() => collapsed && setHoverOpen(true)} onMouseLeave={() => collapsed && setHoverOpen(false)}>
       <button className="emp-nav-toggle" type="button" onClick={onToggle} title={collapsed ? 'Navigation ausklappen' : 'Navigation einklappen'}>
         <Icon name={collapsed ? 'chevR' : 'chevL'} size={15} />
-        {!collapsed && <span>Navigation einklappen</span>}
+        {expanded && <span>Navigation einklappen</span>}
       </button>
       {groups.map(([groupLabel, ids]) => (
         <div className="emp-nav-group" key={groupLabel}>
-          {!collapsed && <strong>{groupLabel}</strong>}
+          {expanded && <strong>{groupLabel}</strong>}
           {ids.map(id => {
             const [, label, icon] = entries[id];
             return (
-              <button key={id} title={label} aria-label={label} className={area === id ? 'is-active' : ''} onClick={() => onSelect(id)}>
+              <button key={id} title={label} aria-label={label} className={area === id ? 'is-active' : ''} onClick={() => handleSelect(id)}>
                 <Icon name={icon} size={16} /><span>{label}</span><Icon className="emp-nav-chevron" name="chevR" size={13} />
               </button>
             );

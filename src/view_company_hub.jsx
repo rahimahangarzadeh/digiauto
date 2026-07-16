@@ -215,6 +215,12 @@ function CompanyDetail({ company, onBack }) {
 }
 
 function CompanyDetailNav({ area, collapsed, onToggle, onSelect }) {
+  const [hoverOpen, setHoverOpen] = React.useState(false);
+  const expanded = !collapsed || hoverOpen;
+  const handleSelect = id => {
+    onSelect(id);
+    if (collapsed) setHoverOpen(false);
+  };
   const groups = [
     ['Übersicht', ['overview', 'master']],
     ['Qualifikation', ['matrix', 'evaluation', 'certification', 'norms', 'infoMatrix', 'forms', 'calendar', 'authorized']],
@@ -222,19 +228,19 @@ function CompanyDetailNav({ area, collapsed, onToggle, onSelect }) {
     ['Struktur', ['organization', 'documents', 'drive']],
   ];
   const areaMap = Object.fromEntries(COMPANY_DETAIL_AREAS.map(item => [item[0], item]));
-  return <nav className={`emp-section-nav emp-section-nav--collapsible company-section-nav ${collapsed ? 'is-collapsed' : ''}`} aria-label="Firma Navigation">
+  return <nav className={`emp-section-nav emp-section-nav--collapsible company-section-nav ${collapsed ? 'is-collapsed' : ''} ${hoverOpen ? 'is-hover-open' : ''}`} aria-label="Firma Navigation" onMouseEnter={() => collapsed && setHoverOpen(true)} onMouseLeave={() => collapsed && setHoverOpen(false)}>
     <button className="emp-nav-toggle" type="button" onClick={onToggle} title={collapsed ? 'Navigation ausklappen' : 'Navigation einklappen'}>
       <Icon name={collapsed ? 'chevR' : 'chevL'} size={16} />
-      <span>Navigation einklappen</span>
+      {expanded && <span>Navigation einklappen</span>}
       <Icon className="emp-nav-chevron" name={collapsed ? 'chevR' : 'chevL'} size={13} />
     </button>
     {groups.map(([groupLabel, ids]) => <div className="emp-nav-group" key={groupLabel}>
-      {!collapsed && <strong>{groupLabel}</strong>}
+      {expanded && <strong>{groupLabel}</strong>}
       {ids.map(id => {
         const item = areaMap[id];
         if (!item) return null;
         const [, label, icon] = item;
-        return <button key={id} className={area === id ? 'is-active' : ''} type="button" title={label} aria-label={label} onClick={() => onSelect(id)}><Icon name={icon} size={16} /><span>{label}</span><Icon className="emp-nav-chevron" name="chevR" size={13} /></button>;
+        return <button key={id} className={area === id ? 'is-active' : ''} type="button" title={label} aria-label={label} onClick={() => handleSelect(id)}><Icon name={icon} size={16} /><span>{label}</span><Icon className="emp-nav-chevron" name="chevR" size={13} /></button>;
       })}
     </div>)}
   </nav>;

@@ -10694,6 +10694,14 @@ a.subtle:hover { text-decoration: underline; }
   padding:6px;
 }
 
+.company-detail__body > .company-section-nav.is-collapsed.is-hover-open {
+  width:230px;
+  min-width:230px;
+  z-index:25;
+  background:#fffdfa;
+  box-shadow:0 14px 32px rgba(47,36,25,.16);
+}
+
 .company-detail__body > .company-section-nav.is-collapsed .emp-nav-toggle,
 .company-detail__body > .company-section-nav.is-collapsed .emp-nav-group button {
   grid-template-columns:1fr;
@@ -10702,9 +10710,21 @@ a.subtle:hover { text-decoration: underline; }
   padding:6px;
 }
 
+.company-detail__body > .company-section-nav.is-collapsed.is-hover-open .emp-nav-toggle,
+.company-detail__body > .company-section-nav.is-collapsed.is-hover-open .emp-nav-group button {
+  grid-template-columns:18px minmax(0,1fr) 14px;
+  justify-items:stretch;
+  padding:5px 10px;
+}
+
 .company-detail__body > .company-section-nav.is-collapsed button span,
 .company-detail__body > .company-section-nav.is-collapsed .emp-nav-chevron {
   display:none;
+}
+
+.company-detail__body > .company-section-nav.is-collapsed.is-hover-open button span,
+.company-detail__body > .company-section-nav.is-collapsed.is-hover-open .emp-nav-chevron {
+  display:block;
 }
 
 .company-detail__body > .company-section-nav.is-collapsed .emp-nav-group + .emp-nav-group {
@@ -13764,6 +13784,14 @@ a.subtle:hover { text-decoration: underline; }
   padding:6px;
 }
 
+.emp-detail-body .emp-section-nav.is-collapsed.is-hover-open {
+  width:220px;
+  min-width:220px;
+  z-index:25;
+  background:#fffdfa;
+  box-shadow:0 14px 32px rgba(47,36,25,.16);
+}
+
 .emp-detail-body .emp-section-nav.is-collapsed .emp-nav-toggle,
 .emp-detail-body .emp-section-nav.is-collapsed .emp-nav-group button {
   grid-template-columns:1fr;
@@ -13772,9 +13800,21 @@ a.subtle:hover { text-decoration: underline; }
   padding:6px;
 }
 
+.emp-detail-body .emp-section-nav.is-collapsed.is-hover-open .emp-nav-toggle,
+.emp-detail-body .emp-section-nav.is-collapsed.is-hover-open .emp-nav-group button {
+  grid-template-columns:18px minmax(0,1fr) 14px;
+  justify-items:stretch;
+  padding:5px 10px;
+}
+
 .emp-detail-body .emp-section-nav.is-collapsed button span,
 .emp-detail-body .emp-section-nav.is-collapsed .emp-nav-chevron {
   display:none;
+}
+
+.emp-detail-body .emp-section-nav.is-collapsed.is-hover-open button span,
+.emp-detail-body .emp-section-nav.is-collapsed.is-hover-open .emp-nav-chevron {
+  display:block;
 }
 
 .emp-detail-body .emp-section-nav.is-collapsed .emp-nav-group + .emp-nav-group {

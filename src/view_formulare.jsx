@@ -142,7 +142,7 @@ function FormulareView({ activeCompany = 'all', extraAction = null, title = 'For
   ];
 
   if (detail) return <>
-    <FormDetailPage row={detail} onBack={() => setDetail(null)} onEdit={() => setFormDialog(detail)} onVersion={() => setVersionDialog(detail)} statusBadge={statusBadge} fmt={fmt} />
+    <FormDetailPage row={detail} onBack={() => setDetail(null)} onAdd={() => setFormDialog({})} onEdit={() => setFormDialog(detail)} onVersion={() => setVersionDialog(detail)} statusBadge={statusBadge} fmt={fmt} />
     {formDialog && <FormCreateDialog row={formDialog.id ? formDialog : null} companies={companies} onClose={() => setFormDialog(null)} />}
     {versionDialog && <FormVersionDialog row={versionDialog} onClose={() => setVersionDialog(null)} />}
   </>;
@@ -344,24 +344,55 @@ function FormField({ label, children, wide }) {
   return <label className={wide ? 'is-wide' : ''}><span>{label}</span>{children}</label>;
 }
 
-function FormDetailPage({ row, onBack, onEdit, onVersion, statusBadge, fmt }) {
+function FormDetailPage({ row, onBack, onAdd, onEdit, onVersion, statusBadge, fmt }) {
+  const warning = row.warning || 'Keine Warnung';
+  const statusValue = { 'In Pruefung':'In Prüfung', 'Pruefung faellig':'Prüfung fällig', 'Ueberfaellig':'Überfällig' }[row.status] || row.status;
   return <div className="emp-full form-detail-page">
-    <CompanyPageTitle title={`${row.name}`} onBack={onBack} action={<div style={{ display:'flex', gap:8 }}><button className="emp-edit-all" onClick={onEdit}><Icon name="edit" size={15} />Bearbeiten</button><button className="btn btn--ghost" onClick={onVersion}><Icon name="history" size={14} />neue Version</button><button className="btn btn--ghost"><Icon name="download" size={14} />PDF herunterladen</button></div>} />
-    <section className="form-detail-hero"><div><span>{row.internal}</span><h2>{row.name}</h2><p>{row.description}</p></div>{statusBadge(row.status)}</section>
-    <div className="cert-detail-grid">
-      <FormInfoCard title="Stammdaten" rows={[['interne Nummer', row.internal], ['Firma', row.companyName], ['Formularart', row.type], ['Sprache', row.language], ['Seitenanzahl', row.pages]]} />
-      <FormInfoCard title="Aktuelle Version" rows={[['Version', row.version], ['gueltig ab', fmt(row.validFrom)], ['letzte Aktualisierung', fmt(row.updated)], ['naechste Pruefung', fmt(row.nextCheck)], ['Pruefintervall', row.interval]]} />
-      <FormInfoCard title="Verantwortlichkeiten" rows={[['verantwortliche Person', row.responsible], ['Pruefer', row.reviewer], ['Freigeber', row.approver], ['Status', row.status]]} />
-      <FormInfoCard title="PDF-Dateien" rows={[['Aktuelle PDF', row.pdf || 'fehlt'], ['Vorschau', 'PDF-Vorschau oeffnen'], ['Export', 'PDF herunterladen']]} />
-      <FormInfoCard title="Aeltere Versionen" rows={[['Version 001', 'erstellt 2024-04-01'], ['Version 002', 'aktuelle Freigabe']]} />
-      <FormInfoCard title="Aenderungshistorie" rows={[['Erstellt', 'Rahim Ahangarzadeh'], ['Geprueft', row.reviewer], ['Freigegeben', row.approver]]} />
-      <FormInfoCard title="Bemerkungen" rows={[['Notiz', row.notes || '-']]} />
+    <CompanyPageTitle title={row.name} onBack={onBack} action={<div className="form-detail-actions">
+      <button className="btn btn--primary" onClick={onAdd}><Icon name="plus" size={14} />PDF-Formular hinzufügen</button>
+      <button className="emp-edit-all" onClick={onEdit}><Icon name="edit" size={15} />Bearbeiten</button>
+      <button className="btn btn--ghost"><Icon name="upload" size={14} />Dokument hinzufügen</button>
+      <button className="btn btn--ghost" onClick={onVersion}><Icon name="history" size={14} />Neue Version</button>
+      <button className="btn btn--ghost"><Icon name="archive" size={14} />Archivieren</button>
+      <button className="btn btn--danger-fill"><Icon name="trash" size={14} />Löschen</button>
+    </div>} />
+    <section className="form-detail-hero">
+      <div>
+        {statusBadge(row.status)}
+        <span>{row.internal}</span>
+        <h2>{row.name}</h2>
+        <p>{row.description}</p>
+      </div>
+      <aside>
+        <span>{warning === 'Keine Warnung' ? 'Keine Warnung' : 'Hinweis'}</span>
+        <strong>{warning}</strong>
+        <small>Nächste Prüfung: {fmt(row.nextCheck)}</small>
+      </aside>
+    </section>
+    <div className="form-detail-grid">
+      <FormInfoCard title="Stammdaten" rows={[['interne Nummer', row.internal], ['Firma', row.companyName], ['Formularart', row.type], ['Sprache', row.language], ['Seitenanzahl', `${row.pages} Seiten`]]} />
+      <FormInfoCard title="Aktuelle Version" rows={[['Version', row.version], ['gültig ab', fmt(row.validFrom)], ['letzte Aktualisierung', fmt(row.updated)], ['nächste Prüfung', fmt(row.nextCheck)], ['Prüfintervall', row.interval]]} />
+      <FormInfoCard title="Verantwortlichkeiten" rows={[['verantwortliche Person', row.responsible], ['Prüfer', row.reviewer], ['Freigeber', row.approver], ['Status', statusValue]]} />
+      <section className="form-detail-card">
+        <h3>PDF-Dateien</h3>
+        <div className="qualified-doc-box">
+          {row.pdf ? <div className="qualified-doc-chip"><Icon name="doc" size={14} /><span>{row.pdf}</span><button><Icon name="x" size={13} /></button></div> : <div className="qualified-doc-empty"><Icon name="doc" size={14} />Keine PDF-Datei hinterlegt</div>}
+          <button className="qualified-doc-upload"><Icon name="upload" size={14} />Dokument hinzufügen</button>
+        </div>
+        <div className="form-detail-card-actions">
+          <button className="btn btn--ghost">PDF-Vorschau öffnen</button>
+          <button className="btn btn--ghost">PDF herunterladen</button>
+        </div>
+      </section>
+      <FormInfoCard title="Ältere Versionen" rows={[['Version 001', 'erstellt 01.04.2024'], [`Version ${row.version}`, 'aktuelle Freigabe']]} />
+      <FormInfoCard title="Änderungshistorie" rows={[['Erstellt von', 'Rahim Ahangarzadeh'], ['Geprüft von', row.reviewer], ['Freigegeben von', row.approver], ['Letzte Änderung', fmt(row.updated)]]} />
+      <FormInfoCard title="Bemerkungen" wide rows={[['Notiz', row.notes || '-']]} />
     </div>
   </div>;
 }
 
-function FormInfoCard({ title, rows }) {
-  return <section className="cert-info-card"><h3>{title}</h3>{rows.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</section>;
+function FormInfoCard({ title, rows, wide }) {
+  return <section className={'form-detail-card ' + (wide ? 'is-wide' : '')}><h3>{title}</h3>{rows.map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</section>;
 }
 
 Object.assign(window, { FormulareView });
